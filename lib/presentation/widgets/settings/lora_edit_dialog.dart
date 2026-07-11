@@ -23,13 +23,11 @@ class LoraEditDialog extends StatefulWidget {
 
 class _LoraEditDialogState extends State<LoraEditDialog> {
   late final TextEditingController _triggerController;
-  late bool _isEnabled;
 
   @override
   void initState() {
     super.initState();
     _triggerController = TextEditingController(text: widget.existing?.triggerWords ?? '');
-    _isEnabled = widget.existing?.isEnabled ?? true;
   }
 
   @override
@@ -70,13 +68,6 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
             ),
             maxLines: 2,
           ),
-          const SizedBox(height: ThemeConstants.spacingMedium),
-          SwitchListTile(
-            title: const Text('Visible in Create / Studio / Auto Image'),
-            value: _isEnabled,
-            onChanged: (v) => setState(() => _isEnabled = v),
-            contentPadding: EdgeInsets.zero,
-          ),
         ],
       ),
       actions: [
@@ -97,7 +88,7 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
       serverId: widget.serverId,
       loraName: widget.loraName,
       triggerWords: _triggerController.text.trim(),
-      isEnabled: _isEnabled,
+      isEnabled: widget.existing?.isEnabled ?? true,
       updatedAt: DateTime.now(),
     );
     context.read<ServersBloc>().add(LoraMetadataSaveRequested(widget.serverId, [meta]));
