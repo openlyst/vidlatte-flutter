@@ -76,3 +76,23 @@ class StudioSessionModelChanged extends StudioEvent {
   @override
   List<Object?> get props => [sessionId, model];
 }
+
+class StudioSessionLorasChanged extends StudioEvent {
+  final String sessionId;
+  final List<String> loras;
+
+  const StudioSessionLorasChanged(this.sessionId, this.loras);
+
+  @override
+  List<Object?> get props => [sessionId, loras];
+}
+
+class StudioImageRemoved extends StudioEvent {
+  final String sessionId;
+  final String imageId;
+
+  const StudioImageRemoved(this.sessionId, this.imageId);
+
+  @override
+  List<Object?> get props => [sessionId, imageId];
+}

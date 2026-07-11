@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../bloc/generation/generation_bloc.dart';
+import '../../../bloc/servers/servers_bloc.dart';
 import '../../../bloc/studio/studio_bloc.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
+import '../../../data/models/comfy_server.dart';
 import '../../../data/models/generated_image.dart';
+import '../../../data/models/generation_job.dart';
 import '../../../data/models/studio_session.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/image_detail_modal.dart';
 import '../../widgets/common/image_grid.dart';
+import '../../widgets/create/generation_controls.dart';
+import '../../widgets/create/progress_card.dart';
+import '../../widgets/create/prompt_input.dart';
 
 class StudioPage extends StatefulWidget {
   const StudioPage({super.key});
@@ -191,16 +198,113 @@ class _SessionList extends StatelessWidget {
   }
 }
 
-class _SessionDetail extends StatelessWidget {
+class _SessionDetail extends StatefulWidget {
   final StudioSession? session;
 
   const _SessionDetail({this.session});
 
   @override
-  Widget build(BuildContext context) {
-    final ext = Theme.of(context).extension<AppColors>()!;
+  State<_SessionDetail> createState() => _SessionDetailState();
+}
 
-    if (session == null) {
+class _SessionDetailState extends State<_SessionDetail> {
+  final _promptController = TextEditingController();
+  String _selectedModel = '';
+  List<String> _selectedLoras = [];
+  Creativity _creativity = Creativity.normal;
+  double? _customCfg;
+  int? _customSteps;
+  bool? _customHiresFix;
+  int _width = ComfyConstants.defaultWidth;
+  int _height = ComfyConstants.defaultHeight;
+  String? _selectedServerId;
+  final Set<String> _addedImageIds = {};
+
+  @override
+  void didUpdateWidget(_SessionDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.session?.id != oldWidget.session?.id) {
+      _loadFromSession();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromSession();
+  }
+
+  void _loadFromSession() {
+    final s = widget.session;
+    if (s == null) return;
+    _promptController.text = s.prompt;
+    _selectedModel = s.model;
+    _selectedLoras = List.from(s.loras);
+    _addedImageIds.clear();
+    for (final img in s.images) {
+      _addedImageIds.add(img.id);
+    }
+  }
+
+  @override
+  void dispose() {
+    _promptController.dispose();
+    super.dispose();
+  }
+
+  void _generate() {
+    final s = widget.session;
+    if (s == null) return;
+
+    final serversState = context.read<ServersBloc>().state;
+    ComfyServer? server;
+    if (_selectedServerId != null) {
+      server = serversState.servers.where((srv) => srv.id == _selectedServerId).firstOrNull;
+    }
+    server ??= serversState.defaultServer ?? (serversState.servers.isNotEmpty ? serversState.servers.first : null);
+
+    if (server == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(ErrorMessages.comfyNoServer)),
+      );
+      return;
+    }
+
+    if (_promptController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a prompt first.')),
+      );
+      return;
+    }
+
+    if (_selectedModel.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select a model first.')),
+      );
+      return;
+    }
+
+    context.read<StudioBloc>().add(StudioSessionPromptChanged(s.id, _promptController.text.trim()));
+    context.read<StudioBloc>().add(StudioSessionModelChanged(s.id, _selectedModel));
+    context.read<StudioBloc>().add(StudioSessionLorasChanged(s.id, _selectedLoras));
+
+    context.read<GenerationBloc>().add(GenerationSubmitted(
+          server: server,
+          prompt: _promptController.text.trim(),
+          model: _selectedModel,
+          loras: _selectedLoras,
+          creativity: _creativity,
+          cfg: _customCfg,
+          steps: _customSteps,
+          hiresFix: _customHiresFix,
+          width: _width,
+          height: _height,
+        ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.session == null) {
       return const EmptyState(
         icon: Icons.dashboard_outlined,
         title: 'Select a Session',
@@ -208,69 +312,194 @@ class _SessionDetail extends StatelessWidget {
       );
     }
 
-    final s = session!;
-    return ListView(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: ext.surfaceElevated,
-            borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
-            border: Border.all(color: ext.border, width: 0.5),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ThemeConstants.spacingLarge,
-              vertical: ThemeConstants.spacingMedium,
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.folder, color: ext.accent, size: 28),
-                const SizedBox(width: ThemeConstants.spacingMedium),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        s.title,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${s.images.length} images',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: ext.muted,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  color: ext.muted,
-                  onPressed: () => _confirmDelete(context, s.id),
-                  tooltip: 'Delete Session',
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: ThemeConstants.spacingMedium),
-        if (s.images.isEmpty)
-          const EmptyState(
-            icon: Icons.image_outlined,
-            title: 'No Images',
-            message: 'Generate images from the Create page and add them to this session.',
-          )
-        else
-          ImageGrid(
-            images: s.images,
-            onTap: (image) => _showImage(context, image),
-            onFavorite: null,
-            onDelete: null,
-          ),
-      ],
+    final s = widget.session!;
+    return BlocListener<GenerationBloc, GenerationState>(
+      listenWhen: (prev, curr) => curr.images.length > prev.images.length,
+      listener: (context, genState) {
+        for (final img in genState.images) {
+          if (!_addedImageIds.contains(img.id)) {
+            _addedImageIds.add(img.id);
+            context.read<StudioBloc>().add(StudioImageAdded(s.id, img));
+          }
+        }
+      },
+      child: _buildContent(context, s),
     );
+  }
+
+  Widget _buildContent(BuildContext context, StudioSession s) {
+    final serversState = context.read<ServersBloc>().state;
+    final server = _selectedServerId != null
+        ? serversState.servers.where((srv) => srv.id == _selectedServerId).firstOrNull
+        : null;
+    final effectiveServer = server ?? serversState.defaultServer ?? (serversState.servers.isNotEmpty ? serversState.servers.first : null);
+
+    if (serversState.servers.isEmpty) {
+      return const EmptyState(
+        icon: Icons.dns_outlined,
+        title: 'No ComfyUI Server',
+        message: 'Add a ComfyUI server in Settings to start generating images.',
+      );
+    }
+
+    final catalog = serversState.catalogs[effectiveServer?.id];
+    if (catalog == null && effectiveServer != null) {
+      context.read<ServersBloc>().add(ServerModelsFetchRequested(effectiveServer.id));
+    }
+
+    final visibleLoras = serversState.visibleLorasFor(effectiveServer!.id);
+    final triggerWords = serversState.triggerWordsFor(effectiveServer.id);
+
+    return BlocBuilder<GenerationBloc, GenerationState>(
+      builder: (context, genState) {
+        final isGenerating = genState.status == GenerationStatus.generating;
+        return ListView(
+          padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+          children: [
+            _buildSessionHeader(context, s),
+            const SizedBox(height: ThemeConstants.spacingMedium),
+            PromptInput(controller: _promptController, maxLength: ComfyConstants.maxPromptLength),
+            const SizedBox(height: ThemeConstants.spacingMedium),
+            GenerationControls(
+              models: catalog?.models as List<String>? ?? [],
+              loras: visibleLoras,
+              triggerWords: triggerWords,
+              maxLoras: effectiveServer.maxLoras,
+              selectedModel: _selectedModel,
+              selectedLoras: _selectedLoras,
+              creativity: _creativity,
+              customCfg: _customCfg,
+              customSteps: _customSteps,
+              customHiresFix: _customHiresFix,
+              width: _width,
+              height: _height,
+              servers: serversState.servers,
+              selectedServerId: effectiveServer.id,
+              onModelChanged: (m) => setState(() => _selectedModel = m),
+              onLorasChanged: (l) => setState(() => _selectedLoras = l),
+              onCreativityChanged: (c) => setState(() => _creativity = c),
+              onCfgChanged: (v) => setState(() => _customCfg = v),
+              onStepsChanged: (st) => setState(() => _customSteps = st),
+              onHiresFixChanged: (h) => setState(() => _customHiresFix = h),
+              onDimensionsChanged: (dims) => setState(() { _width = dims.$1; _height = dims.$2; }),
+              onServerChanged: (id) => setState(() {
+                _selectedServerId = id;
+                _selectedModel = '';
+                _selectedLoras = [];
+              }),
+            ),
+            const SizedBox(height: ThemeConstants.spacingLarge),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _generate,
+                icon: isGenerating
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                      )
+                    : const Icon(Icons.auto_awesome),
+                label: Text(isGenerating ? 'Add to Queue' : 'Generate'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: ThemeConstants.spacingMedium),
+            ..._buildActiveJobs(genState),
+            if (s.images.isNotEmpty) ...[
+              const SizedBox(height: ThemeConstants.spacingMedium),
+              Text('Session Images', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: ThemeConstants.spacingSmall),
+              ImageGrid(
+                images: s.images,
+                onTap: (image) => _showImage(context, image),
+                onDelete: (image) {
+                  context.read<StudioBloc>().add(StudioImageRemoved(s.id, image.id));
+                },
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSessionHeader(BuildContext context, StudioSession s) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: ext.surfaceElevated,
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+        border: Border.all(color: ext.border, width: 0.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingLarge,
+          vertical: ThemeConstants.spacingMedium,
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.folder, color: ext.accent, size: 28),
+            const SizedBox(width: ThemeConstants.spacingMedium),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(s.title, style: Theme.of(context).textTheme.headlineSmall),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${s.images.length} images',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ext.muted),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              color: ext.muted,
+              onPressed: () => _confirmDelete(context, s.id),
+              tooltip: 'Delete Session',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildActiveJobs(GenerationState state) {
+    final widgets = <Widget>[];
+
+    if (state.currentJob != null) {
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+        child: ProgressCard(
+          job: state.currentJob!,
+          onCancel: state.currentJob!.isActive
+              ? () => context.read<GenerationBloc>().add(GenerationCancelled(state.currentJob!.id))
+              : null,
+          onRetry: state.currentJob!.isFailed
+              ? () => context.read<GenerationBloc>().add(GenerationRetried(state.currentJob!.id))
+              : null,
+        ),
+      ));
+    }
+
+    if (state.queue.isNotEmpty) {
+      for (var i = 0; i < state.queue.length; i++) {
+        final job = state.queue[i];
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+          child: ProgressCard(
+            job: job.copyWith(status: JobStatus.queued),
+            onCancel: () => context.read<GenerationBloc>().add(GenerationCancelled(job.id)),
+          ),
+        ));
+      }
+    }
+
+    return widgets;
   }
 
   void _confirmDelete(BuildContext context, String id) {

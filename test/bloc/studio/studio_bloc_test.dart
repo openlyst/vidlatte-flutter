@@ -137,6 +137,42 @@ void main() {
     );
 
     blocTest<StudioBloc, StudioState>(
+      'updates loras on StudioSessionLorasChanged',
+      build: () {
+        when(() => storage.getSessions()).thenReturn([]);
+        return StudioBloc(storage: storage)
+          ..emit(StudioState(sessions: [session], selectedSessionId: 'sess-1'));
+      },
+      act: (bloc) => bloc.add(const StudioSessionLorasChanged('sess-1', ['lora1.safetensors', 'lora2.safetensors'])),
+      expect: () => [
+        isA<StudioState>()
+            .having((s) => s.sessions.first.loras.length, 'loras', 2)
+            .having((s) => s.sessions.first.loras.first, 'firstLora', 'lora1.safetensors'),
+      ],
+    );
+
+    blocTest<StudioBloc, StudioState>(
+      'removes image from session on StudioImageRemoved',
+      build: () {
+        when(() => storage.getSessions()).thenReturn([]);
+        final image = GeneratedImage(
+          id: 'img-1',
+          prompt: 'test',
+          model: 'model',
+          createdAt: DateTime(2025, 1, 1),
+        );
+        final sessionWithImage = session.copyWith(images: [image]);
+        return StudioBloc(storage: storage)
+          ..emit(StudioState(sessions: [sessionWithImage], selectedSessionId: 'sess-1'));
+      },
+      act: (bloc) => bloc.add(const StudioImageRemoved('sess-1', 'img-1')),
+      expect: () => [
+        isA<StudioState>()
+            .having((s) => s.sessions.first.images, 'images', isEmpty),
+      ],
+    );
+
+    blocTest<StudioBloc, StudioState>(
       'selectedSession getter returns correct session',
       build: () => StudioBloc(storage: storage)
         ..emit(StudioState(sessions: [session], selectedSessionId: 'sess-1')),

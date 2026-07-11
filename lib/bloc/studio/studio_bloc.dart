@@ -24,8 +24,10 @@ class StudioBloc extends Bloc<StudioEvent, StudioState> {
     on<StudioSessionDeleted>(_onDeleted);
     on<StudioSessionSelected>(_onSelected);
     on<StudioImageAdded>(_onImageAdded);
+    on<StudioImageRemoved>(_onImageRemoved);
     on<StudioSessionPromptChanged>(_onPromptChanged);
     on<StudioSessionModelChanged>(_onModelChanged);
+    on<StudioSessionLorasChanged>(_onLorasChanged);
   }
 
   void _onLoad(StudioLoadRequested event, Emitter<StudioState> emit) {
@@ -103,6 +105,30 @@ class StudioBloc extends Bloc<StudioEvent, StudioState> {
     if (session == null) return;
     final updated = session.copyWith(
       model: event.model,
+      updatedAt: DateTime.now(),
+    );
+    await _storage.saveSession(updated);
+    final sessions = state.sessions.map((s) => s.id == updated.id ? updated : s).toList();
+    emit(state.copyWith(sessions: sessions));
+  }
+
+  Future<void> _onLorasChanged(StudioSessionLorasChanged event, Emitter<StudioState> emit) async {
+    final session = state.sessions.where((s) => s.id == event.sessionId).firstOrNull;
+    if (session == null) return;
+    final updated = session.copyWith(
+      loras: event.loras,
+      updatedAt: DateTime.now(),
+    );
+    await _storage.saveSession(updated);
+    final sessions = state.sessions.map((s) => s.id == updated.id ? updated : s).toList();
+    emit(state.copyWith(sessions: sessions));
+  }
+
+  Future<void> _onImageRemoved(StudioImageRemoved event, Emitter<StudioState> emit) async {
+    final session = state.sessions.where((s) => s.id == event.sessionId).firstOrNull;
+    if (session == null) return;
+    final updated = session.copyWith(
+      images: session.images.where((img) => img.id != event.imageId).toList(),
       updatedAt: DateTime.now(),
     );
     await _storage.saveSession(updated);
