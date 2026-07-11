@@ -69,46 +69,50 @@ class _GalleryPageState extends State<GalleryPage> {
             slivers: [
               _buildHeader(context, ext, state),
               SliverToBoxAdapter(child: _buildFilterBar(context, ext, state)),
-              if (state.filter == GalleryFilter.collection && state.selectedCollectionId != null)
-                SliverToBoxAdapter(child: _buildCollectionBanner(context, ext, state)),
-              if (state.filteredImages.isEmpty)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: EmptyState(
-                    icon: Icons.search_off,
-                    title: 'No Results',
-                    message: 'Try a different search or filter.',
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    ThemeConstants.spacingMedium,
-                    ThemeConstants.spacingSmall,
-                    ThemeConstants.spacingMedium,
-                    ThemeConstants.spacingLarge,
-                  ),
-                  sliver: SliverMasonryGrid(
-                    gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
+              if (state.filter == GalleryFilter.collection && state.selectedCollectionId == null)
+                _buildPlaylistsList(context, ext, state)
+              else ...[
+                if (state.filter == GalleryFilter.collection && state.selectedCollectionId != null)
+                  SliverToBoxAdapter(child: _buildCollectionBanner(context, ext, state)),
+                if (state.filteredImages.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyState(
+                      icon: Icons.search_off,
+                      title: 'No Results',
+                      message: 'Try a different search or filter.',
                     ),
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _GalleryImageCard(
-                        image: state.filteredImages[index],
-                        collections: state.collections,
-                        onTap: (img) => _showImage(context, img),
-                        onFavorite: (img) => context
-                            .read<GalleryBloc>()
-                            .add(GalleryImageFavoriteToggled(img.id)),
-                        onDelete: (img) => _confirmDelete(context, img),
-                        onAddToCollection: (img) => _showCollectionPicker(context, img, state.collections),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      ThemeConstants.spacingMedium,
+                      ThemeConstants.spacingSmall,
+                      ThemeConstants.spacingMedium,
+                      ThemeConstants.spacingLarge,
+                    ),
+                    sliver: SliverMasonryGrid(
+                      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
                       ),
-                      childCount: state.filteredImages.length,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _GalleryImageCard(
+                          image: state.filteredImages[index],
+                          collections: state.collections,
+                          onTap: (img) => _showImage(context, img),
+                          onFavorite: (img) => context
+                              .read<GalleryBloc>()
+                              .add(GalleryImageFavoriteToggled(img.id)),
+                          onDelete: (img) => _confirmDelete(context, img),
+                          onAddToCollection: (img) => _showCollectionPicker(context, img, state.collections),
+                        ),
+                        childCount: state.filteredImages.length,
+                      ),
                     ),
                   ),
-                ),
+              ],
             ],
           );
         },
@@ -203,7 +207,10 @@ class _GalleryPageState extends State<GalleryPage> {
             label: 'Playlists',
             icon: Icons.playlist_play_rounded,
             selected: state.filter == GalleryFilter.collection,
-            onTap: () => _showPlaylistsPanel(context, state),
+            onTap: () {
+              context.read<GalleryBloc>().add(const GalleryCollectionSelected(null));
+              context.read<GalleryBloc>().add(const GalleryFilterChanged(GalleryFilter.collection));
+            },
             accent: ext.accent,
             border: ext.border,
             muted: ext.muted,
@@ -258,6 +265,79 @@ class _GalleryPageState extends State<GalleryPage> {
             tooltip: 'Clear filter',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPlaylistsList(BuildContext context, AppColors ext, GalleryState state) {
+    if (state.collections.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: EmptyState(
+          icon: Icons.playlist_play,
+          title: 'No Playlists',
+          message: 'Create a playlist to organize your images.',
+          action: FilledButton.icon(
+            onPressed: () => _showCreateDialog(context),
+            icon: const Icon(Icons.add),
+            label: const Text('New Playlist'),
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                    side: BorderSide(color: ext.border, width: 0.8),
+                  ),
+                  leading: Icon(Icons.add, color: ext.accent),
+                  title: Text('New Playlist', style: TextStyle(color: ext.accent, fontWeight: FontWeight.w600)),
+                  onTap: () => _showCreateDialog(context),
+                ),
+              );
+            }
+            final c = state.collections[index - 1];
+            final count = state.allImages.where((img) => img.collectionId == c.id).length;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                ),
+                tileColor: ext.surfaceElevated,
+                leading: Icon(Icons.playlist_play, color: ext.accent),
+                title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text('$count image${count == 1 ? '' : 's'}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit_outlined, size: 18, color: ext.muted),
+                      onPressed: () => _showRenameDialog(context, c),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 18, color: ext.muted),
+                      onPressed: () => _confirmDeleteCollection(context, c),
+                    ),
+                  ],
+                ),
+                onTap: () => context
+                    .read<GalleryBloc>()
+                    .add(GalleryCollectionSelected(c.id)),
+              ),
+            );
+          },
+          childCount: state.collections.length + 1,
+        ),
       ),
     );
   }
