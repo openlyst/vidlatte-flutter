@@ -29,7 +29,7 @@ class GalleryState extends Equatable {
     List<Collection>? collections,
     String? searchQuery,
     GalleryFilter? filter,
-    String? selectedCollectionId,
+    Object? selectedCollectionId = _sentinel,
     bool? isLoading,
   }) {
     return GalleryState(
@@ -38,7 +38,9 @@ class GalleryState extends Equatable {
       collections: collections ?? this.collections,
       searchQuery: searchQuery ?? this.searchQuery,
       filter: filter ?? this.filter,
-      selectedCollectionId: selectedCollectionId ?? this.selectedCollectionId,
+      selectedCollectionId: identical(selectedCollectionId, _sentinel)
+          ? this.selectedCollectionId
+          : selectedCollectionId as String?,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -49,3 +51,5 @@ class GalleryState extends Equatable {
         filter, selectedCollectionId, isLoading,
       ];
 }
+
+const _sentinel = Object();
