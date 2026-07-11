@@ -75,6 +75,13 @@ class StorageService {
     }
   }
 
+  ComfyServer? getServer(String id) {
+    final raw = _serversBox.get(id);
+    if (raw == null) return null;
+    final json = jsonDecode(raw as String) as Map<String, dynamic>;
+    return ComfyServer.fromJson(json);
+  }
+
   // --- Images ---
 
   List<GeneratedImage> getImages() {
