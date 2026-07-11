@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -92,13 +91,7 @@ class _GalleryPageState extends State<GalleryPage> {
                             .read<GalleryBloc>()
                             .add(GalleryImageFavoriteToggled(img.id)),
                         onDelete: (img) => _confirmDelete(context, img),
-                      )
-                          .animate()
-                          .fadeIn(
-                            delay: (index * 60).ms,
-                            duration: 350.ms,
-                          )
-                          .slideY(begin: 0.15, end: 0),
+                      ),
                       childCount: state.filteredImages.length,
                     ),
                   ),

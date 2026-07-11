@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
@@ -120,14 +119,7 @@ class _ModelList extends StatelessWidget {
             label: name,
             ext: ext,
           ),
-        ).animate().fadeIn(
-              duration: 400.ms,
-              delay: (index * 40).ms,
-            ).slideY(
-              begin: 0.05,
-              duration: 400.ms,
-              delay: (index * 40).ms,
-            );
+        );
       },
     );
   }
@@ -228,14 +220,7 @@ class _LoraList extends StatelessWidget {
               ),
             ],
           ),
-        ).animate().fadeIn(
-              duration: 400.ms,
-              delay: (index * 40).ms,
-            ).slideY(
-              begin: 0.05,
-              duration: 400.ms,
-              delay: (index * 40).ms,
-            );
+        );
       },
     );
   }

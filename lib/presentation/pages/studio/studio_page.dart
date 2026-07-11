@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/studio/studio_bloc.dart';
@@ -31,15 +30,10 @@ class _StudioPageState extends State<StudioPage> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
-            child: _GradientActionButton(
-              icon: Icons.add,
-              label: 'New Session',
-              gradient: LinearGradient(
-                colors: [ext.accentGradientStart, ext.accentGradientEnd],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+            child: FilledButton.icon(
               onPressed: () => _createSession(context),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('New Session'),
             ),
           ),
         ],
@@ -51,17 +45,12 @@ class _StudioPageState extends State<StudioPage> {
               icon: Icons.dashboard_outlined,
               title: 'No Studio Sessions',
               message: 'Create a session to organize your generations by project.',
-              action: _GradientActionButton(
-                icon: Icons.add,
-                label: 'New Session',
-                gradient: LinearGradient(
-                  colors: [ext.accentGradientStart, ext.accentGradientEnd],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+              action: FilledButton.icon(
                 onPressed: () => _createSession(context),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New Session'),
               ),
-            ).animate().fadeIn(duration: ThemeConstants.animationSlow);
+            );
           }
 
           if (isWide) {
@@ -115,57 +104,6 @@ class _StudioPageState extends State<StudioPage> {
           ],
         );
       },
-    );
-  }
-}
-
-class _GradientActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Gradient gradient;
-  final VoidCallback onPressed;
-
-  const _GradientActionButton({
-    required this.icon,
-    required this.label,
-    required this.gradient,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ThemeConstants.spacingMedium,
-              vertical: 10,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 18, color: Colors.white),
-                const SizedBox(width: ThemeConstants.spacingSmall),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -241,13 +179,7 @@ class _SessionList extends StatelessWidget {
                 ),
               ),
             ),
-          )
-              .animate()
-              .fadeIn(
-                duration: ThemeConstants.animationNormal,
-                delay: Duration(milliseconds: index * 40),
-              )
-              .slideY(begin: 0.05, end: 0);
+          );
         },
       ),
     );
@@ -288,19 +220,7 @@ class _SessionDetail extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [ext.accentGradientStart, ext.accentGradientEnd],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
-                  ),
-                  child: const Icon(Icons.folder, color: Colors.white, size: 20),
-                ),
+                Icon(Icons.folder, color: ext.accent, size: 28),
                 const SizedBox(width: ThemeConstants.spacingMedium),
                 Expanded(
                   child: Column(
@@ -329,10 +249,7 @@ class _SessionDetail extends StatelessWidget {
               ],
             ),
           ),
-        )
-            .animate()
-            .fadeIn(duration: ThemeConstants.animationSlow)
-            .slideY(begin: 0.03, end: 0),
+        ),
         const SizedBox(height: ThemeConstants.spacingMedium),
         if (s.images.isEmpty)
           const EmptyState(
@@ -346,7 +263,7 @@ class _SessionDetail extends StatelessWidget {
             onTap: (image) => _showImage(context, image),
             onFavorite: null,
             onDelete: null,
-          ).animate().fadeIn(duration: ThemeConstants.animationSlow),
+          ),
       ],
     );
   }

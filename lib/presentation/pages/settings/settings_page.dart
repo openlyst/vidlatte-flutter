@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/llm/llm_bloc.dart';
@@ -32,20 +31,11 @@ class _SettingsPageState extends State<SettingsPage> {
           ThemeConstants.spacingXLarge,
         ),
         children: [
-          _ThemeSection()
-              .animate()
-              .fadeIn(duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, duration: 400.ms),
+          _ThemeSection(),
           const SizedBox(height: ThemeConstants.spacingLarge),
-          _ServersSection()
-              .animate()
-              .fadeIn(delay: 80.ms, duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, duration: 400.ms),
+          _ServersSection(),
           const SizedBox(height: ThemeConstants.spacingLarge),
-          _LlmServersSection()
-              .animate()
-              .fadeIn(delay: 160.ms, duration: 400.ms)
-              .slideY(begin: 0.1, end: 0, duration: 400.ms),
+          _LlmServersSection(),
         ],
       ),
     );
@@ -166,7 +156,7 @@ class _ThemeOption extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: 200.ms,
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: selected ? ext.accent.withValues(alpha: 0.14) : Colors.transparent,
@@ -191,45 +181,6 @@ class _ThemeOption extends StatelessWidget {
   }
 }
 
-class _AddServerButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _AddServerButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    final ext = Theme.of(context).extension<AppColors>()!;
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [ext.accentGradientStart, ext.accentGradientEnd],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.add, size: 18, color: Colors.white),
-            const SizedBox(width: 6),
-            Text(
-              'Add',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ServersSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -237,7 +188,11 @@ class _ServersSection extends StatelessWidget {
       builder: (context, state) {
         return _SectionCard(
           title: 'ComfyUI Servers',
-          trailing: _AddServerButton(onPressed: () => _showAddServerDialog(context)),
+          trailing: FilledButton.icon(
+            onPressed: () => _showAddServerDialog(context),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add'),
+          ),
           children: [
             if (state.servers.isEmpty)
               const EmptyState(
@@ -679,7 +634,11 @@ class _LlmServersSection extends StatelessWidget {
         return _SectionCard(
           title: 'LLM Servers',
           subtitle: 'Connect to LM Studio or any OpenAI-compatible server for prompt generation.',
-          trailing: _AddServerButton(onPressed: () => _showAddLlmServerDialog(context)),
+          trailing: FilledButton.icon(
+            onPressed: () => _showAddLlmServerDialog(context),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add'),
+          ),
           children: [
             if (state.servers.isEmpty)
               const EmptyState(

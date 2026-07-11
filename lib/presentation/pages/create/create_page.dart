@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/generation/generation_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../bloc/settings/settings_bloc.dart';
 import '../../../config/constants.dart';
-import '../../../config/theme.dart';
 import '../../../data/models/comfy_server.dart';
 import '../../../data/models/generated_image.dart';
 import '../../widgets/common/empty_state.dart';
@@ -189,7 +187,6 @@ class _CreatePageState extends State<CreatePage> {
     ComfyServer server,
     dynamic catalog,
   ) {
-    final ext = Theme.of(context).extension<AppColors>()!;
     final visibleLoras = serversState.visibleLorasFor(server.id);
     final triggerWords = serversState.triggerWordsFor(server.id);
     final isGenerating = genState.status == GenerationStatus.generating;
@@ -199,10 +196,7 @@ class _CreatePageState extends State<CreatePage> {
         PromptInput(
           controller: _promptController,
           maxLength: ComfyConstants.maxPromptLength,
-        )
-            .animate()
-            .fadeIn(duration: 400.ms)
-            .slideY(begin: 0.1, end: 0, duration: 400.ms),
+        ),
         const SizedBox(height: ThemeConstants.spacingMedium),
         GenerationControls(
           models: catalog?.models as List<String>? ?? [],
@@ -231,52 +225,25 @@ class _CreatePageState extends State<CreatePage> {
             _selectedModel = '';
             _selectedLoras = [];
           }),
-        )
-            .animate()
-            .fadeIn(delay: 100.ms, duration: 400.ms)
-            .slideY(begin: 0.1, end: 0, duration: 400.ms),
+        ),
         const SizedBox(height: ThemeConstants.spacingLarge),
         SizedBox(
           width: double.infinity,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isGenerating
-                    ? [ext.muted, ext.muted]
-                    : [ext.accentGradientStart, ext.accentGradientEnd],
-              ),
-              borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
-              boxShadow: isGenerating
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: ext.accent.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-            ),
-            child: FilledButton.icon(
-              onPressed: isGenerating ? null : _generate,
-              icon: isGenerating
-                  ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
-                    )
-                  : const Icon(Icons.auto_awesome),
-              label: Text(isGenerating ? 'Generating...' : 'Generate'),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+          child: FilledButton.icon(
+            onPressed: isGenerating ? null : _generate,
+            icon: isGenerating
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                  )
+                : const Icon(Icons.auto_awesome),
+            label: Text(isGenerating ? 'Generating...' : 'Generate'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
             ),
           ),
-        )
-            .animate()
-            .fadeIn(delay: 200.ms, duration: 400.ms)
-            .slideY(begin: 0.2, end: 0, duration: 400.ms),
+        ),
         const SizedBox(height: ThemeConstants.spacingMedium),
         ..._buildActiveJobs(genState),
       ],

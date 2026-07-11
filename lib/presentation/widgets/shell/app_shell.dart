@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../config/constants.dart';
@@ -148,7 +147,7 @@ class _RailIconItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: 250.ms,
+          duration: const Duration(milliseconds: 200),
           width: 56,
           height: 52,
           decoration: BoxDecoration(
@@ -244,9 +243,7 @@ class _DesktopSidebar extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [ext.accentGradientStart, ext.accentGradientEnd],
-                    ),
+                    color: ext.accent,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.person, size: 18, color: Colors.white),
@@ -291,7 +288,7 @@ class _SidebarItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: 200.ms,
+          duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: selected ? ext.accent.withValues(alpha: 0.12) : Colors.transparent,
@@ -313,7 +310,7 @@ class _SidebarItem extends StatelessWidget {
           ),
         ),
       ),
-    ).animate(target: selected ? 1 : 0).fadeIn(duration: 200.ms);
+    );
   }
 }
 
@@ -333,19 +330,8 @@ class _GradientLogo extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [ext.accentGradientStart, ext.accentGradientEnd],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: ext.accent,
             borderRadius: BorderRadius.circular(size * 0.28),
-            boxShadow: [
-              BoxShadow(
-                color: ext.accent.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Center(
             child: Text(

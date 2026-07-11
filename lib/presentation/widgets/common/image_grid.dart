@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../config/constants.dart';
@@ -48,10 +47,7 @@ class ImageGrid extends StatelessWidget {
           onTap: () => onTap(image),
           onFavorite: onFavorite != null ? () => onFavorite!(image) : null,
           onDelete: onDelete != null ? () => onDelete!(image) : null,
-        )
-            .animate()
-            .fadeIn(delay: (index * 60).ms, duration: 350.ms)
-            .slideY(begin: 0.15, end: 0, duration: 350.ms, curve: Curves.easeOutCubic);
+        );
       },
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
@@ -80,9 +79,6 @@ class ProgressCard extends StatelessWidget {
           ],
         ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 300.ms)
-        .slideY(begin: 0.1, end: 0, duration: 300.ms);
+    );
   }
 }

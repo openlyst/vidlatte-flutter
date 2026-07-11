@@ -44,17 +44,7 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [ext.accentGradientStart, ext.accentGradientEnd],
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.style_outlined, size: 18, color: Colors.white),
-          ),
+          Icon(Icons.style_outlined, size: 22, color: ext.accent),
           const SizedBox(width: 10),
           Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
         ],

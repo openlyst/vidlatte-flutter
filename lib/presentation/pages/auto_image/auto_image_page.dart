@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/autogen/autogen_bloc.dart';
@@ -476,10 +475,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
         borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
       ),
       child: child,
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, end: 0, duration: 400.ms);
+    );
   }
 
   Widget _buildOutputPanel() {
@@ -495,10 +491,10 @@ class _AutoImagePageState extends State<AutoImagePage> {
                 'Configure settings and press Start to begin automated generation.',
             action: isWide(context)
                 ? null
-                : _GradientButton(
+                : FilledButton.icon(
                     onPressed: _canStart() ? _start : null,
-                    icon: Icons.play_arrow,
-                    label: 'Start Generation',
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Start Generation'),
                   ),
           );
         }
@@ -543,56 +539,6 @@ class _AutoImagePageState extends State<AutoImagePage> {
 
   bool isWide(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= ThemeConstants.tabletBreakpoint;
-}
-
-class _GradientButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  final IconData icon;
-  final String label;
-
-  const _GradientButton({
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ext = Theme.of(context).extension<AppColors>()!;
-    final enabled = onPressed != null;
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.5,
-      child: GestureDetector(
-        onTap: onPressed,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: enabled
-                ? LinearGradient(
-                    colors: [ext.accentGradientStart, ext.accentGradientEnd],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  )
-                : null,
-            color: enabled ? null : ext.muted,
-            borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: Colors.white, size: 18),
-              const SizedBox(width: 8),
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _StatusBar extends StatelessWidget {
@@ -652,12 +598,6 @@ class _StatusBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.4),
-                        blurRadius: 6,
-                      ),
-                    ],
                   ),
                 ),
               const SizedBox(width: ThemeConstants.spacingSmall),
@@ -682,10 +622,7 @@ class _StatusBar extends StatelessWidget {
           ),
         ),
       ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, end: 0, duration: 400.ms);
+    );
   }
 }
 
@@ -722,10 +659,7 @@ class _CurrentPromptCard extends StatelessWidget {
           Text(prompt, style: theme.textTheme.bodySmall),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, end: 0, duration: 400.ms);
+    );
   }
 }
 
@@ -792,9 +726,6 @@ class _AutoImageCard extends StatelessWidget {
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideY(begin: 0.1, end: 0, duration: 400.ms);
+    );
   }
 }
