@@ -83,6 +83,8 @@ class _GalleryPageState extends State<GalleryPage> {
                     gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
                     ),
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
                     delegate: SliverChildBuilderDelegate(
                       (context, index) => _GalleryImageCard(
                         image: state.filteredImages[index],
