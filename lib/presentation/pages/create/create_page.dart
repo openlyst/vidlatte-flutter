@@ -273,7 +273,12 @@ class _CreatePageState extends State<CreatePage> {
     dynamic catalog,
   ) {
     return ListView(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      padding: const EdgeInsets.fromLTRB(
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.floatingNavTotalHeight,
+      ),
       children: [
         _buildConfigPanel(context, genState, serversState, server, catalog),
         const SizedBox(height: ThemeConstants.spacingLarge),
@@ -358,7 +363,12 @@ class _CreatePageState extends State<CreatePage> {
       );
     }
     return ListView(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      padding: const EdgeInsets.fromLTRB(
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.floatingNavTotalHeight,
+      ),
       children: [
         if (state.images.isNotEmpty) ...[
           Text('Results', style: Theme.of(context).textTheme.titleLarge),

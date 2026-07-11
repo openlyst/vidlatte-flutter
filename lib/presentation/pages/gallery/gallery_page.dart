@@ -86,7 +86,7 @@ class _GalleryPageState extends State<GalleryPage> {
                     ThemeConstants.spacingMedium,
                     ThemeConstants.spacingSmall,
                     ThemeConstants.spacingMedium,
-                    ThemeConstants.spacingLarge,
+                    ThemeConstants.floatingNavTotalHeight,
                   ),
                   sliver: SliverMasonryGrid(
                     gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(

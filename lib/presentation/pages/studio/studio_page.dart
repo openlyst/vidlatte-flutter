@@ -210,7 +210,12 @@ class _SessionDetail extends StatelessWidget {
 
     final s = session!;
     return ListView(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      padding: const EdgeInsets.fromLTRB(
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.floatingNavTotalHeight,
+      ),
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
