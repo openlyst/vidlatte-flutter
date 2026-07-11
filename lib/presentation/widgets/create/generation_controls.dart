@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../config/constants.dart';
+import '../../../config/theme.dart';
 import '../../../data/models/comfy_server.dart';
 import 'lora_picker_dialog.dart';
 
@@ -187,6 +188,7 @@ class _LoraSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,8 +201,8 @@ class _LoraSummary extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: selectedLoras.isNotEmpty
-                    ? theme.colorScheme.secondary.withValues(alpha: 0.15)
-                    : theme.colorScheme.surfaceContainerHighest,
+                    ? ext.accent.withValues(alpha: 0.15)
+                    : ext.surfaceElevated,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -208,7 +210,7 @@ class _LoraSummary extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: selectedLoras.isNotEmpty ? theme.colorScheme.secondary : theme.colorScheme.outline,
+                  color: selectedLoras.isNotEmpty ? ext.accent : ext.muted,
                 ),
               ),
             ),
@@ -249,7 +251,7 @@ class _LoraSummary extends StatelessWidget {
                       Text(name, style: const TextStyle(fontSize: 12)),
                       if (hasTriggers) ...[
                         const SizedBox(width: 4),
-                        Icon(Icons.bolt, size: 12, color: theme.colorScheme.secondary),
+                        Icon(Icons.bolt, size: 12, color: ext.accent),
                       ],
                     ],
                   ),
@@ -289,6 +291,7 @@ class _CreativitySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
     final index = creativity.index;
     return Column(
@@ -300,7 +303,7 @@ class _CreativitySelector extends StatelessWidget {
             const Spacer(),
             Text(
               '${creativity.label} · ${creativity.cfgScale}',
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodySmall?.copyWith(color: ext.accent, fontWeight: FontWeight.w600),
             ),
           ],
         ),

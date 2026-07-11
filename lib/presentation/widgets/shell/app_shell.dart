@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../config/constants.dart';
+import '../../../config/theme.dart';
 
 enum AppDestination {
-  create(Icons.auto_awesome, 'Create', '/create'),
-  autoImage(Icons.auto_fix_high, 'Auto Image', '/auto-image'),
-  studio(Icons.dashboard_outlined, 'Studio', '/studio'),
-  gallery(Icons.photo_library_outlined, 'Gallery', '/gallery'),
-  browse(Icons.explore_outlined, 'Browse', '/browse'),
-  settings(Icons.settings_outlined, 'Settings', '/settings');
+  create(Icons.auto_awesome_outlined, Icons.auto_awesome, 'Create', '/create'),
+  autoImage(Icons.bolt_outlined, Icons.bolt, 'Auto Image', '/auto-image'),
+  studio(Icons.dashboard_outlined, Icons.dashboard, 'Studio', '/studio'),
+  gallery(Icons.photo_library_outlined, Icons.photo_library, 'Gallery', '/gallery'),
+  browse(Icons.explore_outlined, Icons.explore, 'Browse', '/browse'),
+  settings(Icons.settings_outlined, Icons.settings, 'Settings', '/settings');
 
   final IconData icon;
   final IconData selectedIcon;
   final String label;
   final String path;
 
-  const AppDestination(this.icon, this.label, this.path) : selectedIcon = icon;
+  const AppDestination(this.icon, this.selectedIcon, this.label, this.path);
 }
 
 class AppShell extends StatelessWidget {
@@ -81,23 +83,94 @@ class _TabletShell extends StatelessWidget {
     return Scaffold(
       body: Row(
         children: [
-          NavigationRail(
-            selectedIndex: currentIndex,
-            onDestinationSelected: (index) => context.go(AppDestination.values[index].path),
-            extended: false,
-            labelType: NavigationRailLabelType.all,
-            leading: _Logo(),
-            destinations: AppDestination.values.map((d) {
-              return NavigationRailDestination(
-                icon: Icon(d.icon),
-                selectedIcon: Icon(d.selectedIcon),
-                label: Text(d.label),
-              );
-            }).toList(),
-          ),
+          _NavRail(currentIndex: currentIndex),
           const VerticalDivider(width: 1),
           Expanded(child: child),
         ],
+      ),
+    );
+  }
+}
+
+class _NavRail extends StatelessWidget {
+  final int currentIndex;
+
+  const _NavRail({required this.currentIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          const _GradientLogo(size: 36),
+          const SizedBox(height: 24),
+          Expanded(
+            child: ListView.builder(
+              itemCount: AppDestination.values.length,
+              itemBuilder: (context, index) {
+                final dest = AppDestination.values[index];
+                final selected = index == currentIndex;
+                return _RailIconItem(
+                  icon: selected ? dest.selectedIcon : dest.icon,
+                  label: dest.label,
+                  selected: selected,
+                  onTap: () => context.go(dest.path),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RailIconItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RailIconItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: 250.ms,
+          width: 56,
+          height: 52,
+          decoration: BoxDecoration(
+            color: selected ? ext.accent.withValues(alpha: 0.12) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22, color: selected ? ext.accent : ext.muted),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? ext.accent : ext.muted,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -130,33 +203,65 @@ class _DesktopSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final ext = Theme.of(context).extension<AppColors>()!;
     return Container(
-      width: 240,
-      padding: const EdgeInsets.symmetric(vertical: ThemeConstants.spacingMedium),
-      color: theme.colorScheme.surface,
+      width: 220,
+      padding: const EdgeInsets.fromLTRB(16, 20, 12, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: ThemeConstants.spacingLarge),
-            child: _Logo(),
+            padding: EdgeInsets.only(left: 8),
+            child: _GradientLogo(size: 40, showText: true),
           ),
-          const SizedBox(height: ThemeConstants.spacingLarge),
+          const SizedBox(height: 28),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: ThemeConstants.spacingMedium),
+              padding: EdgeInsets.zero,
               itemCount: AppDestination.values.length,
               itemBuilder: (context, index) {
                 final dest = AppDestination.values[index];
                 final selected = index == currentIndex;
                 return _SidebarItem(
-                  icon: dest.icon,
+                  icon: selected ? dest.selectedIcon : dest.icon,
                   label: dest.label,
                   selected: selected,
                   onTap: () => context.go(dest.path),
                 );
               },
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: ext.surfaceElevated,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: ext.border, width: 0.5),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [ext.accentGradientStart, ext.accentGradientEnd],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.person, size: 18, color: Colors.white),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Local', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                      Text('ComfyUI', style: TextStyle(fontSize: 11, color: ext.muted)),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -180,82 +285,91 @@ class _SidebarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final ext = Theme.of(context).extension<AppColors>()!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
-      child: Material(
-        color: selected ? theme.colorScheme.secondary.withValues(alpha: 0.12) : Colors.transparent,
-        borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ThemeConstants.spacingMedium,
-              vertical: 12,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: selected ? theme.colorScheme.secondary : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: 200.ms,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? ext.accent.withValues(alpha: 0.12) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: selected ? ext.accent : ext.muted),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? ext.accent : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
-                const SizedBox(width: ThemeConstants.spacingMedium),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    color: selected ? theme.colorScheme.secondary : theme.colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
+    ).animate(target: selected ? 1 : 0).fadeIn(duration: 200.ms);
   }
 }
 
-class _Logo extends StatelessWidget {
-  const _Logo();
+class _GradientLogo extends StatelessWidget {
+  final double size;
+  final bool showText;
+
+  const _GradientLogo({required this.size, this.showText = false});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final ext = Theme.of(context).extension<AppColors>()!;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 36,
-          height: 36,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
-            color: theme.colorScheme.secondary,
-            borderRadius: BorderRadius.circular(10),
+            gradient: LinearGradient(
+              colors: [ext.accentGradientStart, ext.accentGradientEnd],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(size * 0.28),
+            boxShadow: [
+              BoxShadow(
+                color: ext.accent.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Center(
             child: Text(
               'V',
               style: TextStyle(
-                color: theme.colorScheme.onSecondary,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                fontSize: size * 0.55,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
         ),
-        const SizedBox(width: ThemeConstants.spacingSmall),
-        Text(
-          AppConfig.appName,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-            color: theme.colorScheme.onSurface,
+        if (showText) ...[
+          const SizedBox(width: 10),
+          Text(
+            AppConfig.appName,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

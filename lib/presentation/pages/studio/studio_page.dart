@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/studio/studio_bloc.dart';
 import '../../../config/constants.dart';
+import '../../../config/theme.dart';
 import '../../../data/models/generated_image.dart';
 import '../../../data/models/studio_session.dart';
 import '../../widgets/common/empty_state.dart';
@@ -19,6 +21,7 @@ class StudioPage extends StatefulWidget {
 class _StudioPageState extends State<StudioPage> {
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= ThemeConstants.tabletBreakpoint;
 
@@ -26,10 +29,18 @@ class _StudioPageState extends State<StudioPage> {
       appBar: AppBar(
         title: const Text('Studio'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _createSession(context),
-            tooltip: 'New Session',
+          Padding(
+            padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
+            child: _GradientActionButton(
+              icon: Icons.add,
+              label: 'New Session',
+              gradient: LinearGradient(
+                colors: [ext.accentGradientStart, ext.accentGradientEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              onPressed: () => _createSession(context),
+            ),
           ),
         ],
       ),
@@ -40,19 +51,24 @@ class _StudioPageState extends State<StudioPage> {
               icon: Icons.dashboard_outlined,
               title: 'No Studio Sessions',
               message: 'Create a session to organize your generations by project.',
-              action: FilledButton.icon(
+              action: _GradientActionButton(
+                icon: Icons.add,
+                label: 'New Session',
+                gradient: LinearGradient(
+                  colors: [ext.accentGradientStart, ext.accentGradientEnd],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 onPressed: () => _createSession(context),
-                icon: const Icon(Icons.add),
-                label: const Text('New Session'),
               ),
-            );
+            ).animate().fadeIn(duration: ThemeConstants.animationSlow);
           }
 
           if (isWide) {
             return Row(
               children: [
                 _SessionList(state: state),
-                const VerticalDivider(width: 1),
+                VerticalDivider(width: 1, color: ext.border),
                 Expanded(child: _SessionDetail(session: state.selectedSession)),
               ],
             );
@@ -103,6 +119,57 @@ class _StudioPageState extends State<StudioPage> {
   }
 }
 
+class _GradientActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Gradient gradient;
+  final VoidCallback onPressed;
+
+  const _GradientActionButton({
+    required this.icon,
+    required this.label,
+    required this.gradient,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ThemeConstants.spacingMedium,
+              vertical: 10,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: Colors.white),
+                const SizedBox(width: ThemeConstants.spacingSmall),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SessionList extends StatelessWidget {
   final StudioState state;
 
@@ -110,6 +177,7 @@ class _SessionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     return SizedBox(
       width: 260,
       child: ListView.builder(
@@ -119,49 +187,67 @@ class _SessionList extends StatelessWidget {
           final session = state.sessions[index];
           final selected = session.id == state.selectedSessionId;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 2),
+            padding: const EdgeInsets.only(bottom: ThemeConstants.spacingXSmall),
             child: Material(
-              color: selected
-                  ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12)
-                  : Colors.transparent,
+              color: selected ? ext.accent.withValues(alpha: 0.12) : ext.surfaceElevated,
               borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
-              child: InkWell(
-                onTap: () => context.read<StudioBloc>().add(StudioSessionSelected(session.id)),
-                borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: ThemeConstants.spacingMedium,
-                    vertical: 12,
+              clipBehavior: Clip.antiAlias,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: selected ? ext.accent.withValues(alpha: 0.4) : ext.border,
+                    width: 0.5,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.folder_outlined,
-                        size: 20,
-                        color: selected
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(width: ThemeConstants.spacingSmall),
-                      Expanded(
-                        child: Text(
-                          session.title,
-                          style: TextStyle(
-                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                  borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                ),
+                child: InkWell(
+                  onTap: () =>
+                      context.read<StudioBloc>().add(StudioSessionSelected(session.id)),
+                  borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: ThemeConstants.spacingMedium,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.folder_outlined,
+                          size: 20,
+                          color: selected ? ext.accent : ext.muted,
                         ),
-                      ),
-                      Text(
-                        '${session.images.length}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+                        const SizedBox(width: ThemeConstants.spacingSmall),
+                        Expanded(
+                          child: Text(
+                            session.title,
+                            style: TextStyle(
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                              color: selected
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : ext.muted,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${session.images.length}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: selected ? ext.accent : ext.muted,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          );
+          )
+              .animate()
+              .fadeIn(
+                duration: ThemeConstants.animationNormal,
+                delay: Duration(milliseconds: index * 40),
+              )
+              .slideY(begin: 0.05, end: 0);
         },
       ),
     );
@@ -175,6 +261,8 @@ class _SessionDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+
     if (session == null) {
       return const EmptyState(
         icon: Icons.dashboard_outlined,
@@ -187,18 +275,64 @@ class _SessionDetail extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(s.title, style: Theme.of(context).textTheme.headlineSmall),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: ext.surfaceElevated,
+            borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+            border: Border.all(color: ext.border, width: 0.5),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ThemeConstants.spacingLarge,
+              vertical: ThemeConstants.spacingMedium,
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _confirmDelete(context, s.id),
-              tooltip: 'Delete Session',
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [ext.accentGradientStart, ext.accentGradientEnd],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+                  ),
+                  child: const Icon(Icons.folder, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: ThemeConstants.spacingMedium),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.title,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${s.images.length} images',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: ext.muted,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  color: ext.muted,
+                  onPressed: () => _confirmDelete(context, s.id),
+                  tooltip: 'Delete Session',
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        )
+            .animate()
+            .fadeIn(duration: ThemeConstants.animationSlow)
+            .slideY(begin: 0.03, end: 0),
         const SizedBox(height: ThemeConstants.spacingMedium),
         if (s.images.isEmpty)
           const EmptyState(
@@ -212,7 +346,7 @@ class _SessionDetail extends StatelessWidget {
             onTap: (image) => _showImage(context, image),
             onFavorite: null,
             onDelete: null,
-          ),
+          ).animate().fadeIn(duration: ThemeConstants.animationSlow),
       ],
     );
   }

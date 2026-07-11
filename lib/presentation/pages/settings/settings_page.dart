@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/llm/llm_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../bloc/settings/settings_bloc.dart';
 import '../../../config/constants.dart';
+import '../../../config/theme.dart';
 import '../../../data/models/comfy_server.dart';
 import '../../../data/models/llm_server.dart';
 import '../../../data/models/model_catalog.dart';
@@ -23,12 +25,81 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          ThemeConstants.spacingLarge,
+          ThemeConstants.spacingMedium,
+          ThemeConstants.spacingLarge,
+          ThemeConstants.spacingXLarge,
+        ),
         children: [
-          _ThemeSection(),
-          const Divider(),
-          _ServersSection(),
-          const Divider(),
-          _LlmServersSection(),
+          _ThemeSection()
+              .animate()
+              .fadeIn(duration: 400.ms)
+              .slideY(begin: 0.1, end: 0, duration: 400.ms),
+          const SizedBox(height: ThemeConstants.spacingLarge),
+          _ServersSection()
+              .animate()
+              .fadeIn(delay: 80.ms, duration: 400.ms)
+              .slideY(begin: 0.1, end: 0, duration: 400.ms),
+          const SizedBox(height: ThemeConstants.spacingLarge),
+          _LlmServersSection()
+              .animate()
+              .fadeIn(delay: 160.ms, duration: 400.ms)
+              .slideY(begin: 0.1, end: 0, duration: 400.ms),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final List<Widget> children;
+
+  const _SectionCard({
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return Container(
+      padding: const EdgeInsets.all(ThemeConstants.spacingLarge),
+      decoration: BoxDecoration(
+        color: ext.surfaceElevated,
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+        border: Border.all(color: ext.border, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.headlineSmall),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+          const SizedBox(height: ThemeConstants.spacingMedium),
+          ...children,
         ],
       ),
     );
@@ -38,25 +109,122 @@ class _SettingsPageState extends State<SettingsPage> {
 class _ThemeSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final settings = context.watch<SettingsBloc>().state.settings;
-    return Padding(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Appearance', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: ThemeConstants.spacingSmall),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'system', label: Text('System')),
-              ButtonSegment(value: 'light', label: Text('Light')),
-              ButtonSegment(value: 'dark', label: Text('Dark')),
-            ],
-            selected: {settings.themeMode},
-            onSelectionChanged: (set) =>
-                context.read<SettingsBloc>().add(ThemeModeChanged(set.first)),
+    return _SectionCard(
+      title: 'Appearance',
+      subtitle: 'Choose how Vidlatte looks.',
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: ext.surfaceElevated,
+            borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+            border: Border.all(color: ext.border, width: 0.5),
           ),
-        ],
+          child: Row(
+            children: [
+              for (final mode in const [
+                ('system', 'System', Icons.brightness_auto_outlined),
+                ('light', 'Light', Icons.light_mode_outlined),
+                ('dark', 'Dark', Icons.dark_mode_outlined),
+              ])
+                Expanded(
+                  child: _ThemeOption(
+                    label: mode.$2,
+                    icon: mode.$3,
+                    selected: settings.themeMode == mode.$1,
+                    onTap: () => context
+                        .read<SettingsBloc>()
+                        .add(ThemeModeChanged(mode.$1)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: 200.ms,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? ext.accent.withValues(alpha: 0.14) : Colors.transparent,
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: selected ? ext.accent : ext.muted),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: selected ? ext.accent : ext.muted,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddServerButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _AddServerButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [ext.accentGradientStart, ext.accentGradientEnd],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.add, size: 18, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(
+              'Add',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -67,37 +235,26 @@ class _ServersSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ServersBloc, ServersState>(
       builder: (context, state) {
-        return Padding(
-          padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text('ComfyUI Servers', style: Theme.of(context).textTheme.titleLarge),
-                  const Spacer(),
-                  FilledButton.tonalIcon(
-                    onPressed: () => _showAddServerDialog(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ThemeConstants.spacingMedium),
-              if (state.servers.isEmpty)
-                const EmptyState(
-                  icon: Icons.dns_outlined,
-                  title: 'No Servers',
-                  message: 'Add a ComfyUI server to start generating images.',
-                )
-              else
-                ...state.servers.map((server) => _ServerCard(
+        return _SectionCard(
+          title: 'ComfyUI Servers',
+          trailing: _AddServerButton(onPressed: () => _showAddServerDialog(context)),
+          children: [
+            if (state.servers.isEmpty)
+              const EmptyState(
+                icon: Icons.dns_outlined,
+                title: 'No Servers',
+                message: 'Add a ComfyUI server to start generating images.',
+              )
+            else
+              ...state.servers.map((server) => Padding(
+                    padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+                    child: _ServerCard(
                       server: server,
                       health: state.healthStatuses[server.id],
                       isDefault: server.id == state.defaultServer?.id,
-                    )),
-            ],
-          ),
+                    ),
+                  )),
+          ],
         );
       },
     );
@@ -134,10 +291,25 @@ class _ServerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+    return Container(
+      decoration: BoxDecoration(
+        color: ext.surfaceElevated,
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        border: Border.all(color: ext.border, width: 0.5),
+      ),
       child: ExpansionTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        ),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        ),
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingMedium,
+          vertical: 4,
+        ),
         leading: Icon(
           health?.healthy == true
               ? Icons.cloud_done
@@ -148,17 +320,17 @@ class _ServerCard extends StatelessWidget {
               ? Colors.green
               : health?.healthy == false
                   ? theme.colorScheme.error
-                  : null,
+                  : ext.muted,
         ),
         title: Row(
           children: [
-            Text(server.name),
+            Flexible(child: Text(server.name, style: theme.textTheme.titleMedium)),
             if (isDefault) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.secondary.withValues(alpha: 0.15),
+                  color: ext.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -166,7 +338,7 @@ class _ServerCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.secondary,
+                    color: ext.accent,
                   ),
                 ),
               ),
@@ -176,10 +348,17 @@ class _ServerCard extends StatelessWidget {
         subtitle: Text(server.url, style: theme.textTheme.bodySmall),
         children: [
           Padding(
-            padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+            padding: const EdgeInsets.fromLTRB(
+              ThemeConstants.spacingMedium,
+              0,
+              ThemeConstants.spacingMedium,
+              ThemeConstants.spacingMedium,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Divider(color: ext.border, height: 1),
+                const SizedBox(height: ThemeConstants.spacingSmall),
                 if (health != null) ...[
                   _InfoRow('Status', health!.healthy ? 'Healthy' : 'Unhealthy'),
                   if (health!.os != null) _InfoRow('OS', health!.os!),
@@ -197,38 +376,41 @@ class _ServerCard extends StatelessWidget {
                 const SizedBox(height: ThemeConstants.spacingMedium),
                 Wrap(
                   spacing: ThemeConstants.spacingSmall,
+                  runSpacing: ThemeConstants.spacingSmall,
                   children: [
-                    FilledButton.tonalIcon(
-                      onPressed: () => context
+                    _ActionChip(
+                      icon: Icons.health_and_safety,
+                      label: 'Health Check',
+                      onTap: () => context
                           .read<ServersBloc>()
                           .add(ServerHealthCheckRequested(server.id)),
-                      icon: const Icon(Icons.health_and_safety),
-                      label: const Text('Health Check'),
                     ),
-                    FilledButton.tonalIcon(
-                      onPressed: () => context
+                    _ActionChip(
+                      icon: Icons.download,
+                      label: 'Fetch Models',
+                      onTap: () => context
                           .read<ServersBloc>()
                           .add(ServerModelsFetchRequested(server.id)),
-                      icon: const Icon(Icons.download),
-                      label: const Text('Fetch Models'),
                     ),
                     if (!isDefault)
-                      FilledButton.tonalIcon(
-                        onPressed: () => context
+                      _ActionChip(
+                        icon: Icons.star,
+                        label: 'Set Default',
+                        accent: true,
+                        onTap: () => context
                             .read<ServersBloc>()
                             .add(ServerSetDefaultRequested(server.id)),
-                        icon: const Icon(Icons.star),
-                        label: const Text('Set Default'),
                       ),
-                    FilledButton.tonalIcon(
-                      onPressed: () => _showEditDialog(context, server),
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Edit'),
+                    _ActionChip(
+                      icon: Icons.edit,
+                      label: 'Edit',
+                      onTap: () => _showEditDialog(context, server),
                     ),
-                    FilledButton.tonalIcon(
-                      onPressed: () => _confirmDelete(context, server.id),
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete'),
+                    _ActionChip(
+                      icon: Icons.delete_outline,
+                      label: 'Delete',
+                      danger: true,
+                      onTap: () => _confirmDelete(context, server.id),
                     ),
                   ],
                 ),
@@ -293,6 +475,7 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -300,8 +483,8 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
-            child: Text(label, style: theme.textTheme.bodySmall),
+            width: 110,
+            child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: ext.muted)),
           ),
           Expanded(
             child: Text(
@@ -312,6 +495,62 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool accent;
+  final bool danger;
+
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.accent = false,
+    this.danger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    final theme = Theme.of(context);
+    final color = danger
+        ? theme.colorScheme.error
+        : accent
+            ? ext.accent
+            : ext.muted;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -437,42 +676,27 @@ class _LlmServersSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<LlmBloc, LlmState>(
       builder: (context, state) {
-        return Padding(
-          padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text('LLM Servers', style: Theme.of(context).textTheme.titleLarge),
-                  const Spacer(),
-                  FilledButton.tonalIcon(
-                    onPressed: () => _showAddLlmServerDialog(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ThemeConstants.spacingSmall),
-              Text(
-                'Connect to LM Studio or any OpenAI-compatible server for prompt generation.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: ThemeConstants.spacingMedium),
-              if (state.servers.isEmpty)
-                const EmptyState(
-                  icon: Icons.psychology_outlined,
-                  title: 'No LLM Servers',
-                  message: 'Add an LLM server to enable Auto Image generation.',
-                )
-              else
-                ...state.servers.map((server) => _LlmServerCard(
+        return _SectionCard(
+          title: 'LLM Servers',
+          subtitle: 'Connect to LM Studio or any OpenAI-compatible server for prompt generation.',
+          trailing: _AddServerButton(onPressed: () => _showAddLlmServerDialog(context)),
+          children: [
+            if (state.servers.isEmpty)
+              const EmptyState(
+                icon: Icons.psychology_outlined,
+                title: 'No LLM Servers',
+                message: 'Add an LLM server to enable Auto Image generation.',
+              )
+            else
+              ...state.servers.map((server) => Padding(
+                    padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+                    child: _LlmServerCard(
                       server: server,
                       health: state.healthStatuses[server.id],
                       modelCount: (state.models[server.id] ?? []).length,
-                    )),
-            ],
-          ),
+                    ),
+                  )),
+          ],
         );
       },
     );
@@ -508,10 +732,25 @@ class _LlmServerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+    return Container(
+      decoration: BoxDecoration(
+        color: ext.surfaceElevated,
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        border: Border.all(color: ext.border, width: 0.5),
+      ),
       child: ExpansionTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        ),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        ),
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingMedium,
+          vertical: 4,
+        ),
         leading: Icon(
           health?.healthy == true
               ? Icons.cloud_done
@@ -522,16 +761,23 @@ class _LlmServerCard extends StatelessWidget {
               ? Colors.green
               : health?.healthy == false
                   ? theme.colorScheme.error
-                  : null,
+                  : ext.muted,
         ),
-        title: Text(server.name),
+        title: Text(server.name, style: theme.textTheme.titleMedium),
         subtitle: Text(server.url, style: theme.textTheme.bodySmall),
         children: [
           Padding(
-            padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+            padding: const EdgeInsets.fromLTRB(
+              ThemeConstants.spacingMedium,
+              0,
+              ThemeConstants.spacingMedium,
+              ThemeConstants.spacingMedium,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Divider(color: ext.border, height: 1),
+                const SizedBox(height: ThemeConstants.spacingSmall),
                 if (health != null) ...[
                   _LlmInfoRow('Status', health!.healthy == true ? 'Healthy' : 'Unhealthy'),
                   if (health!.error != null)
@@ -544,30 +790,32 @@ class _LlmServerCard extends StatelessWidget {
                 const SizedBox(height: ThemeConstants.spacingMedium),
                 Wrap(
                   spacing: ThemeConstants.spacingSmall,
+                  runSpacing: ThemeConstants.spacingSmall,
                   children: [
-                    FilledButton.tonalIcon(
-                      onPressed: () => context
+                    _ActionChip(
+                      icon: Icons.health_and_safety,
+                      label: 'Test',
+                      onTap: () => context
                           .read<LlmBloc>()
                           .add(LlmHealthCheckRequested(server.id)),
-                      icon: const Icon(Icons.health_and_safety),
-                      label: const Text('Test'),
                     ),
-                    FilledButton.tonalIcon(
-                      onPressed: () => context
+                    _ActionChip(
+                      icon: Icons.download,
+                      label: 'Fetch Models',
+                      onTap: () => context
                           .read<LlmBloc>()
                           .add(LlmModelsFetchRequested(server.id)),
-                      icon: const Icon(Icons.download),
-                      label: const Text('Fetch Models'),
                     ),
-                    FilledButton.tonalIcon(
-                      onPressed: () => _showEditDialog(context, server),
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Edit'),
+                    _ActionChip(
+                      icon: Icons.edit,
+                      label: 'Edit',
+                      onTap: () => _showEditDialog(context, server),
                     ),
-                    FilledButton.tonalIcon(
-                      onPressed: () => _confirmDelete(context, server.id),
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete'),
+                    _ActionChip(
+                      icon: Icons.delete_outline,
+                      label: 'Delete',
+                      danger: true,
+                      onTap: () => _confirmDelete(context, server.id),
                     ),
                   ],
                 ),
@@ -631,6 +879,7 @@ class _LlmInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -638,8 +887,8 @@ class _LlmInfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
-            child: Text(label, style: theme.textTheme.bodySmall),
+            width: 120,
+            child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: ext.muted)),
           ),
           Expanded(
             child: Text(

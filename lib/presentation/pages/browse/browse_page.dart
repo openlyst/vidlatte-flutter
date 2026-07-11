@@ -1,10 +1,13 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../config/constants.dart';
-import '../../../data/models/lora_metadata.dart';
+import '../../../config/theme.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/settings/lora_edit_dialog.dart';
 
@@ -88,6 +91,8 @@ class _ModelList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+
     if (models.isEmpty) {
       return const EmptyState(
         icon: Icons.layers_clear,
@@ -104,24 +109,25 @@ class _ModelList extends StatelessWidget {
         final name = model.split('/').last;
         final folder = model.contains('/') ? model.substring(0, model.lastIndexOf('/')) : '';
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
-          child: ListTile(
-            leading: const Icon(Icons.layers_outlined),
-            title: Text(name),
-            subtitle: folder.isNotEmpty ? Text(folder) : Text('From: $serverName'),
-            trailing: IconButton(
-              icon: const Icon(Icons.copy),
-              tooltip: 'Copy name',
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: model));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Copied: $name')),
-                );
-              },
-            ),
+        return _BrowseCard(
+          ext: ext,
+          icon: Icons.layers_outlined,
+          iconColor: ext.accent,
+          title: name,
+          subtitle: folder.isNotEmpty ? folder : 'From: $serverName',
+          trailing: _CopyButton(
+            text: model,
+            label: name,
+            ext: ext,
           ),
-        );
+        ).animate().fadeIn(
+              duration: 400.ms,
+              delay: (index * 40).ms,
+            ).slideY(
+              begin: 0.05,
+              duration: 400.ms,
+              delay: (index * 40).ms,
+            );
       },
     );
   }
@@ -144,6 +150,8 @@ class _LoraList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+
     if (loras.isEmpty) {
       return const EmptyState(
         icon: Icons.style_outlined,
@@ -161,90 +169,277 @@ class _LoraList extends StatelessWidget {
         final folder = lora.contains('/') ? lora.substring(0, lora.lastIndexOf('/')) : '';
         final triggers = triggerWords[lora];
         final isHidden = disabledLoras.contains(lora);
-        final theme = Theme.of(context);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
-          color: isHidden ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) : null,
-          child: ListTile(
-            leading: Icon(
-              isHidden ? Icons.style_outlined : Icons.style,
-              color: isHidden ? theme.colorScheme.outline : null,
-            ),
-            title: Text(
-              name,
-              style: isHidden
-                  ? TextStyle(color: theme.colorScheme.outline, decoration: TextDecoration.lineThrough)
+        return _BrowseCard(
+          ext: ext,
+          dimmed: isHidden,
+          icon: isHidden ? Icons.style_outlined : Icons.style,
+          iconColor: isHidden ? ext.muted : ext.accent,
+          title: name,
+          titleStyle: isHidden
+              ? TextStyle(color: ext.muted, decoration: TextDecoration.lineThrough)
+              : null,
+          subtitle: folder.isNotEmpty ? folder : 'From: $serverName',
+          subtitleExtra: isHidden
+              ? _Badge(text: 'Hidden', color: ext.muted, ext: ext)
+              : triggers != null && triggers.isNotEmpty
+                  ? _TriggerChips(text: triggers, ext: ext)
                   : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _IconButton(
+                ext: ext,
+                icon: isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                tooltip: isHidden ? 'Show' : 'Hide',
+                active: !isHidden,
+                onPressed: () {
+                  final bloc = context.read<ServersBloc>();
+                  final disabled = Set<String>.from(bloc.state.disabledLorasFor(serverId));
+                  if (isHidden) {
+                    disabled.remove(lora);
+                  } else {
+                    disabled.add(lora);
+                  }
+                  bloc.add(LoraVisibilitySaveRequested(serverId, disabled));
+                },
+              ),
+              _IconButton(
+                ext: ext,
+                icon: Icons.edit_outlined,
+                tooltip: 'Edit LoRA',
+                onPressed: () {
+                  final bloc = context.read<ServersBloc>();
+                  final existing = bloc.state.loraMetadata[serverId]
+                      ?.where((m) => m.loraName == lora)
+                      .firstOrNull;
+                  showDialog(
+                    context: context,
+                    builder: (_) => BlocProvider.value(
+                      value: bloc,
+                      child: LoraEditDialog(
+                        serverId: serverId,
+                        loraName: lora,
+                        existing: existing,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ).animate().fadeIn(
+              duration: 400.ms,
+              delay: (index * 40).ms,
+            ).slideY(
+              begin: 0.05,
+              duration: 400.ms,
+              delay: (index * 40).ms,
+            );
+      },
+    );
+  }
+}
+
+class _BrowseCard extends StatelessWidget {
+  final AppColors ext;
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final TextStyle? titleStyle;
+  final String subtitle;
+  final Widget? subtitleExtra;
+  final Widget? trailing;
+  final bool dimmed;
+
+  const _BrowseCard({
+    required this.ext,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    this.titleStyle,
+    this.subtitleExtra,
+    this.trailing,
+    this.dimmed = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ThemeConstants.spacingMedium,
+        vertical: ThemeConstants.spacingMedium,
+      ),
+      decoration: BoxDecoration(
+        color: ext.surfaceElevated.withValues(alpha: dimmed ? 0.5 : 1.0),
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+        border: Border.all(color: ext.border, width: 0.5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
             ),
-            subtitle: Column(
+            child: Icon(icon, size: 20, color: iconColor),
+          ),
+          const SizedBox(width: ThemeConstants.spacingMedium),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (folder.isNotEmpty)
-                  Text(folder, style: theme.textTheme.bodySmall)
-                else
-                  Text('From: $serverName', style: theme.textTheme.bodySmall),
-                if (isHidden)
-                  Text('Hidden', style: TextStyle(fontSize: 11, color: theme.colorScheme.outline))
-                else if (triggers != null && triggers.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 4,
-                    children: triggers
-                        .split(',')
-                        .map((t) => t.trim())
-                        .where((t) => t.isNotEmpty)
-                        .map((t) => Chip(
-                              label: Text(t, style: const TextStyle(fontSize: 11)),
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                            ))
-                        .toList(),
-                  ),
+                Text(title, style: titleStyle ?? theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(subtitle, style: theme.textTheme.bodySmall),
+                if (subtitleExtra != null) ...[
+                  const SizedBox(height: ThemeConstants.spacingSmall),
+                  subtitleExtra!,
                 ],
               ],
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                  tooltip: isHidden ? 'Show' : 'Hide',
-                  onPressed: () {
-                    final bloc = context.read<ServersBloc>();
-                    final disabled = Set<String>.from(bloc.state.disabledLorasFor(serverId));
-                    if (isHidden) {
-                      disabled.remove(lora);
-                    } else {
-                      disabled.add(lora);
-                    }
-                    bloc.add(LoraVisibilitySaveRequested(serverId, disabled));
-                  },
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: ThemeConstants.spacingSmall),
+            trailing!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TriggerChips extends StatelessWidget {
+  final String text;
+  final AppColors ext;
+
+  const _TriggerChips({required this.text, required this.ext});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tags = text
+        .split(',')
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
+
+    return Wrap(
+      spacing: ThemeConstants.spacingXSmall,
+      runSpacing: ThemeConstants.spacingXSmall,
+      children: tags
+          .map((t) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: ext.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+                  border: Border.all(color: ext.accent.withValues(alpha: 0.25), width: 0.5),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Edit LoRA',
-                  onPressed: () {
-                    final bloc = context.read<ServersBloc>();
-                    final existing = bloc.state.loraMetadata[serverId]
-                        ?.where((m) => m.loraName == lora)
-                        .firstOrNull;
-                    showDialog(
-                      context: context,
-                      builder: (_) => BlocProvider.value(
-                        value: bloc,
-                        child: LoraEditDialog(
-                          serverId: serverId,
-                          loraName: lora,
-                          existing: existing,
-                        ),
-                      ),
-                    );
-                  },
+                child: Text(
+                  t,
+                  style: theme.textTheme.labelSmall?.copyWith(color: ext.accent),
                 ),
-              ],
+              ))
+          .toList(),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String text;
+  final Color color;
+  final AppColors ext;
+
+  const _Badge({required this.text, required this.color, required this.ext});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+      ),
+      child: Text(text, style: theme.textTheme.labelSmall?.copyWith(color: color)),
+    );
+  }
+}
+
+class _IconButton extends StatelessWidget {
+  final AppColors ext;
+  final IconData icon;
+  final String tooltip;
+  final bool active;
+  final VoidCallback onPressed;
+
+  const _IconButton({
+    required this.ext,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.active = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+          child: Material(
+            color: active ? ext.accent.withValues(alpha: 0.12) : Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+              side: BorderSide(
+                color: active ? ext.accent.withValues(alpha: 0.3) : ext.border,
+                width: 0.5,
+              ),
+            ),
+            child: InkWell(
+              onTap: onPressed,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: active ? ext.accent : ext.muted,
+                ),
+              ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CopyButton extends StatelessWidget {
+  final String text;
+  final String label;
+  final AppColors ext;
+
+  const _CopyButton({required this.text, required this.label, required this.ext});
+
+  @override
+  Widget build(BuildContext context) {
+    return _IconButton(
+      ext: ext,
+      icon: Icons.copy_outlined,
+      tooltip: 'Copy name',
+      onPressed: () {
+        Clipboard.setData(ClipboardData(text: text));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Copied: $label')),
         );
       },
     );

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../config/constants.dart';
+import '../../../config/theme.dart';
 import '../../../data/models/lora_metadata.dart';
 
 class LoraEditDialog extends StatefulWidget {
@@ -38,12 +39,23 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     final name = widget.loraName.split('/').last;
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.style_outlined),
-          const SizedBox(width: 8),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [ext.accentGradientStart, ext.accentGradientEnd],
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.style_outlined, size: 18, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
           Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
         ],
       ),
@@ -56,7 +68,7 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
               padding: const EdgeInsets.only(bottom: ThemeConstants.spacingMedium),
               child: Text(
                 widget.loraName.substring(0, widget.loraName.lastIndexOf('/')),
-                style: Theme.of(context).textTheme.bodySmall,
+                style: TextStyle(color: ext.muted, fontSize: 13),
               ),
             ),
           TextField(
@@ -64,7 +76,6 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
             decoration: const InputDecoration(
               labelText: 'Trigger words',
               hintText: 'Comma-separated, e.g. cat girl, anime style',
-              border: OutlineInputBorder(),
             ),
             maxLines: 2,
           ),

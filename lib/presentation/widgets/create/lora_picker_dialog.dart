@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../config/constants.dart';
+import '../../../config/theme.dart';
 
 class LoraPickerDialog extends StatefulWidget {
   final List<String> loras;
@@ -57,6 +57,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ext = theme.extension<AppColors>()!;
     return Dialog(
       child: SizedBox(
         width: 640,
@@ -72,7 +73,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.15),
+                      color: ext.accent.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -80,7 +81,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.secondary,
+                        color: ext.accent,
                       ),
                     ),
                   ),
@@ -169,7 +170,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                                               t,
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                color: theme.colorScheme.secondary,
+                                                color: ext.accent,
                                               ),
                                             ))
                                         .toList(),
@@ -178,7 +179,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                             ],
                           ),
                           trailing: hasTriggers
-                              ? Icon(Icons.bolt, size: 16, color: theme.colorScheme.secondary)
+                              ? Icon(Icons.bolt, size: 16, color: ext.accent)
                               : null,
                           onTap: () => _toggle(lora),
                           dense: true,
