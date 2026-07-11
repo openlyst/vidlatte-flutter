@@ -139,7 +139,7 @@ class ComfyWorkflow {
         'scale_by': scale,
         'image': ['6', 0],
       },
-      'class_type': 'ImageUpscaleWith',
+      'class_type': 'ImageScaleBy',
     };
 
     workflow[latentId] = {

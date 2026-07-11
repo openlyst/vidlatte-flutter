@@ -108,9 +108,17 @@ class _CreatePageState extends State<CreatePage> {
       return;
     }
 
+    final catalog = serversState.catalogs[server.id];
     if (_selectedModel.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Select a model first.')),
+      );
+      return;
+    }
+
+    if (catalog != null && catalog.models.isNotEmpty && !catalog.models.contains(_selectedModel)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"$_selectedModel" is not available on ${server.name}. Select a model from the list.')),
       );
       return;
     }

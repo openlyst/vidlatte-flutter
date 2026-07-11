@@ -180,6 +180,20 @@ void main() {
       expect(inputs['scale_by'], 2.0);
     });
 
+    test('uses ImageScaleBy node type (not ImageUpscaleWith)', () {
+      var workflow = ComfyWorkflow.generate(WorkflowInputs(
+        prompt: 'test',
+        model: 'model.safetensors',
+        seed: 1,
+      ));
+      workflow = ComfyWorkflow.addHiresFix(workflow, 1.5, 10);
+
+      final nodeIds = workflow.keys.map(int.parse).toList()..sort();
+      final upscaleNode = workflow[nodeIds[nodeIds.length - 5].toString()];
+      final classType = (upscaleNode as Map<String, dynamic>)['class_type'];
+      expect(classType, 'ImageScaleBy');
+    });
+
     test('uses denoise 0.5 for hires fix ksampler', () {
       var workflow = ComfyWorkflow.generate(WorkflowInputs(
         prompt: 'test',

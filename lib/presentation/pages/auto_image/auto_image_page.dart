@@ -109,6 +109,17 @@ class _AutoImagePageState extends State<AutoImagePage> {
   }
 
   void _start() {
+    final serversState = context.read<ServersBloc>().state;
+    final serverId = _selectedImageServerId ?? serversState.defaultServer?.id;
+    if (serverId != null) {
+      final catalog = serversState.catalogs[serverId];
+      if (catalog != null && catalog.models.isNotEmpty && !catalog.models.contains(_imageModel)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"$_imageModel" is not available on the selected server.')),
+        );
+        return;
+      }
+    }
     _syncConfig();
     context.read<AutoGenBloc>().add(const AutoGenStarted());
   }
