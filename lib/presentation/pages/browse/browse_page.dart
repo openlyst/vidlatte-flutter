@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
@@ -207,16 +206,6 @@ class _LoraList extends StatelessWidget {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.copy),
-                  tooltip: 'Copy name',
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: lora));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Copied: $name')),
-                    );
-                  },
-                ),
                 IconButton(
                   icon: Icon(isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                   tooltip: isHidden ? 'Show' : 'Hide',
