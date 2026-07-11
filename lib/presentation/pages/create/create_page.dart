@@ -34,14 +34,17 @@ class _CreatePageState extends State<CreatePage> {
   int _height = ComfyConstants.defaultHeight;
   String? _selectedServerId;
 
+  bool _loadedSettings = false;
+
   @override
   void initState() {
     super.initState();
-    _loadSettings();
   }
 
   void _loadSettings() {
+    if (_loadedSettings) return;
     final settings = context.read<SettingsBloc>().state.settings;
+    _loadedSettings = true;
     setState(() {
       _selectedModel = settings.lastModel;
       _selectedLoras = settings.lastLoras;
@@ -152,7 +155,10 @@ class _CreatePageState extends State<CreatePage> {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isWide = screenWidth >= ThemeConstants.tabletBreakpoint;
 
-    return Scaffold(
+    return BlocListener<SettingsBloc, SettingsState>(
+      listenWhen: (prev, curr) => !_loadedSettings && (curr.settings.lastModel.isNotEmpty || curr.settings.lastPrompt.isNotEmpty),
+      listener: (context, state) => _loadSettings(),
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Create'),
         actions: [
@@ -197,6 +203,7 @@ class _CreatePageState extends State<CreatePage> {
             },
           );
         },
+      ),
       ),
     );
   }
