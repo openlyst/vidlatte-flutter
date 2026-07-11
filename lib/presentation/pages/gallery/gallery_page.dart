@@ -83,6 +83,20 @@ class _GalleryPageState extends State<GalleryPage> {
               SliverToBoxAdapter(child: _buildFilterBar(context, ext, state)),
               if (state.filter == GalleryFilter.collection && state.selectedCollectionId == null)
                 _buildPlaylistsList(context, ext, state)
+              else if (state.filter == GalleryFilter.hidden) ...[
+                SliverToBoxAdapter(child: _buildHiddenBanner(context, ext, state)),
+                if (state.filteredImages.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyState(
+                      icon: Icons.lock_outline,
+                      title: 'No Hidden Images',
+                      message: 'Hide images from the card menu to see them here.',
+                    ),
+                  )
+                else
+                  _buildImageGrid(context, ext, state, crossAxisCount),
+              ]
               else ...[
                 if (state.filter == GalleryFilter.collection && state.selectedCollectionId != null)
                   SliverToBoxAdapter(child: _buildCollectionBanner(context, ext, state)),
@@ -96,38 +110,7 @@ class _GalleryPageState extends State<GalleryPage> {
                     ),
                   )
                 else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      ThemeConstants.spacingMedium,
-                      ThemeConstants.spacingSmall,
-                      ThemeConstants.spacingMedium,
-                      ThemeConstants.spacingLarge,
-                    ),
-                    sliver: SliverMasonryGrid(
-                      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                      ),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => _GalleryImageCard(
-                          image: state.filteredImages[index],
-                          collections: state.collections,
-                          isLocked: state.isLocked,
-                          onTap: (img) => _showImage(context, img),
-                          onFavorite: (img) => context
-                              .read<GalleryBloc>()
-                              .add(GalleryImageFavoriteToggled(img.id)),
-                          onHide: (img) => context
-                              .read<GalleryBloc>()
-                              .add(GalleryImageHiddenToggled(img.id)),
-                          onDelete: (img) => _confirmDelete(context, img),
-                          onAddToCollection: (img) => _showCollectionPicker(context, img, state.collections),
-                        ),
-                        childCount: state.filteredImages.length,
-                      ),
-                    ),
-                  ),
+                  _buildImageGrid(context, ext, state, crossAxisCount),
               ],
             ],
           );
@@ -306,8 +289,86 @@ class _GalleryPageState extends State<GalleryPage> {
     );
   }
 
+  Widget _buildHiddenBanner(BuildContext context, AppColors ext, GalleryState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ThemeConstants.spacingMedium,
+        vertical: 4,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: ext.surfaceElevated,
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+          border: Border.all(color: ext.border, width: 0.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(Icons.lock_outline, size: 18, color: ext.accent),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Locked',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: ext.accent,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.arrow_back, size: 18, color: ext.muted),
+                onPressed: () => context
+                    .read<GalleryBloc>()
+                    .add(const GalleryCollectionSelected(null)),
+                tooltip: 'Back to playlists',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageGrid(BuildContext context, AppColors ext, GalleryState state, int crossAxisCount) {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingSmall,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingLarge,
+      ),
+      sliver: SliverMasonryGrid(
+        gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+        ),
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _GalleryImageCard(
+            image: state.filteredImages[index],
+            collections: state.collections,
+            isLocked: state.isLocked,
+            onTap: (img) => _showImage(context, img),
+            onFavorite: (img) => context
+                .read<GalleryBloc>()
+                .add(GalleryImageFavoriteToggled(img.id)),
+            onHide: (img) => context
+                .read<GalleryBloc>()
+                .add(GalleryImageHiddenToggled(img.id)),
+            onDelete: (img) => _confirmDelete(context, img),
+            onAddToCollection: (img) => _showCollectionPicker(context, img, state.collections),
+          ),
+          childCount: state.filteredImages.length,
+        ),
+      ),
+    );
+  }
+
   Widget _buildPlaylistsList(BuildContext context, AppColors ext, GalleryState state) {
-    if (state.collections.isEmpty) {
+    final hasLocked = state.hasPassword;
+    if (state.collections.isEmpty && !hasLocked) {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: EmptyState(
@@ -323,12 +384,36 @@ class _GalleryPageState extends State<GalleryPage> {
       );
     }
 
+    final lockedCount = state.allImages.where((img) => img.isHidden).length;
+
     return SliverPadding(
       padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            if (index == 0) {
+            if (hasLocked && index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                  ),
+                  tileColor: ext.surfaceElevated,
+                  leading: Icon(Icons.lock_outline, color: ext.accent),
+                  title: const Text('Locked', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text('$lockedCount hidden image${lockedCount == 1 ? '' : 's'}'),
+                  onTap: () {
+                    if (state.isLocked) {
+                      _showUnlockDialog(context);
+                    } else {
+                      context.read<GalleryBloc>().add(const GalleryFilterChanged(GalleryFilter.hidden));
+                    }
+                  },
+                ),
+              );
+            }
+            final collectionIndex = hasLocked ? index - 1 : index;
+            if (collectionIndex == 0) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
                 child: ListTile(
@@ -342,7 +427,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 ),
               );
             }
-            final c = state.collections[index - 1];
+            final c = state.collections[collectionIndex - 1];
             final count = state.allImages.where((img) => img.collectionId == c.id).length;
             return Padding(
               padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
@@ -373,7 +458,7 @@ class _GalleryPageState extends State<GalleryPage> {
               ),
             );
           },
-          childCount: state.collections.length + 1,
+          childCount: state.collections.length + 1 + (hasLocked ? 1 : 0),
         ),
       ),
     );

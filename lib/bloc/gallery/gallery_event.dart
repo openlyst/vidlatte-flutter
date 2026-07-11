@@ -112,4 +112,4 @@ class GalleryUnlockAttempted extends GalleryEvent {
 
 class GalleryLockRequested extends GalleryEvent {}
 
-enum GalleryFilter { all, favorites, collection }
+enum GalleryFilter { all, favorites, collection, hidden }

@@ -189,6 +189,8 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
         if (collectionId != null) {
           result = result.where((img) => img.collectionId == collectionId).toList();
         }
+      case GalleryFilter.hidden:
+        result = result.where((img) => img.isHidden).toList();
       case GalleryFilter.all:
         break;
     }
