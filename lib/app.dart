@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'bloc/autogen/autogen_bloc.dart';
 import 'bloc/gallery/gallery_bloc.dart';
 import 'bloc/generation/generation_bloc.dart';
+import 'bloc/llm/llm_bloc.dart';
 import 'bloc/servers/servers_bloc.dart';
 import 'bloc/settings/settings_bloc.dart';
 import 'bloc/studio/studio_bloc.dart';
@@ -33,6 +35,12 @@ class VidlatteApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (_) => StudioBloc(storage: storageService)..add(StudioLoadRequested()),
+        ),
+        BlocProvider(
+          create: (_) => LlmBloc(storage: storageService)..add(const LlmLoadRequested()),
+        ),
+        BlocProvider(
+          create: (_) => AutoGenBloc(storage: storageService),
         ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(

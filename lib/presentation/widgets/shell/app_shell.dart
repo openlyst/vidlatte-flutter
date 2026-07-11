@@ -5,6 +5,7 @@ import '../../../config/constants.dart';
 
 enum AppDestination {
   create(Icons.auto_awesome, 'Create', '/create'),
+  autoImage(Icons.auto_fix_high, 'Auto Image', '/auto-image'),
   studio(Icons.dashboard_outlined, 'Studio', '/studio'),
   gallery(Icons.photo_library_outlined, 'Gallery', '/gallery'),
   browse(Icons.explore_outlined, 'Browse', '/browse'),

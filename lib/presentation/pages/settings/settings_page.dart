@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../bloc/llm/llm_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../bloc/settings/settings_bloc.dart';
 import '../../../config/constants.dart';
 import '../../../data/models/comfy_server.dart';
+import '../../../data/models/llm_server.dart';
 import '../../../data/models/model_catalog.dart';
 import '../../widgets/common/empty_state.dart';
 
@@ -25,6 +27,8 @@ class _SettingsPageState extends State<SettingsPage> {
           _ThemeSection(),
           const Divider(),
           _ServersSection(),
+          const Divider(),
+          _LlmServersSection(),
         ],
       ),
     );
@@ -417,6 +421,336 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
                 _maxLoras,
                 _steps,
                 _hiresFix,
+              );
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _LlmServersSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LlmBloc, LlmState>(
+      builder: (context, state) {
+        return Padding(
+          padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('LLM Servers', style: Theme.of(context).textTheme.titleLarge),
+                  const Spacer(),
+                  FilledButton.tonalIcon(
+                    onPressed: () => _showAddLlmServerDialog(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: ThemeConstants.spacingSmall),
+              Text(
+                'Connect to LM Studio or any OpenAI-compatible server for prompt generation.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: ThemeConstants.spacingMedium),
+              if (state.servers.isEmpty)
+                const EmptyState(
+                  icon: Icons.psychology_outlined,
+                  title: 'No LLM Servers',
+                  message: 'Add an LLM server to enable Auto Image generation.',
+                )
+              else
+                ...state.servers.map((server) => _LlmServerCard(
+                      server: server,
+                      health: state.healthStatuses[server.id],
+                      modelCount: (state.models[server.id] ?? []).length,
+                    )),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAddLlmServerDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _LlmServerFormDialog(
+        onSave: (name, url, apiKey, defaultModel) {
+          context.read<LlmBloc>().add(LlmServerAddRequested(
+                name: name,
+                url: url,
+                apiKey: apiKey,
+                defaultModel: defaultModel,
+              ));
+        },
+      ),
+    );
+  }
+}
+
+class _LlmServerCard extends StatelessWidget {
+  final LlmServer server;
+  final LlmHealthStatus? health;
+  final int modelCount;
+
+  const _LlmServerCard({
+    required this.server,
+    this.health,
+    required this.modelCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+      child: ExpansionTile(
+        leading: Icon(
+          health?.healthy == true
+              ? Icons.cloud_done
+              : health?.healthy == false
+                  ? Icons.cloud_off
+                  : Icons.cloud_queue,
+          color: health?.healthy == true
+              ? Colors.green
+              : health?.healthy == false
+                  ? theme.colorScheme.error
+                  : null,
+        ),
+        title: Text(server.name),
+        subtitle: Text(server.url, style: theme.textTheme.bodySmall),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (health != null) ...[
+                  _LlmInfoRow('Status', health!.healthy == true ? 'Healthy' : 'Unhealthy'),
+                  if (health!.error != null)
+                    _LlmInfoRow('Error', health!.error!, isError: true),
+                  const SizedBox(height: ThemeConstants.spacingSmall),
+                ],
+                _LlmInfoRow('Models', '$modelCount'),
+                _LlmInfoRow('Default Model', server.defaultModel ?? 'None'),
+                _LlmInfoRow('Enabled', server.isEnabled ? 'Yes' : 'No'),
+                const SizedBox(height: ThemeConstants.spacingMedium),
+                Wrap(
+                  spacing: ThemeConstants.spacingSmall,
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: () => context
+                          .read<LlmBloc>()
+                          .add(LlmHealthCheckRequested(server.id)),
+                      icon: const Icon(Icons.health_and_safety),
+                      label: const Text('Test'),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () => context
+                          .read<LlmBloc>()
+                          .add(LlmModelsFetchRequested(server.id)),
+                      icon: const Icon(Icons.download),
+                      label: const Text('Fetch Models'),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () => _showEditDialog(context, server),
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Edit'),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () => _confirmDelete(context, server.id),
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, LlmServer server) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _LlmServerFormDialog(
+        server: server,
+        onSave: (name, url, apiKey, defaultModel) {
+          context.read<LlmBloc>().add(LlmServerUpdateRequested(
+                server.copyWith(
+                  name: name,
+                  url: url,
+                  apiKey: apiKey,
+                  defaultModel: defaultModel,
+                ),
+              ));
+        },
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete LLM Server'),
+        content: const Text('Are you sure you want to remove this server?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<LlmBloc>().add(LlmServerDeleteRequested(id));
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LlmInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isError;
+
+  const _LlmInfoRow(this.label, this.value, {this.isError = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(label, style: theme.textTheme.bodySmall),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isError ? theme.colorScheme.error : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LlmServerFormDialog extends StatefulWidget {
+  final LlmServer? server;
+  final void Function(String name, String url, String? apiKey, String? defaultModel) onSave;
+
+  const _LlmServerFormDialog({this.server, required this.onSave});
+
+  @override
+  State<_LlmServerFormDialog> createState() => _LlmServerFormDialogState();
+}
+
+class _LlmServerFormDialogState extends State<_LlmServerFormDialog> {
+  late final _nameController = TextEditingController(text: widget.server?.name ?? '');
+  late final _urlController =
+      TextEditingController(text: widget.server?.url ?? 'http://127.0.0.1:1234');
+  late final _apiKeyController = TextEditingController(text: widget.server?.apiKey ?? '');
+  late final _defaultModelController =
+      TextEditingController(text: widget.server?.defaultModel ?? '');
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _urlController.dispose();
+    _apiKeyController.dispose();
+    _defaultModelController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.server == null ? 'Add LLM Server' : 'Edit LLM Server'),
+      content: SizedBox(
+        width: 400,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: ThemeConstants.spacingSmall),
+                TextFormField(
+                  controller: _urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'URL',
+                    hintText: 'http://127.0.0.1:1234',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Required';
+                    final uri = Uri.tryParse(v.trim());
+                    if (uri == null || !uri.hasScheme) return 'Invalid URL';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: ThemeConstants.spacingSmall),
+                TextFormField(
+                  controller: _apiKeyController,
+                  decoration: const InputDecoration(
+                    labelText: 'API Key (optional)',
+                    hintText: 'Leave empty for local servers',
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: ThemeConstants.spacingSmall),
+                TextFormField(
+                  controller: _defaultModelController,
+                  decoration: const InputDecoration(
+                    labelText: 'Default Model (optional)',
+                    hintText: 'e.g., llama-3-8b-instruct',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (_formKey.currentState?.validate() ?? false) {
+              widget.onSave(
+                _nameController.text.trim(),
+                _urlController.text.trim(),
+                _apiKeyController.text.trim().isEmpty ? null : _apiKeyController.text.trim(),
+                _defaultModelController.text.trim().isEmpty
+                    ? null
+                    : _defaultModelController.text.trim(),
               );
               Navigator.of(context).pop();
             }
