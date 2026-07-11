@@ -218,6 +218,20 @@ class _LoraList extends StatelessWidget {
                   },
                 ),
                 IconButton(
+                  icon: Icon(isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                  tooltip: isHidden ? 'Show' : 'Hide',
+                  onPressed: () {
+                    final bloc = context.read<ServersBloc>();
+                    final disabled = Set<String>.from(bloc.state.disabledLorasFor(serverId));
+                    if (isHidden) {
+                      disabled.remove(lora);
+                    } else {
+                      disabled.add(lora);
+                    }
+                    bloc.add(LoraVisibilitySaveRequested(serverId, disabled));
+                  },
+                ),
+                IconButton(
                   icon: const Icon(Icons.edit_outlined),
                   tooltip: 'Edit LoRA',
                   onPressed: () {
