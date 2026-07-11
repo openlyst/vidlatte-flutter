@@ -388,64 +388,67 @@ class _GalleryPageState extends State<GalleryPage> {
   ) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-              child: Row(
-                children: [
-                  Icon(Icons.playlist_add, size: 20, color: Theme.of(context).extension<AppColors>()!.accent),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Add to playlist',
-                    style: Theme.of(context).textTheme.titleMedium,
+      isScrollControlled: true,
+      builder: (ctx) => BlocBuilder<GalleryBloc, GalleryState>(
+        builder: (context, state) {
+          final currentCollections = state.collections;
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+                  child: Row(
+                    children: [
+                      Icon(Icons.playlist_add, size: 20, color: Theme.of(context).extension<AppColors>()!.accent),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Add to playlist',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            if (image.collectionId != null)
-              ListTile(
-                leading: Icon(Icons.remove_circle_outline, color: Theme.of(context).colorScheme.error),
-                title: const Text('Remove from current playlist'),
-                onTap: () {
-                  context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, null));
-                  Navigator.of(ctx).pop();
-                },
-              ),
-            const Divider(height: 1),
-            if (collections.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(ThemeConstants.spacingLarge),
-                child: Text('No playlists yet. Create one from the Playlists filter.'),
-              )
-            else
-              ...collections.map((c) {
-              final selected = c.id == image.collectionId;
-              return ListTile(
-                leading: Icon(
-                  selected ? Icons.check_circle : Icons.playlist_play,
-                  color: selected ? Theme.of(context).extension<AppColors>()!.accent : null,
                 ),
-                title: Text(c.name),
-                onTap: () {
-                  context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, c.id));
-                  Navigator.of(ctx).pop();
-                },
-              );
-            }),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.add),
-              title: const Text('New playlist'),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _showCreateDialog(context);
-              },
+                if (image.collectionId != null)
+                  ListTile(
+                    leading: Icon(Icons.remove_circle_outline, color: Theme.of(context).colorScheme.error),
+                    title: const Text('Remove from current playlist'),
+                    onTap: () {
+                      context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, null));
+                      Navigator.of(ctx).pop();
+                    },
+                  ),
+                const Divider(height: 1),
+                if (currentCollections.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(ThemeConstants.spacingLarge),
+                    child: Text('No playlists yet. Tap "New playlist" below to create one.'),
+                  )
+                else
+                  ...currentCollections.map((c) {
+                  final selected = c.id == image.collectionId;
+                  return ListTile(
+                    leading: Icon(
+                      selected ? Icons.check_circle : Icons.playlist_play,
+                      color: selected ? Theme.of(context).extension<AppColors>()!.accent : null,
+                    ),
+                    title: Text(c.name),
+                    onTap: () {
+                      context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, c.id));
+                      Navigator.of(ctx).pop();
+                    },
+                  );
+                }),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.add),
+                  title: const Text('New playlist'),
+                  onTap: () => _showCreateDialog(context),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
