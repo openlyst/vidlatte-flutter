@@ -2,6 +2,12 @@ import 'package:equatable/equatable.dart';
 
 import '../../data/models/studio_session.dart';
 
+class _Sentinel {
+  const _Sentinel();
+}
+
+const _unset = _Sentinel();
+
 class StudioState extends Equatable {
   final List<StudioSession> sessions;
   final String? selectedSessionId;
@@ -20,12 +26,14 @@ class StudioState extends Equatable {
 
   StudioState copyWith({
     List<StudioSession>? sessions,
-    String? selectedSessionId,
+    Object? selectedSessionId = _unset,
     bool? isLoading,
   }) {
     return StudioState(
       sessions: sessions ?? this.sessions,
-      selectedSessionId: selectedSessionId ?? this.selectedSessionId,
+      selectedSessionId: selectedSessionId == _unset
+          ? this.selectedSessionId
+          : selectedSessionId as String?,
       isLoading: isLoading ?? this.isLoading,
     );
   }
