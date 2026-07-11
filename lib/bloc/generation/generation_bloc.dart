@@ -65,6 +65,7 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
         model: event.model,
         loras: event.loras,
         creativity: event.creativity,
+        cfg: event.cfg,
         steps: event.steps,
         hiresFix: event.hiresFix,
         width: event.width,

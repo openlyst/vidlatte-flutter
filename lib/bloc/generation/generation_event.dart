@@ -14,6 +14,7 @@ class GenerationSubmitted extends GenerationEvent {
   final String model;
   final List<String> loras;
   final Creativity creativity;
+  final double? cfg;
   final int? steps;
   final bool? hiresFix;
   final int width;
@@ -26,6 +27,7 @@ class GenerationSubmitted extends GenerationEvent {
     required this.model,
     this.loras = const [],
     this.creativity = Creativity.normal,
+    this.cfg,
     this.steps,
     this.hiresFix,
     this.width = 1024,
@@ -34,7 +36,7 @@ class GenerationSubmitted extends GenerationEvent {
   });
 
   @override
-  List<Object?> get props => [server, prompt, model, loras, creativity, steps, hiresFix, width, height, seed];
+  List<Object?> get props => [server, prompt, model, loras, creativity, cfg, steps, hiresFix, width, height, seed];
 }
 
 class GenerationCancelled extends GenerationEvent {

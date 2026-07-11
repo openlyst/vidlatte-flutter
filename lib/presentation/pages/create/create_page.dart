@@ -26,6 +26,7 @@ class _CreatePageState extends State<CreatePage> {
   String _selectedModel = '';
   List<String> _selectedLoras = [];
   Creativity _creativity = Creativity.normal;
+  double? _customCfg;
   int? _customSteps;
   bool? _customHiresFix;
   int _width = ComfyConstants.defaultWidth;
@@ -131,6 +132,7 @@ class _CreatePageState extends State<CreatePage> {
           model: _selectedModel,
           loras: _selectedLoras,
           creativity: _creativity,
+          cfg: _customCfg,
           steps: _customSteps,
           hiresFix: _customHiresFix,
           width: _width,
@@ -203,6 +205,7 @@ class _CreatePageState extends State<CreatePage> {
           selectedModel: _selectedModel,
           selectedLoras: _selectedLoras,
           creativity: _creativity,
+          customCfg: _customCfg,
           customSteps: _customSteps,
           customHiresFix: _customHiresFix,
           width: _width,
@@ -212,6 +215,7 @@ class _CreatePageState extends State<CreatePage> {
           onModelChanged: (m) => setState(() => _selectedModel = m),
           onLorasChanged: (l) => setState(() => _selectedLoras = l),
           onCreativityChanged: (c) => setState(() => _creativity = c),
+          onCfgChanged: (v) => setState(() => _customCfg = v),
           onStepsChanged: (s) => setState(() => _customSteps = s),
           onHiresFixChanged: (h) => setState(() => _customHiresFix = h),
           onDimensionsChanged: (dims) => setState(() { _width = dims.$1; _height = dims.$2; }),

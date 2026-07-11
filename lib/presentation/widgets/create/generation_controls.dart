@@ -12,6 +12,7 @@ class GenerationControls extends StatelessWidget {
   final String selectedModel;
   final List<String> selectedLoras;
   final Creativity creativity;
+  final double? customCfg;
   final int? customSteps;
   final bool? customHiresFix;
   final int width;
@@ -22,6 +23,7 @@ class GenerationControls extends StatelessWidget {
   final ValueChanged<String> onModelChanged;
   final ValueChanged<List<String>> onLorasChanged;
   final ValueChanged<Creativity> onCreativityChanged;
+  final ValueChanged<double?> onCfgChanged;
   final ValueChanged<int?> onStepsChanged;
   final ValueChanged<bool?> onHiresFixChanged;
   final ValueChanged<(int, int)> onDimensionsChanged;
@@ -36,6 +38,7 @@ class GenerationControls extends StatelessWidget {
     required this.selectedModel,
     required this.selectedLoras,
     required this.creativity,
+    this.customCfg,
     required this.customSteps,
     required this.customHiresFix,
     required this.width,
@@ -45,6 +48,7 @@ class GenerationControls extends StatelessWidget {
     required this.onModelChanged,
     required this.onLorasChanged,
     required this.onCreativityChanged,
+    required this.onCfgChanged,
     required this.onStepsChanged,
     required this.onHiresFixChanged,
     required this.onDimensionsChanged,
@@ -86,10 +90,12 @@ class GenerationControls extends StatelessWidget {
         ),
         const SizedBox(height: ThemeConstants.spacingMedium),
         _AdvancedControls(
+          customCfg: customCfg,
           customSteps: customSteps,
           customHiresFix: customHiresFix,
           width: width,
           height: height,
+          onCfgChanged: onCfgChanged,
           onStepsChanged: onStepsChanged,
           onHiresFixChanged: onHiresFixChanged,
           onDimensionsChanged: onDimensionsChanged,
@@ -312,19 +318,23 @@ class _CreativitySelector extends StatelessWidget {
 }
 
 class _AdvancedControls extends StatefulWidget {
+  final double? customCfg;
   final int? customSteps;
   final bool? customHiresFix;
   final int width;
   final int height;
+  final ValueChanged<double?> onCfgChanged;
   final ValueChanged<int?> onStepsChanged;
   final ValueChanged<bool?> onHiresFixChanged;
   final ValueChanged<(int, int)> onDimensionsChanged;
 
   const _AdvancedControls({
+    this.customCfg,
     required this.customSteps,
     required this.customHiresFix,
     required this.width,
     required this.height,
+    required this.onCfgChanged,
     required this.onStepsChanged,
     required this.onHiresFixChanged,
     required this.onDimensionsChanged,
@@ -336,6 +346,23 @@ class _AdvancedControls extends StatefulWidget {
 
 class _AdvancedControlsState extends State<_AdvancedControls> {
   bool _expanded = false;
+  late final TextEditingController _cfgController;
+  bool _useCustomCfg = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _useCustomCfg = widget.customCfg != null;
+    _cfgController = TextEditingController(
+      text: widget.customCfg != null ? widget.customCfg.toString() : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _cfgController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -360,6 +387,42 @@ class _AdvancedControlsState extends State<_AdvancedControls> {
             onChanged: widget.onDimensionsChanged,
           ),
           const SizedBox(height: ThemeConstants.spacingMedium),
+          SwitchListTile(
+            title: const Text('Custom CFG'),
+            subtitle: Text(_useCustomCfg
+                ? 'Override creativity slider with a custom value'
+                : 'Use creativity slider value'),
+            value: _useCustomCfg,
+            onChanged: (v) {
+              setState(() => _useCustomCfg = v);
+              if (v) {
+                final parsed = double.tryParse(_cfgController.text);
+                widget.onCfgChanged(parsed ?? 7.0);
+              } else {
+                widget.onCfgChanged(null);
+              }
+            },
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (_useCustomCfg) ...[
+            TextField(
+              controller: _cfgController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                isDense: true,
+                labelText: 'CFG Scale',
+                hintText: 'e.g. 7.0',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) {
+                final parsed = double.tryParse(v);
+                if (parsed != null) {
+                  widget.onCfgChanged(parsed);
+                }
+              },
+            ),
+            const SizedBox(height: ThemeConstants.spacingMedium),
+          ],
           _StepsSelector(
             customSteps: widget.customSteps,
             onChanged: widget.onStepsChanged,
