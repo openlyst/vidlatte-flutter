@@ -128,11 +128,10 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   }
 
   void _onCollectionSelected(GalleryCollectionSelected event, Emitter<GalleryState> emit) {
-    final filter = event.collectionId != null ? GalleryFilter.collection : GalleryFilter.all;
     emit(state.copyWith(
       selectedCollectionId: event.collectionId,
-      filter: filter,
-      filteredImages: _applyFilter(state.allImages, filter, state.searchQuery, event.collectionId),
+      filter: GalleryFilter.collection,
+      filteredImages: _applyFilter(state.allImages, GalleryFilter.collection, state.searchQuery, event.collectionId),
     ));
   }
 

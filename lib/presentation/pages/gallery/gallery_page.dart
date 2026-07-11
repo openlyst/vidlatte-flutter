@@ -207,10 +207,9 @@ class _GalleryPageState extends State<GalleryPage> {
             label: 'Playlists',
             icon: Icons.playlist_play_rounded,
             selected: state.filter == GalleryFilter.collection,
-            onTap: () {
-              context.read<GalleryBloc>().add(const GalleryCollectionSelected(null));
-              context.read<GalleryBloc>().add(const GalleryFilterChanged(GalleryFilter.collection));
-            },
+            onTap: () => context
+                .read<GalleryBloc>()
+                .add(const GalleryCollectionSelected(null)),
             accent: ext.accent,
             border: ext.border,
             muted: ext.muted,
@@ -258,11 +257,10 @@ class _GalleryPageState extends State<GalleryPage> {
             tooltip: 'Delete playlist',
           ),
           IconButton(
-            icon: Icon(Icons.close, size: 18, color: ext.muted),
-            onPressed: () {
-              context.read<GalleryBloc>().add(const GalleryCollectionSelected(null));
-              context.read<GalleryBloc>().add(const GalleryFilterChanged(GalleryFilter.collection));
-            },
+            icon: Icon(Icons.arrow_back, size: 18, color: ext.muted),
+            onPressed: () => context
+                .read<GalleryBloc>()
+                .add(const GalleryCollectionSelected(null)),
             tooltip: 'Back to playlists',
           ),
         ],
