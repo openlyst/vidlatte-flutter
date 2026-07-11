@@ -28,13 +28,18 @@ class _StudioPageState extends State<StudioPage> {
       appBar: AppBar(
         title: const Text('Studio'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
-            child: FilledButton.icon(
-              onPressed: () => _createSession(context),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('New Session'),
-            ),
+          BlocBuilder<StudioBloc, StudioState>(
+            builder: (context, state) {
+              if (state.sessions.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
+                child: FilledButton.icon(
+                  onPressed: () => _createSession(context),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New Session'),
+                ),
+              );
+            },
           ),
         ],
       ),
