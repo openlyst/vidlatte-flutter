@@ -8,6 +8,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../../bloc/gallery/gallery_bloc.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
+import '../../../data/models/collection.dart';
 import '../../../data/models/generated_image.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/image_detail_modal.dart';
@@ -21,6 +22,12 @@ class GalleryPage extends StatefulWidget {
 
 class _GalleryPageState extends State<GalleryPage> {
   final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<GalleryBloc>().add(GalleryLoadRequested());
+  }
 
   @override
   void dispose() {
@@ -62,6 +69,8 @@ class _GalleryPageState extends State<GalleryPage> {
             slivers: [
               _buildHeader(context, ext, state),
               SliverToBoxAdapter(child: _buildFilterBar(context, ext, state)),
+              if (state.filter == GalleryFilter.collection && state.selectedCollectionId != null)
+                SliverToBoxAdapter(child: _buildCollectionBanner(context, ext, state)),
               if (state.filteredImages.isEmpty)
                 const SliverFillRemaining(
                   hasScrollBody: false,
@@ -88,11 +97,13 @@ class _GalleryPageState extends State<GalleryPage> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) => _GalleryImageCard(
                         image: state.filteredImages[index],
+                        collections: state.collections,
                         onTap: (img) => _showImage(context, img),
                         onFavorite: (img) => context
                             .read<GalleryBloc>()
                             .add(GalleryImageFavoriteToggled(img.id)),
                         onDelete: (img) => _confirmDelete(context, img),
+                        onAddToCollection: (img) => _showCollectionPicker(context, img, state.collections),
                       ),
                       childCount: state.filteredImages.length,
                     ),
@@ -187,12 +198,254 @@ class _GalleryPageState extends State<GalleryPage> {
             border: ext.border,
             muted: ext.muted,
           ),
+          const SizedBox(width: ThemeConstants.spacingSmall),
+          _FilterSegment(
+            label: 'Playlists',
+            icon: Icons.playlist_play_rounded,
+            selected: state.filter == GalleryFilter.collection,
+            onTap: () => _showPlaylistsPanel(context, state),
+            accent: ext.accent,
+            border: ext.border,
+            muted: ext.muted,
+          ),
           const Spacer(),
           Text(
             '${state.filteredImages.length} images',
             style: Theme.of(context).textTheme.labelMedium,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCollectionBanner(BuildContext context, AppColors ext, GalleryState state) {
+    final collection = state.collections.where((c) => c.id == state.selectedCollectionId).firstOrNull;
+    if (collection == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ThemeConstants.spacingMedium,
+        vertical: 4,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.playlist_play, size: 18, color: ext.accent),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              collection.name,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: ext.accent,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.edit_outlined, size: 18, color: ext.muted),
+            onPressed: () => _showRenameDialog(context, collection),
+            tooltip: 'Rename',
+          ),
+          IconButton(
+            icon: Icon(Icons.delete_outline, size: 18, color: ext.muted),
+            onPressed: () => _confirmDeleteCollection(context, collection),
+            tooltip: 'Delete playlist',
+          ),
+          IconButton(
+            icon: Icon(Icons.close, size: 18, color: ext.muted),
+            onPressed: () => context
+                .read<GalleryBloc>()
+                .add(const GalleryCollectionSelected(null)),
+            tooltip: 'Clear filter',
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPlaylistsPanel(BuildContext context, GalleryState state) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => _PlaylistsPanel(
+        collections: state.collections,
+        allImages: state.allImages,
+        selectedCollectionId: state.selectedCollectionId,
+        onSelect: (id) {
+          context.read<GalleryBloc>().add(GalleryCollectionSelected(id));
+          Navigator.of(ctx).pop();
+        },
+        onCreate: () {
+          Navigator.of(ctx).pop();
+          _showCreateDialog(context);
+        },
+        onRename: (collection) {
+          Navigator.of(ctx).pop();
+          _showRenameDialog(context, collection);
+        },
+        onDelete: (collection) {
+          Navigator.of(ctx).pop();
+          _confirmDeleteCollection(context, collection);
+        },
+      ),
+    );
+  }
+
+  void _showCreateDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Playlist'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Playlist name',
+            hintText: 'e.g. Portraits, Landscapes...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                context.read<GalleryBloc>().add(GalleryCollectionCreated(name));
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRenameDialog(BuildContext context, Collection collection) {
+    final controller = TextEditingController(text: collection.name);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename Playlist'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Playlist name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                context
+                    .read<GalleryBloc>()
+                    .add(GalleryCollectionRenamed(collection.id, name));
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteCollection(BuildContext context, Collection collection) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Playlist'),
+        content: Text(
+          'Delete "${collection.name}"? Images will remain in your gallery.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<GalleryBloc>().add(GalleryCollectionDeleted(collection.id));
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCollectionPicker(
+    BuildContext context,
+    GeneratedImage image,
+    List<Collection> collections,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+              child: Row(
+                children: [
+                  Icon(Icons.playlist_add, size: 20, color: Theme.of(context).extension<AppColors>()!.accent),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Add to playlist',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+            if (image.collectionId != null)
+              ListTile(
+                leading: Icon(Icons.remove_circle_outline, color: Theme.of(context).colorScheme.error),
+                title: const Text('Remove from current playlist'),
+                onTap: () {
+                  context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, null));
+                  Navigator.of(ctx).pop();
+                },
+              ),
+            const Divider(height: 1),
+            if (collections.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(ThemeConstants.spacingLarge),
+                child: Text('No playlists yet. Create one from the Playlists filter.'),
+              )
+            else
+              ...collections.map((c) {
+              final selected = c.id == image.collectionId;
+              return ListTile(
+                leading: Icon(
+                  selected ? Icons.check_circle : Icons.playlist_play,
+                  color: selected ? Theme.of(context).extension<AppColors>()!.accent : null,
+                ),
+                title: Text(c.name),
+                onTap: () {
+                  context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, c.id));
+                  Navigator.of(ctx).pop();
+                },
+              );
+            }),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('New playlist'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _showCreateDialog(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -223,6 +476,94 @@ class _GalleryPageState extends State<GalleryPage> {
             },
             child: const Text('Delete'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaylistsPanel extends StatelessWidget {
+  final List<Collection> collections;
+  final List<GeneratedImage> allImages;
+  final String? selectedCollectionId;
+  final void Function(String) onSelect;
+  final VoidCallback onCreate;
+  final void Function(Collection) onRename;
+  final void Function(Collection) onDelete;
+
+  const _PlaylistsPanel({
+    required this.collections,
+    required this.allImages,
+    required this.selectedCollectionId,
+    required this.onSelect,
+    required this.onCreate,
+    required this.onRename,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+            child: Row(
+              children: [
+                Icon(Icons.playlist_play, size: 22, color: ext.accent),
+                const SizedBox(width: 8),
+                Text('Playlists', style: Theme.of(context).textTheme.titleMedium),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: onCreate,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          if (collections.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(ThemeConstants.spacingXLarge),
+              child: Text('No playlists yet. Tap "New" to create one.'),
+            )
+          else
+            ...collections.map((c) {
+              final count = allImages.where((img) => img.collectionId == c.id).length;
+              final selected = c.id == selectedCollectionId;
+              return ListTile(
+                leading: Icon(
+                  Icons.playlist_play,
+                  color: selected ? ext.accent : ext.muted,
+                ),
+                title: Text(
+                  c.name,
+                  style: TextStyle(
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    color: selected ? ext.accent : null,
+                  ),
+                ),
+                subtitle: Text('$count image${count == 1 ? '' : 's'}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit_outlined, size: 18, color: ext.muted),
+                      onPressed: () => onRename(c),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, size: 18, color: ext.muted),
+                      onPressed: () => onDelete(c),
+                    ),
+                  ],
+                ),
+                onTap: () => onSelect(c.id),
+              );
+            }),
+          const SizedBox(height: ThemeConstants.spacingSmall),
         ],
       ),
     );
@@ -293,15 +634,19 @@ class _FilterSegment extends StatelessWidget {
 
 class _GalleryImageCard extends StatelessWidget {
   final GeneratedImage image;
+  final List<Collection> collections;
   final void Function(GeneratedImage) onTap;
   final void Function(GeneratedImage) onFavorite;
   final void Function(GeneratedImage) onDelete;
+  final void Function(GeneratedImage) onAddToCollection;
 
   const _GalleryImageCard({
     required this.image,
+    required this.collections,
     required this.onTap,
     required this.onFavorite,
     required this.onDelete,
+    required this.onAddToCollection,
   });
 
   @override
@@ -310,6 +655,7 @@ class _GalleryImageCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => onTap(image),
+      onLongPress: () => onAddToCollection(image),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
         child: DecoratedBox(
@@ -369,6 +715,12 @@ class _GalleryImageCard extends StatelessWidget {
                           : Icons.favorite_border,
                       onTap: () => onFavorite(image),
                       color: image.isFavorite ? ext.accent : Colors.white,
+                    ),
+                    const SizedBox(width: 4),
+                    _ActionButton(
+                      icon: Icons.playlist_add,
+                      onTap: () => onAddToCollection(image),
+                      color: image.collectionId != null ? ext.accent : Colors.white,
                     ),
                     const SizedBox(width: 4),
                     _ActionButton(

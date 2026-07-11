@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 export 'gallery_event.dart';
 export 'gallery_state.dart';
 
+import '../../data/models/collection.dart';
 import '../../data/models/generated_image.dart';
 import '../../services/storage_service.dart';
 import 'gallery_event.dart';
@@ -19,6 +20,10 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     on<GalleryImageFavoriteToggled>(_onFavoriteToggled);
     on<GalleryImageDeleted>(_onImageDeleted);
     on<GalleryImageCollectionChanged>(_onCollectionChanged);
+    on<GalleryCollectionCreated>(_onCollectionCreated);
+    on<GalleryCollectionRenamed>(_onCollectionRenamed);
+    on<GalleryCollectionDeleted>(_onCollectionDeleted);
+    on<GalleryCollectionSelected>(_onCollectionSelected);
   }
 
   void _onLoad(GalleryLoadRequested event, Emitter<GalleryState> emit) {
@@ -74,6 +79,60 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     emit(state.copyWith(
       allImages: images,
       filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId),
+    ));
+  }
+
+  Future<void> _onCollectionCreated(GalleryCollectionCreated event, Emitter<GalleryState> emit) async {
+    final now = DateTime.now();
+    final collection = Collection(
+      id: now.millisecondsSinceEpoch.toString(),
+      name: event.name,
+      description: event.description,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await _storage.saveCollection(collection);
+    final collections = _storage.getCollections();
+    emit(state.copyWith(collections: collections));
+  }
+
+  Future<void> _onCollectionRenamed(GalleryCollectionRenamed event, Emitter<GalleryState> emit) async {
+    final collections = state.collections;
+    final target = collections.where((c) => c.id == event.collectionId).firstOrNull;
+    if (target == null) return;
+    await _storage.saveCollection(target.copyWith(
+      name: event.name,
+      updatedAt: DateTime.now(),
+    ));
+    final updated = _storage.getCollections();
+    emit(state.copyWith(collections: updated));
+  }
+
+  Future<void> _onCollectionDeleted(GalleryCollectionDeleted event, Emitter<GalleryState> emit) async {
+    await _storage.deleteCollection(event.collectionId);
+    final collections = _storage.getCollections();
+    final images = _storage.getImages();
+    final filter = state.selectedCollectionId == event.collectionId
+        ? GalleryFilter.all
+        : state.filter;
+    final selectedId = state.selectedCollectionId == event.collectionId
+        ? null
+        : state.selectedCollectionId;
+    emit(state.copyWith(
+      collections: collections,
+      allImages: images,
+      filter: filter,
+      selectedCollectionId: selectedId,
+      filteredImages: _applyFilter(images, filter, state.searchQuery, selectedId),
+    ));
+  }
+
+  void _onCollectionSelected(GalleryCollectionSelected event, Emitter<GalleryState> emit) {
+    final filter = event.collectionId != null ? GalleryFilter.collection : GalleryFilter.all;
+    emit(state.copyWith(
+      selectedCollectionId: event.collectionId,
+      filter: filter,
+      filteredImages: _applyFilter(state.allImages, filter, state.searchQuery, event.collectionId),
     ));
   }
 

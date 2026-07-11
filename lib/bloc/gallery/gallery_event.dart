@@ -54,4 +54,42 @@ class GalleryImageCollectionChanged extends GalleryEvent {
   List<Object?> get props => [imageId, collectionId];
 }
 
+class GalleryCollectionCreated extends GalleryEvent {
+  final String name;
+  final String? description;
+
+  const GalleryCollectionCreated(this.name, {this.description});
+
+  @override
+  List<Object?> get props => [name, description];
+}
+
+class GalleryCollectionRenamed extends GalleryEvent {
+  final String collectionId;
+  final String name;
+
+  const GalleryCollectionRenamed(this.collectionId, this.name);
+
+  @override
+  List<Object?> get props => [collectionId, name];
+}
+
+class GalleryCollectionDeleted extends GalleryEvent {
+  final String collectionId;
+
+  const GalleryCollectionDeleted(this.collectionId);
+
+  @override
+  List<Object?> get props => [collectionId];
+}
+
+class GalleryCollectionSelected extends GalleryEvent {
+  final String? collectionId;
+
+  const GalleryCollectionSelected(this.collectionId);
+
+  @override
+  List<Object?> get props => [collectionId];
+}
+
 enum GalleryFilter { all, favorites, collection }
