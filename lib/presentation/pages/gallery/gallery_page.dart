@@ -409,16 +409,6 @@ class _GalleryPageState extends State<GalleryPage> {
                     ],
                   ),
                 ),
-                if (image.collectionId != null)
-                  ListTile(
-                    leading: Icon(Icons.remove_circle_outline, color: Theme.of(context).colorScheme.error),
-                    title: const Text('Remove from current playlist'),
-                    onTap: () {
-                      context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, null));
-                      Navigator.of(ctx).pop();
-                    },
-                  ),
-                const Divider(height: 1),
                 if (currentCollections.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(ThemeConstants.spacingLarge),
@@ -434,7 +424,10 @@ class _GalleryPageState extends State<GalleryPage> {
                     ),
                     title: Text(c.name),
                     onTap: () {
-                      context.read<GalleryBloc>().add(GalleryImageCollectionChanged(image.id, c.id));
+                      context.read<GalleryBloc>().add(GalleryImageCollectionChanged(
+                        image.id,
+                        selected ? null : c.id,
+                      ));
                       Navigator.of(ctx).pop();
                     },
                   );
