@@ -105,3 +105,11 @@ class LoraVisibilitySaveRequested extends ServersEvent {
   @override
   List<Object?> get props => [serverId, disabledLoras];
 }
+
+class LoraTriggerWordsFetchRequested extends ServersEvent {
+  final String serverId;
+  final List<String> loraNames;
+  const LoraTriggerWordsFetchRequested(this.serverId, this.loraNames);
+  @override
+  List<Object?> get props => [serverId, loraNames];
+}

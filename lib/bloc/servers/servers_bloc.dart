@@ -8,6 +8,7 @@ import '../../data/models/lora_metadata.dart';
 import '../../data/models/model_catalog.dart';
 import '../../services/comfyui_service.dart';
 import '../../services/storage_service.dart';
+import '../../services/trigger_word_extractor.dart';
 import 'servers_event.dart';
 import 'servers_state.dart';
 
@@ -29,6 +30,7 @@ class ServersBloc extends Bloc<ServersEvent, ServersState> {
     on<LoraMetadataSaveRequested>(_onLoraMetaSave);
     on<LoraTriggerWordsSaveRequested>(_onLoraTriggersSave);
     on<LoraVisibilitySaveRequested>(_onLoraVisibilitySave);
+    on<LoraTriggerWordsFetchRequested>(_onLoraTriggersFetch);
   }
 
   void _onLoad(ServersLoadRequested event, Emitter<ServersState> emit) {
@@ -192,5 +194,27 @@ class ServersBloc extends Bloc<ServersEvent, ServersState> {
     final loraMeta = Map<String, List<LoraMetadata>>.from(state.loraMetadata);
     loraMeta[event.serverId] = metas;
     emit(state.copyWith(loraMetadata: loraMeta));
+  }
+
+  Future<void> _onLoraTriggersFetch(
+      LoraTriggerWordsFetchRequested event, Emitter<ServersState> emit) async {
+    final server = state.servers.where((s) => s.id == event.serverId).firstOrNull;
+    if (server == null) return;
+
+    final triggerWords = <String, String>{};
+
+    for (final loraName in event.loraNames) {
+      try {
+        final metadata = await _comfy.getLoraMetadata(server, loraName);
+        final words = TriggerWordExtractor.extract(metadata, loraName.split('/').last);
+        if (words.isNotEmpty) {
+          triggerWords[loraName] = TriggerWordExtractor.toCommaString(words);
+        }
+      } catch (_) {}
+    }
+
+    if (triggerWords.isNotEmpty) {
+      add(LoraTriggerWordsSaveRequested(event.serverId, triggerWords));
+    }
   }
 }

@@ -169,6 +169,27 @@ class ComfyService {
     }
   }
 
+  Future<Map<String, dynamic>?> getLoraMetadata(ComfyServer server, String loraName) async {
+    final baseUrl = _normalizeUrl(server.url);
+    final filename = loraName.split('/').last;
+    try {
+      final response = await _dio.get(
+        '$baseUrl/view_metadata/loras',
+        queryParameters: {'filename': filename},
+        options: Options(responseType: ResponseType.json),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data as Map<String, dynamic>;
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw ComfyApiException('Failed to fetch LoRA metadata: ${e.message}');
+    } catch (e) {
+      throw ComfyApiException('Failed to fetch LoRA metadata: $e');
+    }
+  }
+
   Future<String> submitWorkflow(ComfyServer server, Map<String, dynamic> workflow) async {
     final baseUrl = _normalizeUrl(server.url);
     try {

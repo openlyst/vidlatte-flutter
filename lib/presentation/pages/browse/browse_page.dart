@@ -157,9 +157,30 @@ class _LoraList extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-      itemCount: loras.length,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                context.read<ServersBloc>().add(
+                  LoraTriggerWordsFetchRequested(serverId, loras),
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Fetching trigger words for ${loras.length} LoRAs...')),
+                );
+              },
+              icon: const Icon(Icons.auto_fix_high),
+              label: const Text('Fetch All Trigger Words'),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: ThemeConstants.spacingMedium),
+            itemCount: loras.length,
       itemBuilder: (context, index) {
         final lora = loras[index];
         final name = lora.split('/').last;
@@ -185,6 +206,19 @@ class _LoraList extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _IconButton(
+                ext: ext,
+                icon: Icons.auto_fix_high,
+                tooltip: 'Fetch trigger words',
+                onPressed: () {
+                  context.read<ServersBloc>().add(
+                    LoraTriggerWordsFetchRequested(serverId, [lora]),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Fetching trigger words for $name...')),
+                  );
+                },
+              ),
               _IconButton(
                 ext: ext,
                 icon: isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -227,6 +261,9 @@ class _LoraList extends StatelessWidget {
           ),
         );
       },
+          ),
+        ),
+      ],
     );
   }
 }
