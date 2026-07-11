@@ -391,7 +391,21 @@ class _GalleryPageState extends State<GalleryPage> {
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            if (hasLocked && index == 0) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                    side: BorderSide(color: ext.border, width: 0.8),
+                  ),
+                  leading: Icon(Icons.add, color: ext.accent),
+                  title: Text('New Playlist', style: TextStyle(color: ext.accent, fontWeight: FontWeight.w600)),
+                  onTap: () => _showCreateDialog(context),
+                ),
+              );
+            }
+            if (hasLocked && index == 1) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
                 child: ListTile(
@@ -412,22 +426,8 @@ class _GalleryPageState extends State<GalleryPage> {
                 ),
               );
             }
-            final collectionIndex = hasLocked ? index - 1 : index;
-            if (collectionIndex == 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
-                    side: BorderSide(color: ext.border, width: 0.8),
-                  ),
-                  leading: Icon(Icons.add, color: ext.accent),
-                  title: Text('New Playlist', style: TextStyle(color: ext.accent, fontWeight: FontWeight.w600)),
-                  onTap: () => _showCreateDialog(context),
-                ),
-              );
-            }
-            final c = state.collections[collectionIndex - 1];
+            final collectionIndex = index - 1 - (hasLocked ? 1 : 0);
+            final c = state.collections[collectionIndex];
             final count = state.allImages.where((img) => img.collectionId == c.id).length;
             return Padding(
               padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
