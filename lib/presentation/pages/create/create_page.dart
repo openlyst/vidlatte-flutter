@@ -46,11 +46,14 @@ class _CreatePageState extends State<CreatePage> {
       _selectedModel = settings.lastModel;
       _selectedLoras = settings.lastLoras;
       _creativity = _parseCreativity(settings.lastCreativity);
+      _customCfg = settings.lastCustomCfg;
       _customSteps = settings.lastCustomSteps;
       _customHiresFix = settings.lastHiresFix;
+      _width = settings.lastWidth;
+      _height = settings.lastHeight;
       _selectedServerId = settings.defaultServerId;
     });
-    _promptController.text = '';
+    _promptController.text = settings.lastPrompt;
   }
 
   Creativity _parseCreativity(String value) {
@@ -68,24 +71,27 @@ class _CreatePageState extends State<CreatePage> {
 
   @override
   void dispose() {
+    _persistSettings();
     _promptController.dispose();
     super.dispose();
   }
 
   void _persistSettings() {
-    context.read<SettingsBloc>().add(LastModelChanged(_selectedModel));
-    context.read<SettingsBloc>().add(LastLorasChanged(_selectedLoras));
-    context.read<SettingsBloc>().add(LastCreativityChanged(_creativity.name));
-    if (_customSteps != null) {
-      context.read<SettingsBloc>().add(SettingsUpdated(
-            context.read<SettingsBloc>().state.settings.copyWith(lastCustomSteps: _customSteps),
-          ));
-    }
-    if (_customHiresFix != null) {
-      context.read<SettingsBloc>().add(SettingsUpdated(
-            context.read<SettingsBloc>().state.settings.copyWith(lastHiresFix: _customHiresFix),
-          ));
-    }
+    try {
+      final bloc = context.read<SettingsBloc>();
+      final updated = bloc.state.settings.copyWith(
+        lastModel: _selectedModel,
+        lastLoras: _selectedLoras,
+        lastCreativity: _creativity.name,
+        lastCustomCfg: _customCfg,
+        lastCustomSteps: _customSteps,
+        lastHiresFix: _customHiresFix,
+        lastWidth: _width,
+        lastHeight: _height,
+        lastPrompt: _promptController.text.trim(),
+      );
+      bloc.add(SettingsUpdated(updated));
+    } catch (_) {}
   }
 
   void _generate() {

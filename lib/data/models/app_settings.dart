@@ -8,6 +8,10 @@ class AppSettings extends Equatable {
   final String lastCreativity;
   final int? lastCustomSteps;
   final bool? lastHiresFix;
+  final double? lastCustomCfg;
+  final int lastWidth;
+  final int lastHeight;
+  final String lastPrompt;
   final bool saveToGallery;
   final bool downloadLocally;
   final String? galleryPassword;
@@ -20,6 +24,10 @@ class AppSettings extends Equatable {
     this.lastCreativity = 'normal',
     this.lastCustomSteps,
     this.lastHiresFix,
+    this.lastCustomCfg,
+    this.lastWidth = 1024,
+    this.lastHeight = 1024,
+    this.lastPrompt = '',
     this.saveToGallery = true,
     this.downloadLocally = true,
     this.galleryPassword,
@@ -33,6 +41,10 @@ class AppSettings extends Equatable {
     String? lastCreativity,
     int? lastCustomSteps,
     bool? lastHiresFix,
+    double? lastCustomCfg,
+    int? lastWidth,
+    int? lastHeight,
+    String? lastPrompt,
     bool? saveToGallery,
     bool? downloadLocally,
     Object? galleryPassword = _sentinel,
@@ -45,6 +57,10 @@ class AppSettings extends Equatable {
       lastCreativity: lastCreativity ?? this.lastCreativity,
       lastCustomSteps: lastCustomSteps ?? this.lastCustomSteps,
       lastHiresFix: lastHiresFix ?? this.lastHiresFix,
+      lastCustomCfg: lastCustomCfg ?? this.lastCustomCfg,
+      lastWidth: lastWidth ?? this.lastWidth,
+      lastHeight: lastHeight ?? this.lastHeight,
+      lastPrompt: lastPrompt ?? this.lastPrompt,
       saveToGallery: saveToGallery ?? this.saveToGallery,
       downloadLocally: downloadLocally ?? this.downloadLocally,
       galleryPassword: identical(galleryPassword, _sentinel)
@@ -62,6 +78,10 @@ class AppSettings extends Equatable {
       lastCreativity: json['lastCreativity'] as String? ?? 'normal',
       lastCustomSteps: json['lastCustomSteps'] as int?,
       lastHiresFix: json['lastHiresFix'] as bool?,
+      lastCustomCfg: (json['lastCustomCfg'] as num?)?.toDouble(),
+      lastWidth: json['lastWidth'] as int? ?? 1024,
+      lastHeight: json['lastHeight'] as int? ?? 1024,
+      lastPrompt: json['lastPrompt'] as String? ?? '',
       saveToGallery: json['saveToGallery'] as bool? ?? true,
       downloadLocally: json['downloadLocally'] as bool? ?? true,
       galleryPassword: json['galleryPassword'] as String?,
@@ -76,6 +96,10 @@ class AppSettings extends Equatable {
         'lastCreativity': lastCreativity,
         'lastCustomSteps': lastCustomSteps,
         'lastHiresFix': lastHiresFix,
+        'lastCustomCfg': lastCustomCfg,
+        'lastWidth': lastWidth,
+        'lastHeight': lastHeight,
+        'lastPrompt': lastPrompt,
         'saveToGallery': saveToGallery,
         'downloadLocally': downloadLocally,
         'galleryPassword': galleryPassword,
@@ -84,8 +108,8 @@ class AppSettings extends Equatable {
   @override
   List<Object?> get props => [
         themeMode, defaultServerId, lastModel, lastLoras, lastCreativity,
-        lastCustomSteps, lastHiresFix, saveToGallery, downloadLocally,
-        galleryPassword,
+        lastCustomSteps, lastHiresFix, lastCustomCfg, lastWidth, lastHeight,
+        lastPrompt, saveToGallery, downloadLocally, galleryPassword,
       ];
 }
 
