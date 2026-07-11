@@ -52,18 +52,91 @@ class _PhoneShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) => context.go(AppDestination.values[index].path),
-        destinations: AppDestination.values.map((d) {
-          return NavigationDestination(
-            icon: Icon(d.icon),
-            selectedIcon: Icon(d.selectedIcon),
-            label: d.label,
-          );
-        }).toList(),
+      extendBody: true,
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: ext.surfaceElevated,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: ext.border, width: 0.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: AppDestination.values.asMap().entries.map((entry) {
+                final index = entry.key;
+                final dest = entry.value;
+                final selected = index == currentIndex;
+                return _FloatingNavItem(
+                  icon: selected ? dest.selectedIcon : dest.icon,
+                  label: dest.label,
+                  selected: selected,
+                  onTap: () => context.go(dest.path),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FloatingNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? ext.accent.withValues(alpha: 0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 22, color: selected ? ext.accent : ext.muted),
+            if (selected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: ext.accent,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
