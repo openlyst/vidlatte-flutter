@@ -1,5 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+export 'gallery_event.dart';
+export 'gallery_state.dart';
+
 import '../../data/models/generated_image.dart';
 import '../../services/storage_service.dart';
 import 'gallery_event.dart';

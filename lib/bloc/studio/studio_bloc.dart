@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
+export 'studio_event.dart';
+export 'studio_state.dart';
+
 import '../../data/models/studio_session.dart';
 import '../../services/storage_service.dart';
 import 'studio_event.dart';

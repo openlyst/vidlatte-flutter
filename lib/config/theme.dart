@@ -179,15 +179,12 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
         indicatorColor: accent.withValues(alpha: 0.15),
-        labelTextStyle: WidgetStateProperty.resolveTextStyle((states) {
-          final selected = states.contains(WidgetState.selected);
-          return TextStyle(
-            fontSize: 11,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? accent : secondary,
-          );
-        }),
-        iconTheme: WidgetStateProperty.resolveIconTheme((states) {
+        labelTextStyle: WidgetStateProperty.all(TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: secondary,
+        )),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
             color: selected ? accent : secondary,

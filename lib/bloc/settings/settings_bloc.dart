@@ -1,5 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+export 'settings_event.dart';
+export 'settings_state.dart';
+
 import '../../services/storage_service.dart';
 import 'settings_event.dart';
 import 'settings_state.dart';
