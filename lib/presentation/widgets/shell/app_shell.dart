@@ -74,16 +74,17 @@ class _PhoneShell extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: AppDestination.values.asMap().entries.map((entry) {
                 final index = entry.key;
                 final dest = entry.value;
                 final selected = index == currentIndex;
-                return _FloatingNavItem(
-                  icon: selected ? dest.selectedIcon : dest.icon,
-                  label: dest.label,
-                  selected: selected,
-                  onTap: () => context.go(dest.path),
+                return Expanded(
+                  child: _FloatingNavItem(
+                    icon: selected ? dest.selectedIcon : dest.icon,
+                    label: dest.label,
+                    selected: selected,
+                    onTap: () => context.go(dest.path),
+                  ),
                 );
               }).toList(),
             ),
@@ -115,27 +116,29 @@ class _FloatingNavItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: selected ? ext.accent.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: selected ? ext.accent : ext.muted),
-            if (selected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: ext.accent,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: selected ? ext.accent : ext.muted),
+              if (selected) ...[
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: ext.accent,
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
