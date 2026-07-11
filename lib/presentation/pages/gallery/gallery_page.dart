@@ -526,29 +526,44 @@ class _GalleryPageState extends State<GalleryPage> {
                     ],
                   ),
                 ),
-                if (currentCollections.isEmpty)
+                if (currentCollections.isEmpty && !state.hasPassword)
                   const Padding(
                     padding: EdgeInsets.all(ThemeConstants.spacingLarge),
                     child: Text('No playlists yet. Tap "New playlist" below to create one.'),
                   )
-                else
+                else ...[
                   ...currentCollections.map((c) {
-                  final selected = c.id == image.collectionId;
-                  return ListTile(
-                    leading: Icon(
-                      selected ? Icons.check_circle : Icons.playlist_play,
-                      color: selected ? Theme.of(context).extension<AppColors>()!.accent : null,
+                    final selected = c.id == image.collectionId;
+                    return ListTile(
+                      leading: Icon(
+                        selected ? Icons.check_circle : Icons.playlist_play,
+                        color: selected ? Theme.of(context).extension<AppColors>()!.accent : null,
+                      ),
+                      title: Text(c.name),
+                      onTap: () {
+                        context.read<GalleryBloc>().add(GalleryImageCollectionChanged(
+                          image.id,
+                          selected ? null : c.id,
+                        ));
+                        Navigator.of(ctx).pop();
+                      },
+                    );
+                  }),
+                  if (state.hasPassword) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: Icon(
+                        image.isHidden ? Icons.lock : Icons.lock_outline,
+                        color: image.isHidden ? Theme.of(context).extension<AppColors>()!.accent : null,
+                      ),
+                      title: const Text('Locked'),
+                      onTap: () {
+                        context.read<GalleryBloc>().add(GalleryImageHiddenToggled(image.id));
+                        Navigator.of(ctx).pop();
+                      },
                     ),
-                    title: Text(c.name),
-                    onTap: () {
-                      context.read<GalleryBloc>().add(GalleryImageCollectionChanged(
-                        image.id,
-                        selected ? null : c.id,
-                      ));
-                      Navigator.of(ctx).pop();
-                    },
-                  );
-                }),
+                  ],
+                ],
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.add),
