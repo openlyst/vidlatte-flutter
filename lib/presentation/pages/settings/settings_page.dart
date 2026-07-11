@@ -219,13 +219,10 @@ class _ServersSection extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => _ServerFormDialog(
-        onSave: (name, url, maxLoras, steps, hiresFix) {
+        onSave: (name, url) {
           context.read<ServersBloc>().add(ServerAddRequested(
                 name: name,
                 url: url,
-                maxLoras: maxLoras,
-                steps: steps,
-                hiresFix: hiresFix,
               ));
         },
       ),
@@ -325,9 +322,6 @@ class _ServerCard extends StatelessWidget {
                     _InfoRow('Error', health!.error!, isError: true),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                 ],
-                _InfoRow('Max LoRAs', '${server.maxLoras}'),
-                _InfoRow('Default Steps', '${server.steps}'),
-                _InfoRow('Hires Fix', server.hiresFix ? 'Enabled' : 'Disabled'),
                 const SizedBox(height: ThemeConstants.spacingMedium),
                 Wrap(
                   spacing: ThemeConstants.spacingSmall,
@@ -382,15 +376,9 @@ class _ServerCard extends StatelessWidget {
       context: context,
       builder: (ctx) => _ServerFormDialog(
         server: server,
-        onSave: (name, url, maxLoras, steps, hiresFix) {
+        onSave: (name, url) {
           context.read<ServersBloc>().add(ServerUpdateRequested(
-                server.copyWith(
-                  name: name,
-                  url: url,
-                  maxLoras: maxLoras,
-                  steps: steps,
-                  hiresFix: hiresFix,
-                ),
+                server.copyWith(name: name, url: url),
               ));
         },
       ),
@@ -513,7 +501,7 @@ class _ActionChip extends StatelessWidget {
 
 class _ServerFormDialog extends StatefulWidget {
   final ComfyServer? server;
-  final void Function(String name, String url, int maxLoras, int steps, bool hiresFix) onSave;
+  final void Function(String name, String url) onSave;
 
   const _ServerFormDialog({this.server, required this.onSave});
 
@@ -524,9 +512,6 @@ class _ServerFormDialog extends StatefulWidget {
 class _ServerFormDialogState extends State<_ServerFormDialog> {
   late final _nameController = TextEditingController(text: widget.server?.name ?? '');
   late final _urlController = TextEditingController(text: widget.server?.url ?? 'http://127.0.0.1:8188');
-  late int _maxLoras = widget.server?.maxLoras ?? 5;
-  late int _steps = widget.server?.steps ?? 20;
-  late bool _hiresFix = widget.server?.hiresFix ?? false;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -567,35 +552,6 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
                     return null;
                   },
                 ),
-                const SizedBox(height: ThemeConstants.spacingSmall),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        initialValue: _maxLoras.toString(),
-                        decoration: const InputDecoration(labelText: 'Max LoRAs'),
-                        keyboardType: TextInputType.number,
-                        onChanged: (v) => _maxLoras = int.tryParse(v) ?? 5,
-                      ),
-                    ),
-                    const SizedBox(width: ThemeConstants.spacingSmall),
-                    Expanded(
-                      child: TextFormField(
-                        initialValue: _steps.toString(),
-                        decoration: const InputDecoration(labelText: 'Default Steps'),
-                        keyboardType: TextInputType.number,
-                        onChanged: (v) => _steps = int.tryParse(v) ?? 20,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: ThemeConstants.spacingSmall),
-                SwitchListTile(
-                  title: const Text('Hires Fix'),
-                  value: _hiresFix,
-                  onChanged: (v) => setState(() => _hiresFix = v),
-                  contentPadding: EdgeInsets.zero,
-                ),
               ],
             ),
           ),
@@ -612,9 +568,6 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
               widget.onSave(
                 _nameController.text.trim(),
                 _urlController.text.trim(),
-                _maxLoras,
-                _steps,
-                _hiresFix,
               );
               Navigator.of(context).pop();
             }
