@@ -259,10 +259,11 @@ class _GalleryPageState extends State<GalleryPage> {
           ),
           IconButton(
             icon: Icon(Icons.close, size: 18, color: ext.muted),
-            onPressed: () => context
-                .read<GalleryBloc>()
-                .add(const GalleryCollectionSelected(null)),
-            tooltip: 'Clear filter',
+            onPressed: () {
+              context.read<GalleryBloc>().add(const GalleryCollectionSelected(null));
+              context.read<GalleryBloc>().add(const GalleryFilterChanged(GalleryFilter.collection));
+            },
+            tooltip: 'Back to playlists',
           ),
         ],
       ),
