@@ -150,7 +150,27 @@ class _AutoImageContentState extends State<AutoImageContent> {
         ],
       );
     }
-    return _buildOutputPanel();
+    return Scaffold(
+      endDrawer: Drawer(
+        width: 340,
+        child: _buildConfigPanel(),
+      ),
+      body: Builder(
+        builder: (scaffoldContext) => Stack(
+          children: [
+            _buildOutputPanel(),
+            Positioned(
+              top: ThemeConstants.spacingSmall,
+              right: ThemeConstants.spacingSmall,
+              child: FloatingActionButton.small(
+                onPressed: () => Scaffold.of(scaffoldContext).openEndDrawer(),
+                child: const Icon(Icons.tune),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildConfigPanel() {
