@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../pages/auto_image/auto_image_page.dart';
 import '../pages/browse/browse_page.dart';
 import '../pages/create/create_page.dart';
 import '../pages/gallery/gallery_page.dart';
@@ -39,10 +38,6 @@ class AppRouter {
             builder: (context, state) => const SettingsPage(),
           ),
         ],
-      ),
-      GoRoute(
-        path: '/auto-image',
-        builder: (context, state) => const AutoImagePage(),
       ),
       GoRoute(
         path: '/browse',

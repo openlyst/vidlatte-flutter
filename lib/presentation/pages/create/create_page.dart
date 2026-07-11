@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../bloc/autogen/autogen_bloc.dart';
 import '../../../bloc/generation/generation_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../bloc/settings/settings_bloc.dart';
 import '../../../config/constants.dart';
+import '../../../config/theme.dart';
 import '../../../data/models/comfy_server.dart';
 import '../../../data/models/generated_image.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/image_detail_modal.dart';
 import '../../widgets/common/image_grid.dart';
+import '../../widgets/create/auto_image_content.dart';
 import '../../widgets/create/generation_controls.dart';
 import '../../widgets/create/prompt_input.dart';
 import '../../widgets/create/progress_card.dart';
@@ -36,6 +39,12 @@ class _CreatePageState extends State<CreatePage> {
   String? _selectedServerId;
 
   bool _loadedSettings = false;
+  bool _isAutoImageMode = false;
+  final _autoImageController = AutoImageController();
+
+  void _onAutoImageChanged() {
+    if (_isAutoImageMode) setState(() {});
+  }
 
   @override
   void initState() {
@@ -155,56 +164,91 @@ class _CreatePageState extends State<CreatePage> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isWide = screenWidth >= ThemeConstants.tabletBreakpoint;
+    final ext = Theme.of(context).extension<AppColors>()!;
 
     return BlocListener<SettingsBloc, SettingsState>(
       listenWhen: (prev, curr) => !_loadedSettings && (curr.settings.lastModel.isNotEmpty || curr.settings.lastPrompt.isNotEmpty),
       listener: (context, state) => _loadSettings(),
       child: Scaffold(
       appBar: AppBar(
-        title: const Text('Create'),
+        title: Text(_isAutoImageMode ? 'Auto Image' : 'Create'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.explore_outlined),
-            tooltip: 'Browse Models & LoRAs',
-            onPressed: () => context.go('/browse'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.bolt_outlined),
-            tooltip: 'Auto Image',
-            onPressed: () => context.go('/auto-image'),
-          ),
+          if (!_isAutoImageMode) ...[
+            IconButton(
+              icon: const Icon(Icons.explore_outlined),
+              tooltip: 'Browse Models & LoRAs',
+              onPressed: () => context.go('/browse'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.bolt_outlined),
+              tooltip: 'Auto Image',
+              onPressed: () => setState(() => _isAutoImageMode = true),
+            ),
+          ] else ...[
+            BlocBuilder<AutoGenBloc, AutoGenState>(
+              builder: (context, state) {
+                if (state.isRunning) {
+                  return TextButton.icon(
+                    onPressed: () => _autoImageController.stop(),
+                    icon: const Icon(Icons.stop_circle, color: Colors.red),
+                    label: const Text('Stop'),
+                  );
+                }
+                return TextButton.icon(
+                  onPressed: _autoImageController.canStart
+                      ? () => _autoImageController.start()
+                      : null,
+                  icon: Icon(Icons.play_circle,
+                      color: _autoImageController.canStart ? ext.accent : ext.muted),
+                  label: Text('Start',
+                      style: TextStyle(
+                          color: _autoImageController.canStart ? ext.accent : ext.muted)),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: 'Back to Create',
+              onPressed: () => setState(() => _isAutoImageMode = false),
+            ),
+          ],
         ],
       ),
-      body: BlocBuilder<ServersBloc, ServersState>(
-        builder: (context, serversState) {
-          if (serversState.servers.isEmpty) {
-            return const EmptyState(
-              icon: Icons.dns_outlined,
-              title: 'No ComfyUI Server',
-              message: 'Add a ComfyUI server in Settings to start generating images.',
-            );
-          }
+      body: _isAutoImageMode
+          ? AutoImageContent(
+              controller: _autoImageController,
+              onCanStartChanged: _onAutoImageChanged,
+            )
+          : BlocBuilder<ServersBloc, ServersState>(
+              builder: (context, serversState) {
+                if (serversState.servers.isEmpty) {
+                  return const EmptyState(
+                    icon: Icons.dns_outlined,
+                    title: 'No ComfyUI Server',
+                    message: 'Add a ComfyUI server in Settings to start generating images.',
+                  );
+                }
 
-          final server = _selectedServerId != null
-              ? serversState.servers.where((s) => s.id == _selectedServerId).firstOrNull
-              : null;
-          final effectiveServer = server ?? serversState.defaultServer ?? serversState.servers.first;
-          final catalog = serversState.catalogs[effectiveServer.id];
+                final server = _selectedServerId != null
+                    ? serversState.servers.where((s) => s.id == _selectedServerId).firstOrNull
+                    : null;
+                final effectiveServer = server ?? serversState.defaultServer ?? serversState.servers.first;
+                final catalog = serversState.catalogs[effectiveServer.id];
 
-          if (catalog == null) {
-            context.read<ServersBloc>().add(ServerModelsFetchRequested(effectiveServer.id));
-          }
+                if (catalog == null) {
+                  context.read<ServersBloc>().add(ServerModelsFetchRequested(effectiveServer.id));
+                }
 
-          return BlocBuilder<GenerationBloc, GenerationState>(
-            builder: (context, genState) {
-              if (isWide) {
-                return _wideLayout(context, genState, serversState, effectiveServer, catalog);
-              }
-              return _narrowLayout(context, genState, serversState, effectiveServer, catalog);
-            },
-          );
-        },
-      ),
+                return BlocBuilder<GenerationBloc, GenerationState>(
+                  builder: (context, genState) {
+                    if (isWide) {
+                      return _wideLayout(context, genState, serversState, effectiveServer, catalog);
+                    }
+                    return _narrowLayout(context, genState, serversState, effectiveServer, catalog);
+                  },
+                );
+              },
+            ),
       ),
     );
   }

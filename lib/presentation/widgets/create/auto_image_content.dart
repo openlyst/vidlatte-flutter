@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../bloc/autogen/autogen_bloc.dart';
 import '../../../bloc/llm/llm_bloc.dart';
@@ -13,14 +12,44 @@ import '../../../config/theme.dart';
 import '../../../data/models/generated_image.dart';
 import '../../widgets/common/empty_state.dart';
 
-class AutoImagePage extends StatefulWidget {
-  const AutoImagePage({super.key});
+class AutoImageController {
+  VoidCallback? _start;
+  VoidCallback? _stop;
+  bool Function()? _canStart;
+  VoidCallback? onChanged;
 
-  @override
-  State<AutoImagePage> createState() => _AutoImagePageState();
+  void _attach({
+    required VoidCallback start,
+    required VoidCallback stop,
+    required bool Function() canStart,
+  }) {
+    _start = start;
+    _stop = stop;
+    _canStart = canStart;
+  }
+
+  void _notifyChanged() => onChanged?.call();
+
+  bool get canStart => _canStart?.call() ?? false;
+  void start() => _start?.call();
+  void stop() => _stop?.call();
 }
 
-class _AutoImagePageState extends State<AutoImagePage> {
+class AutoImageContent extends StatefulWidget {
+  final AutoImageController controller;
+  final VoidCallback? onCanStartChanged;
+
+  const AutoImageContent({
+    super.key,
+    required this.controller,
+    this.onCanStartChanged,
+  });
+
+  @override
+  State<AutoImageContent> createState() => _AutoImageContentState();
+}
+
+class _AutoImageContentState extends State<AutoImageContent> {
   AutoGenMode _mode = AutoGenMode.auto;
   String _topic = '';
   String _basePrompt = '';
@@ -34,6 +63,20 @@ class _AutoImagePageState extends State<AutoImagePage> {
   final _topicController = TextEditingController();
   final _basePromptController = TextEditingController();
   final _mustIncludeController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller._attach(
+      start: _start,
+      stop: _stop,
+      canStart: _canStart,
+    );
+    widget.controller.onChanged = () {
+      setState(() {});
+      widget.onCanStartChanged?.call();
+    };
+  }
 
   @override
   void dispose() {
@@ -56,62 +99,6 @@ class _AutoImagePageState extends State<AutoImagePage> {
           llmModel: _selectedLlmModel,
           imageServerId: _selectedImageServerId,
         ));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ext = Theme.of(context).extension<AppColors>()!;
-    final width = MediaQuery.sizeOf(context).width;
-    final isWide = width >= ThemeConstants.tabletBreakpoint;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Auto Image'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/create'),
-        ),
-        actions: [
-          BlocBuilder<AutoGenBloc, AutoGenState>(
-            builder: (context, state) {
-              if (state.isRunning) {
-                return TextButton.icon(
-                  onPressed: () =>
-                      context.read<AutoGenBloc>().add(const AutoGenStopped()),
-                  icon: const Icon(Icons.stop_circle, color: Colors.red),
-                  label: const Text('Stop'),
-                );
-              }
-              return TextButton.icon(
-                onPressed: _canStart() ? _start : null,
-                icon: Icon(Icons.play_circle,
-                    color: _canStart() ? ext.accent : ext.muted),
-                label: Text('Start',
-                    style: TextStyle(
-                        color: _canStart() ? ext.accent : ext.muted)),
-              );
-            },
-          ),
-        ],
-      ),
-      body: isWide
-          ? Row(
-              children: [
-                SizedBox(
-                  width: 360,
-                  child: _buildConfigPanel(),
-                ),
-                Container(width: 0.5, color: ext.border),
-                Expanded(child: _buildOutputPanel()),
-              ],
-            )
-          : _buildOutputPanel(),
-      drawer: isWide
-          ? null
-          : Drawer(
-              child: _buildConfigPanel(),
-            ),
-    );
   }
 
   bool _canStart() {
@@ -137,6 +124,33 @@ class _AutoImagePageState extends State<AutoImagePage> {
     }
     _syncConfig();
     context.read<AutoGenBloc>().add(const AutoGenStarted());
+  }
+
+  void _stop() {
+    context.read<AutoGenBloc>().add(const AutoGenStopped());
+  }
+
+  void _setState(VoidCallback fn) {
+    setState(fn);
+    widget.controller._notifyChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppColors>()!;
+    final width = MediaQuery.sizeOf(context).width;
+    final isWide = width >= ThemeConstants.tabletBreakpoint;
+
+    if (isWide) {
+      return Row(
+        children: [
+          SizedBox(width: 360, child: _buildConfigPanel()),
+          Container(width: 0.5, color: ext.border),
+          Expanded(child: _buildOutputPanel()),
+        ],
+      );
+    }
+    return _buildOutputPanel();
   }
 
   Widget _buildConfigPanel() {
@@ -191,7 +205,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
                   ),
                 ],
                 selected: {_mode},
-                onSelectionChanged: (set) => setState(() {
+                onSelectionChanged: (set) => _setState(() {
                   _mode = set.first;
                   _syncConfig();
                 }),
@@ -262,7 +276,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
                       ),
                       onChanged: (v) {
                         final n = int.tryParse(v);
-                        setState(() => _maxImages = n);
+                        _setState(() => _maxImages = n);
                       },
                     ),
                   ),
@@ -302,7 +316,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
                             DropdownMenuItem(value: s.id, child: Text(s.name)))
                         .toList(),
                     onChanged: (id) {
-                      setState(() {
+                      _setState(() {
                         _selectedLlmServerId = id;
                         _selectedLlmModel = null;
                       });
@@ -325,7 +339,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
                                 child: Text(m.displayName),
                               ))
                           .toList(),
-                      onChanged: (id) => setState(() => _selectedLlmModel = id),
+                      onChanged: (id) => _setState(() => _selectedLlmModel = id),
                     ),
                   ],
                 ],
@@ -365,7 +379,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
                             DropdownMenuItem(value: s.id, child: Text(s.name)))
                         .toList(),
                     onChanged: (id) {
-                      setState(() => _selectedImageServerId = id);
+                      _setState(() => _selectedImageServerId = id);
                       if (id != null) {
                         context.read<ServersBloc>()
                             .add(ServerModelsFetchRequested(id));
@@ -388,7 +402,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
                                     .replaceAll('_', ' ')),
                               ))
                           .toList(),
-                      onChanged: (id) => setState(() => _imageModel = id ?? ''),
+                      onChanged: (id) => _setState(() => _imageModel = id ?? ''),
                     ),
                     const SizedBox(height: ThemeConstants.spacingSmall),
                     if (state
@@ -446,7 +460,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
                                   : null,
                               value: selected,
                               onChanged: (checked) {
-                                setState(() {
+                                _setState(() {
                                   if (checked == true) {
                                     _selectedLoras.add(lora);
                                   } else {
@@ -485,6 +499,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
 
   Widget _buildOutputPanel() {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final isWide = MediaQuery.sizeOf(context).width >= ThemeConstants.tabletBreakpoint;
     return BlocBuilder<AutoGenBloc, AutoGenState>(
       builder: (context, state) {
         if (state.images.isEmpty &&
@@ -494,7 +509,7 @@ class _AutoImagePageState extends State<AutoImagePage> {
             title: 'Auto Image',
             message:
                 'Configure settings and press Start to begin automated generation.',
-            action: isWide(context)
+            action: isWide
                 ? null
                 : FilledButton.icon(
                     onPressed: _canStart() ? _start : null,
@@ -541,9 +556,6 @@ class _AutoImagePageState extends State<AutoImagePage> {
       },
     );
   }
-
-  bool isWide(BuildContext context) =>
-      MediaQuery.sizeOf(context).width >= ThemeConstants.tabletBreakpoint;
 }
 
 class _StatusBar extends StatelessWidget {
