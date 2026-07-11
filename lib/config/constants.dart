@@ -38,10 +38,6 @@ class ThemeConstants {
   static const double elevationSmall = 1.0;
   static const double elevationMedium = 3.0;
   static const double elevationLarge = 8.0;
-
-  static const double floatingNavHeight = 60.0;
-  static const double floatingNavBottomPadding = 16.0;
-  static const double floatingNavTotalHeight = floatingNavHeight + floatingNavBottomPadding + 16.0;
 }
 
 class ComfyConstants {

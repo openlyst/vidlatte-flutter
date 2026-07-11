@@ -55,7 +55,6 @@ class _PhoneShell extends StatelessWidget {
     final ext = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       body: child,
-      extendBody: true,
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: SizedBox(

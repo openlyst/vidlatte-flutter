@@ -106,12 +106,7 @@ class _ModelList extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        ThemeConstants.spacingMedium,
-        ThemeConstants.spacingMedium,
-        ThemeConstants.spacingMedium,
-        ThemeConstants.floatingNavTotalHeight,
-      ),
+      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       itemCount: models.length,
       itemBuilder: (context, index) {
         final model = models[index];
@@ -163,12 +158,7 @@ class _LoraList extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        ThemeConstants.spacingMedium,
-        ThemeConstants.spacingMedium,
-        ThemeConstants.spacingMedium,
-        ThemeConstants.floatingNavTotalHeight,
-      ),
+      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       itemCount: loras.length,
       itemBuilder: (context, index) {
         final lora = loras[index];

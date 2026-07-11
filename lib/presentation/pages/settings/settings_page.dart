@@ -28,7 +28,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ThemeConstants.spacingLarge,
           ThemeConstants.spacingMedium,
           ThemeConstants.spacingLarge,
-          ThemeConstants.floatingNavTotalHeight,
+          ThemeConstants.spacingXLarge,
         ),
         children: [
           _ThemeSection(),
