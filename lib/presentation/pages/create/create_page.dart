@@ -222,10 +222,13 @@ class _CreatePageState extends State<CreatePage> {
           }),
         ),
         const SizedBox(height: ThemeConstants.spacingLarge),
-        FilledButton.icon(
-          onPressed: genState.status == GenerationStatus.generating ? null : _generate,
-          icon: const Icon(Icons.auto_awesome),
-          label: const Text('Generate'),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: genState.status == GenerationStatus.generating ? null : _generate,
+            icon: const Icon(Icons.auto_awesome),
+            label: const Text('Generate'),
+          ),
         ),
         const SizedBox(height: ThemeConstants.spacingMedium),
         ..._buildActiveJobs(genState),

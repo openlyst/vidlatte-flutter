@@ -283,17 +283,28 @@ class _CreativitySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final index = creativity.index;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Creativity (CFG)', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: ThemeConstants.spacingSmall),
-        SegmentedButton<Creativity>(
-          segments: Creativity.values.map((c) {
-            return ButtonSegment(value: c, label: Text(c.label));
-          }).toList(),
-          selected: {creativity},
-          onSelectionChanged: (set) => onChanged(set.first),
+        Row(
+          children: [
+            Text('Creativity (CFG)', style: theme.textTheme.titleMedium),
+            const Spacer(),
+            Text(
+              '${creativity.label} · ${creativity.cfgScale}',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+        Slider(
+          value: index.toDouble(),
+          min: 0,
+          max: (Creativity.values.length - 1).toDouble(),
+          divisions: Creativity.values.length - 1,
+          label: creativity.label,
+          onChanged: (v) => onChanged(Creativity.values[v.round()]),
         ),
       ],
     );
