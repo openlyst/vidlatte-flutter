@@ -12,6 +12,8 @@ class GalleryState extends Equatable {
   final GalleryFilter filter;
   final String? selectedCollectionId;
   final bool isLoading;
+  final bool hasPassword;
+  final bool isLocked;
 
   const GalleryState({
     this.allImages = const [],
@@ -21,6 +23,8 @@ class GalleryState extends Equatable {
     this.filter = GalleryFilter.all,
     this.selectedCollectionId,
     this.isLoading = false,
+    this.hasPassword = false,
+    this.isLocked = false,
   });
 
   GalleryState copyWith({
@@ -31,6 +35,8 @@ class GalleryState extends Equatable {
     GalleryFilter? filter,
     Object? selectedCollectionId = _sentinel,
     bool? isLoading,
+    bool? hasPassword,
+    bool? isLocked,
   }) {
     return GalleryState(
       allImages: allImages ?? this.allImages,
@@ -42,13 +48,15 @@ class GalleryState extends Equatable {
           ? this.selectedCollectionId
           : selectedCollectionId as String?,
       isLoading: isLoading ?? this.isLoading,
+      hasPassword: hasPassword ?? this.hasPassword,
+      isLocked: isLocked ?? this.isLocked,
     );
   }
 
   @override
   List<Object?> get props => [
         allImages, filteredImages, collections, searchQuery,
-        filter, selectedCollectionId, isLoading,
+        filter, selectedCollectionId, isLoading, hasPassword, isLocked,
       ];
 }
 

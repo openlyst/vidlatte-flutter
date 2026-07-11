@@ -10,6 +10,7 @@ class AppSettings extends Equatable {
   final bool? lastHiresFix;
   final bool saveToGallery;
   final bool downloadLocally;
+  final String? galleryPassword;
 
   const AppSettings({
     this.themeMode = 'system',
@@ -21,6 +22,7 @@ class AppSettings extends Equatable {
     this.lastHiresFix,
     this.saveToGallery = true,
     this.downloadLocally = true,
+    this.galleryPassword,
   });
 
   AppSettings copyWith({
@@ -33,6 +35,7 @@ class AppSettings extends Equatable {
     bool? lastHiresFix,
     bool? saveToGallery,
     bool? downloadLocally,
+    Object? galleryPassword = _sentinel,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -44,6 +47,9 @@ class AppSettings extends Equatable {
       lastHiresFix: lastHiresFix ?? this.lastHiresFix,
       saveToGallery: saveToGallery ?? this.saveToGallery,
       downloadLocally: downloadLocally ?? this.downloadLocally,
+      galleryPassword: identical(galleryPassword, _sentinel)
+          ? this.galleryPassword
+          : galleryPassword as String?,
     );
   }
 
@@ -58,6 +64,7 @@ class AppSettings extends Equatable {
       lastHiresFix: json['lastHiresFix'] as bool?,
       saveToGallery: json['saveToGallery'] as bool? ?? true,
       downloadLocally: json['downloadLocally'] as bool? ?? true,
+      galleryPassword: json['galleryPassword'] as String?,
     );
   }
 
@@ -71,11 +78,15 @@ class AppSettings extends Equatable {
         'lastHiresFix': lastHiresFix,
         'saveToGallery': saveToGallery,
         'downloadLocally': downloadLocally,
+        'galleryPassword': galleryPassword,
       };
 
   @override
   List<Object?> get props => [
         themeMode, defaultServerId, lastModel, lastLoras, lastCreativity,
         lastCustomSteps, lastHiresFix, saveToGallery, downloadLocally,
+        galleryPassword,
       ];
 }
+
+const _sentinel = Object();

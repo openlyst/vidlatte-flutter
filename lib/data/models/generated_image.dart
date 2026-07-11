@@ -53,6 +53,7 @@ class GeneratedImage extends Equatable {
   final String? comfyType;
   final String? errorMessage;
   final bool isFavorite;
+  final bool isHidden;
   final String? collectionId;
   final DateTime createdAt;
   final DateTime? completedAt;
@@ -76,6 +77,7 @@ class GeneratedImage extends Equatable {
     this.comfyType,
     this.errorMessage,
     this.isFavorite = false,
+    this.isHidden = false,
     this.collectionId,
     required this.createdAt,
     this.completedAt,
@@ -100,6 +102,7 @@ class GeneratedImage extends Equatable {
     String? comfyType,
     String? errorMessage,
     bool? isFavorite,
+    bool? isHidden,
     String? collectionId,
     DateTime? createdAt,
     DateTime? completedAt,
@@ -123,6 +126,7 @@ class GeneratedImage extends Equatable {
       comfyType: comfyType ?? this.comfyType,
       errorMessage: errorMessage ?? this.errorMessage,
       isFavorite: isFavorite ?? this.isFavorite,
+      isHidden: isHidden ?? this.isHidden,
       collectionId: collectionId ?? this.collectionId,
       createdAt: createdAt ?? this.createdAt,
       completedAt: completedAt ?? this.completedAt,
@@ -149,6 +153,7 @@ class GeneratedImage extends Equatable {
       comfyType: json['comfyType'] as String?,
       errorMessage: json['errorMessage'] as String?,
       isFavorite: json['isFavorite'] as bool? ?? false,
+      isHidden: json['isHidden'] as bool? ?? false,
       collectionId: json['collectionId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt'] as String) : null,
@@ -174,6 +179,7 @@ class GeneratedImage extends Equatable {
         'comfyType': comfyType,
         'errorMessage': errorMessage,
         'isFavorite': isFavorite,
+        'isHidden': isHidden,
         'collectionId': collectionId,
         'createdAt': createdAt.toIso8601String(),
         'completedAt': completedAt?.toIso8601String(),
@@ -197,6 +203,6 @@ class GeneratedImage extends Equatable {
         id, prompt, model, loras, creativity, steps, hiresFix,
         width, height, seed, status, localPath, serverUrl,
         comfyFilename, comfySubfolder, comfyType, errorMessage,
-        isFavorite, collectionId, createdAt, completedAt,
+        isFavorite, isHidden, collectionId, createdAt, completedAt,
       ];
 }

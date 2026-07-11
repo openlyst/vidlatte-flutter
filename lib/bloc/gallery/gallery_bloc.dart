@@ -24,15 +24,23 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     on<GalleryCollectionRenamed>(_onCollectionRenamed);
     on<GalleryCollectionDeleted>(_onCollectionDeleted);
     on<GalleryCollectionSelected>(_onCollectionSelected);
+    on<GalleryImageHiddenToggled>(_onHiddenToggled);
+    on<GalleryUnlockAttempted>(_onUnlockAttempted);
+    on<GalleryLockRequested>(_onLockRequested);
   }
 
   void _onLoad(GalleryLoadRequested event, Emitter<GalleryState> emit) {
     final images = _storage.getImages();
     final collections = _storage.getCollections();
+    final settings = _storage.getSettings();
+    final hasPassword = settings.galleryPassword != null;
+    final isLocked = hasPassword;
     emit(state.copyWith(
       allImages: images,
       collections: collections,
-      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId),
+      hasPassword: hasPassword,
+      isLocked: isLocked,
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, isLocked),
       isLoading: false,
     ));
   }
@@ -40,7 +48,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
   void _onSearch(GallerySearchChanged event, Emitter<GalleryState> emit) {
     emit(state.copyWith(
       searchQuery: event.query,
-      filteredImages: _applyFilter(state.allImages, state.filter, event.query, state.selectedCollectionId),
+      filteredImages: _applyFilter(state.allImages, state.filter, event.query, state.selectedCollectionId, state.isLocked),
     ));
   }
 
@@ -51,7 +59,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     emit(state.copyWith(
       filter: event.filter,
       selectedCollectionId: collectionId,
-      filteredImages: _applyFilter(state.allImages, event.filter, state.searchQuery, collectionId),
+      filteredImages: _applyFilter(state.allImages, event.filter, state.searchQuery, collectionId, state.isLocked),
     ));
   }
 
@@ -60,7 +68,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     final images = _storage.getImages();
     emit(state.copyWith(
       allImages: images,
-      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId),
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, state.isLocked),
     ));
   }
 
@@ -69,7 +77,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     final images = _storage.getImages();
     emit(state.copyWith(
       allImages: images,
-      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId),
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, state.isLocked),
     ));
   }
 
@@ -78,7 +86,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     final images = _storage.getImages();
     emit(state.copyWith(
       allImages: images,
-      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId),
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, state.isLocked),
     ));
   }
 
@@ -123,7 +131,7 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
       allImages: images,
       filter: filter,
       selectedCollectionId: selectedId,
-      filteredImages: _applyFilter(images, filter, state.searchQuery, selectedId),
+      filteredImages: _applyFilter(images, filter, state.searchQuery, selectedId, state.isLocked),
     ));
   }
 
@@ -131,7 +139,33 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     emit(state.copyWith(
       selectedCollectionId: event.collectionId,
       filter: GalleryFilter.collection,
-      filteredImages: _applyFilter(state.allImages, GalleryFilter.collection, state.searchQuery, event.collectionId),
+      filteredImages: _applyFilter(state.allImages, GalleryFilter.collection, state.searchQuery, event.collectionId, state.isLocked),
+    ));
+  }
+
+  Future<void> _onHiddenToggled(GalleryImageHiddenToggled event, Emitter<GalleryState> emit) async {
+    await _storage.toggleHidden(event.imageId);
+    final images = _storage.getImages();
+    emit(state.copyWith(
+      allImages: images,
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, state.isLocked),
+    ));
+  }
+
+  void _onUnlockAttempted(GalleryUnlockAttempted event, Emitter<GalleryState> emit) {
+    final settings = _storage.getSettings();
+    if (settings.galleryPassword == event.password) {
+      emit(state.copyWith(
+        isLocked: false,
+        filteredImages: _applyFilter(state.allImages, state.filter, state.searchQuery, state.selectedCollectionId, false),
+      ));
+    }
+  }
+
+  void _onLockRequested(GalleryLockRequested event, Emitter<GalleryState> emit) {
+    emit(state.copyWith(
+      isLocked: true,
+      filteredImages: _applyFilter(state.allImages, state.filter, state.searchQuery, state.selectedCollectionId, true),
     ));
   }
 
@@ -140,8 +174,13 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     GalleryFilter filter,
     String query,
     String? collectionId,
+    bool isLocked,
   ) {
     var result = images;
+
+    if (isLocked) {
+      result = result.where((img) => !img.isHidden).toList();
+    }
 
     switch (filter) {
       case GalleryFilter.favorites:

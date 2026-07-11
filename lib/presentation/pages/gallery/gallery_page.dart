@@ -22,6 +22,7 @@ class GalleryPage extends StatefulWidget {
 
 class _GalleryPageState extends State<GalleryPage> {
   final _searchController = TextEditingController();
+  bool _unlockAttempted = false;
 
   @override
   void initState() {
@@ -40,7 +41,18 @@ class _GalleryPageState extends State<GalleryPage> {
     final ext = Theme.of(context).extension<AppColors>()!;
 
     return Scaffold(
-      body: BlocBuilder<GalleryBloc, GalleryState>(
+      body: BlocListener<GalleryBloc, GalleryState>(
+        listenWhen: (prev, curr) => _unlockAttempted,
+        listener: (context, state) {
+          if (!_unlockAttempted) return;
+          if (state.isLocked) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Incorrect password')),
+            );
+          }
+          _unlockAttempted = false;
+        },
+        child: BlocBuilder<GalleryBloc, GalleryState>(
         builder: (context, state) {
           if (state.allImages.isEmpty) {
             return CustomScrollView(
@@ -101,10 +113,14 @@ class _GalleryPageState extends State<GalleryPage> {
                         (context, index) => _GalleryImageCard(
                           image: state.filteredImages[index],
                           collections: state.collections,
+                          isLocked: state.isLocked,
                           onTap: (img) => _showImage(context, img),
                           onFavorite: (img) => context
                               .read<GalleryBloc>()
                               .add(GalleryImageFavoriteToggled(img.id)),
+                          onHide: (img) => context
+                              .read<GalleryBloc>()
+                              .add(GalleryImageHiddenToggled(img.id)),
                           onDelete: (img) => _confirmDelete(context, img),
                           onAddToCollection: (img) => _showCollectionPicker(context, img, state.collections),
                         ),
@@ -116,6 +132,7 @@ class _GalleryPageState extends State<GalleryPage> {
             ],
           );
         },
+        ),
       ),
     );
   }
@@ -215,6 +232,27 @@ class _GalleryPageState extends State<GalleryPage> {
             muted: ext.muted,
           ),
           const Spacer(),
+          if (state.hasPassword)
+            Padding(
+              padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
+              child: _FilterSegment(
+                label: state.isLocked ? 'Locked' : 'Unlocked',
+                icon: state.isLocked
+                    ? Icons.lock_outline
+                    : Icons.lock_open_outlined,
+                selected: !state.isLocked,
+                onTap: () {
+                  if (state.isLocked) {
+                    _showUnlockDialog(context);
+                  } else {
+                    context.read<GalleryBloc>().add(GalleryLockRequested());
+                  }
+                },
+                accent: ext.accent,
+                border: ext.border,
+                muted: ext.muted,
+              ),
+            ),
           Text(
             '${state.filteredImages.length} images',
             style: Theme.of(context).textTheme.labelMedium,
@@ -555,6 +593,63 @@ class _GalleryPageState extends State<GalleryPage> {
       ),
     );
   }
+
+  void _showUnlockDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lock_outline, size: 22),
+            SizedBox(width: 8),
+            Text('Gallery Locked'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter your password to view hidden images.'),
+            const SizedBox(height: ThemeConstants.spacingMedium),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (value) {
+                _unlockAttempted = true;
+                context
+                    .read<GalleryBloc>()
+                    .add(GalleryUnlockAttempted(value));
+                Navigator.of(ctx).pop();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final password = controller.text;
+              _unlockAttempted = true;
+              context
+                  .read<GalleryBloc>()
+                  .add(GalleryUnlockAttempted(password));
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Unlock'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PlaylistsPanel extends StatelessWidget {
@@ -710,16 +805,20 @@ class _FilterSegment extends StatelessWidget {
 class _GalleryImageCard extends StatelessWidget {
   final GeneratedImage image;
   final List<Collection> collections;
+  final bool isLocked;
   final void Function(GeneratedImage) onTap;
   final void Function(GeneratedImage) onFavorite;
+  final void Function(GeneratedImage) onHide;
   final void Function(GeneratedImage) onDelete;
   final void Function(GeneratedImage) onAddToCollection;
 
   const _GalleryImageCard({
     required this.image,
     required this.collections,
+    required this.isLocked,
     required this.onTap,
     required this.onFavorite,
+    required this.onHide,
     required this.onDelete,
     required this.onAddToCollection,
   });
@@ -798,6 +897,16 @@ class _GalleryImageCard extends StatelessWidget {
                       color: image.collectionId != null ? ext.accent : Colors.white,
                     ),
                     const SizedBox(width: 4),
+                    if (!isLocked) ...[
+                      _ActionButton(
+                        icon: image.isHidden
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        onTap: () => onHide(image),
+                        color: image.isHidden ? ext.accent : Colors.white,
+                      ),
+                      const SizedBox(width: 4),
+                    ],
                     _ActionButton(
                       icon: Icons.delete_outline,
                       onTap: () => onDelete(image),

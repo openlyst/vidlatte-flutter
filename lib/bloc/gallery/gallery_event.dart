@@ -92,4 +92,24 @@ class GalleryCollectionSelected extends GalleryEvent {
   List<Object?> get props => [collectionId];
 }
 
+class GalleryImageHiddenToggled extends GalleryEvent {
+  final String imageId;
+
+  const GalleryImageHiddenToggled(this.imageId);
+
+  @override
+  List<Object?> get props => [imageId];
+}
+
+class GalleryUnlockAttempted extends GalleryEvent {
+  final String password;
+
+  const GalleryUnlockAttempted(this.password);
+
+  @override
+  List<Object?> get props => [password];
+}
+
+class GalleryLockRequested extends GalleryEvent {}
+
 enum GalleryFilter { all, favorites, collection }

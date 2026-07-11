@@ -129,6 +129,12 @@ class StorageService {
     await saveImage(image.copyWith(isFavorite: !image.isFavorite));
   }
 
+  Future<void> toggleHidden(String id) async {
+    final image = getImage(id);
+    if (image == null) return;
+    await saveImage(image.copyWith(isHidden: !image.isHidden));
+  }
+
   Future<void> setImageCollection(String imageId, String? collectionId) async {
     final image = getImage(imageId);
     if (image == null) return;

@@ -36,6 +36,8 @@ class _SettingsPageState extends State<SettingsPage> {
           _ServersSection(),
           const SizedBox(height: ThemeConstants.spacingLarge),
           _LlmServersSection(),
+          const SizedBox(height: ThemeConstants.spacingLarge),
+          _GalleryPrivacySection(),
         ],
       ),
     );
@@ -919,6 +921,158 @@ class _LlmServerFormDialogState extends State<_LlmServerFormDialog> {
           child: const Text('Save'),
         ),
       ],
+    );
+  }
+}
+
+class _GalleryPrivacySection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<SettingsBloc, SettingsState>(
+      builder: (context, state) {
+        final hasPassword = state.settings.galleryPassword != null;
+        return _SectionCard(
+          title: 'Gallery Privacy',
+          subtitle: hasPassword
+              ? 'Password protection enabled'
+              : 'Set a password to hide images',
+          children: [
+            Row(
+              children: [
+                Icon(Icons.lock_outline, size: 20, color: Theme.of(context).extension<AppColors>()!.accent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(hasPassword
+                      ? 'Your gallery is protected. Hidden images require a password to view.'
+                      : 'Set a password to lock hidden images. Without a password, hidden images are still visible.'),
+                ),
+              ],
+            ),
+            const SizedBox(height: ThemeConstants.spacingMedium),
+            Row(
+              children: [
+                FilledButton.icon(
+                  onPressed: () => _showPasswordDialog(context, state.settings.galleryPassword),
+                  icon: Icon(hasPassword ? Icons.edit : Icons.lock),
+                  label: Text(hasPassword ? 'Change Password' : 'Set Password'),
+                ),
+                if (hasPassword) ...[
+                  const SizedBox(width: ThemeConstants.spacingSmall),
+                  TextButton(
+                    onPressed: () => _confirmRemovePassword(context),
+                    child: const Text('Remove'),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPasswordDialog(BuildContext context, String? existingPassword) {
+    final pwdController = TextEditingController();
+    final confirmController = TextEditingController();
+    final oldPwdController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(existingPassword != null ? 'Change Password' : 'Set Password'),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (existingPassword != null) ...[
+                TextField(
+                  controller: oldPwdController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Current password',
+                  ),
+                ),
+                const SizedBox(height: ThemeConstants.spacingSmall),
+              ],
+              TextField(
+                controller: pwdController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'New password',
+                ),
+              ),
+              const SizedBox(height: ThemeConstants.spacingSmall),
+              TextField(
+                controller: confirmController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm password',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final pwd = pwdController.text;
+              final confirm = confirmController.text;
+              if (pwd.isEmpty) return;
+              if (pwd != confirm) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Passwords do not match')),
+                );
+                return;
+              }
+              if (existingPassword != null && oldPwdController.text != existingPassword) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Current password is incorrect')),
+                );
+                return;
+              }
+              final settings = context.read<SettingsBloc>().state.settings;
+              context.read<SettingsBloc>().add(SettingsUpdated(
+                settings.copyWith(galleryPassword: pwd),
+              ));
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(existingPassword != null ? 'Password updated' : 'Password set')),
+              );
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRemovePassword(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Password'),
+        content: const Text('Hidden images will be visible to anyone with access to this device.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final settings = context.read<SettingsBloc>().state.settings;
+              context.read<SettingsBloc>().add(SettingsUpdated(
+                settings.copyWith(galleryPassword: null),
+              ));
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
     );
   }
 }
