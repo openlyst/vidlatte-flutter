@@ -11,6 +11,7 @@ import '../data/models/app_settings.dart';
 import '../data/models/collection.dart';
 import '../data/models/comfy_server.dart';
 import '../data/models/generated_image.dart';
+import '../data/models/llm_server.dart';
 import '../data/models/studio_session.dart';
 
 class StorageService {
@@ -19,6 +20,7 @@ class StorageService {
   late Box _collectionsBox;
   late Box _settingsBox;
   late Box _sessionsBox;
+  late Box _llmServersBox;
   late Directory _imageDir;
 
   Future<void> init() async {
@@ -29,6 +31,7 @@ class StorageService {
     _collectionsBox = await Hive.openBox(StorageKeys.collections);
     _settingsBox = await Hive.openBox(StorageKeys.settings);
     _sessionsBox = await Hive.openBox('sessions');
+    _llmServersBox = await Hive.openBox('llm_servers');
 
     final appDir = await getApplicationDocumentsDirectory();
     _imageDir = Directory(p.join(appDir.path, 'vidlatte_images'));
@@ -205,9 +208,35 @@ class StorageService {
     await _collectionsBox.clear();
     await _settingsBox.clear();
     await _sessionsBox.clear();
+    await _llmServersBox.clear();
     if (_imageDir.existsSync()) {
       await _imageDir.delete(recursive: true);
       await _imageDir.create(recursive: true);
     }
+  }
+
+  // --- LLM Servers ---
+
+  List<LlmServer> getLlmServers() {
+    return _llmServersBox.values.map((v) {
+      final json = jsonDecode(v as String) as Map<String, dynamic>;
+      return LlmServer.fromJson(json);
+    }).toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  }
+
+  Future<void> saveLlmServer(LlmServer server) async {
+    await _llmServersBox.put(server.id, jsonEncode(server.toJson()));
+  }
+
+  Future<void> deleteLlmServer(String id) async {
+    await _llmServersBox.delete(id);
+  }
+
+  LlmServer? getLlmServer(String id) {
+    final raw = _llmServersBox.get(id);
+    if (raw == null) return null;
+    final json = jsonDecode(raw as String) as Map<String, dynamic>;
+    return LlmServer.fromJson(json);
   }
 }
