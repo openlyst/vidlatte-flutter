@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../config/constants.dart';
+import '../../../data/models/lora_metadata.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/settings/lora_edit_dialog.dart';
 
 class BrowsePage extends StatefulWidget {
   const BrowsePage({super.key});
@@ -64,8 +66,10 @@ class _BrowsePageState extends State<BrowsePage> with SingleTickerProviderStateM
             children: [
               _ModelList(models: catalog.models, serverName: server.name),
               _LoraList(
-                loras: state.visibleLorasFor(server.id),
+                loras: catalog.loras,
                 triggerWords: state.triggerWordsFor(server.id),
+                disabledLoras: state.disabledLorasFor(server.id),
+                serverId: server.id,
                 serverName: server.name,
               ),
             ],
@@ -126,11 +130,15 @@ class _ModelList extends StatelessWidget {
 class _LoraList extends StatelessWidget {
   final List<String> loras;
   final Map<String, String> triggerWords;
+  final Set<String> disabledLoras;
+  final String serverId;
   final String serverName;
 
   const _LoraList({
     required this.loras,
     required this.triggerWords,
+    required this.disabledLoras,
+    required this.serverId,
     required this.serverName,
   });
 
@@ -152,20 +160,33 @@ class _LoraList extends StatelessWidget {
         final name = lora.split('/').last;
         final folder = lora.contains('/') ? lora.substring(0, lora.lastIndexOf('/')) : '';
         final triggers = triggerWords[lora];
+        final isHidden = disabledLoras.contains(lora);
+        final theme = Theme.of(context);
 
         return Card(
           margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+          color: isHidden ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) : null,
           child: ListTile(
-            leading: const Icon(Icons.style_outlined),
-            title: Text(name),
+            leading: Icon(
+              isHidden ? Icons.style_outlined : Icons.style,
+              color: isHidden ? theme.colorScheme.outline : null,
+            ),
+            title: Text(
+              name,
+              style: isHidden
+                  ? TextStyle(color: theme.colorScheme.outline, decoration: TextDecoration.lineThrough)
+                  : null,
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (folder.isNotEmpty)
-                  Text(folder, style: Theme.of(context).textTheme.bodySmall)
+                  Text(folder, style: theme.textTheme.bodySmall)
                 else
-                  Text('From: $serverName', style: Theme.of(context).textTheme.bodySmall),
-                if (triggers != null && triggers.isNotEmpty) ...[
+                  Text('From: $serverName', style: theme.textTheme.bodySmall),
+                if (isHidden)
+                  Text('Hidden', style: TextStyle(fontSize: 11, color: theme.colorScheme.outline))
+                else if (triggers != null && triggers.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 4,
@@ -183,15 +204,41 @@ class _LoraList extends StatelessWidget {
                 ],
               ],
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.copy),
-              tooltip: 'Copy name',
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: lora));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Copied: $name')),
-                );
-              },
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.copy),
+                  tooltip: 'Copy name',
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: lora));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Copied: $name')),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Edit LoRA',
+                  onPressed: () {
+                    final bloc = context.read<ServersBloc>();
+                    final existing = bloc.state.loraMetadata[serverId]
+                        ?.where((m) => m.loraName == lora)
+                        .firstOrNull;
+                    showDialog(
+                      context: context,
+                      builder: (_) => BlocProvider.value(
+                        value: bloc,
+                        child: LoraEditDialog(
+                          serverId: serverId,
+                          loraName: lora,
+                          existing: existing,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         );
