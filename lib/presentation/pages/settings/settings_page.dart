@@ -951,10 +951,12 @@ class _GalleryPrivacySection extends StatelessWidget {
             const SizedBox(height: ThemeConstants.spacingMedium),
             Row(
               children: [
-                FilledButton.icon(
-                  onPressed: () => _showPasswordDialog(context, state.settings.galleryPassword),
-                  icon: Icon(hasPassword ? Icons.edit : Icons.lock),
-                  label: Text(hasPassword ? 'Change Password' : 'Set Password'),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _showPasswordDialog(context, state.settings.galleryPassword),
+                    icon: Icon(hasPassword ? Icons.edit : Icons.lock),
+                    label: Text(hasPassword ? 'Change Password' : 'Set Password'),
+                  ),
                 ),
                 if (hasPassword) ...[
                   const SizedBox(width: ThemeConstants.spacingSmall),
