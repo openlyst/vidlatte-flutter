@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vidlatte/data/models/comfy_server.dart';
 import 'package:vidlatte/data/models/generated_image.dart';
 import 'package:vidlatte/data/models/studio_session.dart';
 
