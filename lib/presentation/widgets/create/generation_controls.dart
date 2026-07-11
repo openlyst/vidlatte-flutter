@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../config/constants.dart';
 import '../../../data/models/comfy_server.dart';
+import 'lora_picker_dialog.dart';
 
 class GenerationControls extends StatelessWidget {
   final List<String> models;
@@ -55,12 +56,14 @@ class GenerationControls extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ServerSelector(
-          servers: servers,
-          selectedId: selectedServerId,
-          onChanged: onServerChanged,
-        ),
-        const SizedBox(height: ThemeConstants.spacingMedium),
+        if (servers.length > 1) ...[
+          _ServerSelector(
+            servers: servers,
+            selectedId: selectedServerId,
+            onChanged: onServerChanged,
+          ),
+          const SizedBox(height: ThemeConstants.spacingMedium),
+        ],
         _ModelSelector(
           models: models,
           selectedModel: selectedModel,
@@ -68,7 +71,7 @@ class GenerationControls extends StatelessWidget {
         ),
         const SizedBox(height: ThemeConstants.spacingMedium),
         if (loras.isNotEmpty) ...[
-          _LoraSelector(
+          _LoraSummary(
             loras: loras,
             triggerWords: triggerWords,
             selectedLoras: selectedLoras,
@@ -109,7 +112,6 @@ class _ServerSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (servers.length <= 1) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -162,14 +164,14 @@ class _ModelSelector extends StatelessWidget {
   }
 }
 
-class _LoraSelector extends StatelessWidget {
+class _LoraSummary extends StatelessWidget {
   final List<String> loras;
   final Map<String, String> triggerWords;
   final List<String> selectedLoras;
   final int maxLoras;
   final ValueChanged<List<String>> onChanged;
 
-  const _LoraSelector({
+  const _LoraSummary({
     required this.loras,
     required this.triggerWords,
     required this.selectedLoras,
@@ -186,51 +188,90 @@ class _LoraSelector extends StatelessWidget {
         Row(
           children: [
             Text('LoRAs', style: theme.textTheme.titleMedium),
-            const SizedBox(width: ThemeConstants.spacingSmall),
-            Text(
-              '${selectedLoras.length}/$maxLoras',
-              style: theme.textTheme.bodySmall,
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: selectedLoras.isNotEmpty
+                    ? theme.colorScheme.secondary.withValues(alpha: 0.15)
+                    : theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${selectedLoras.length}/$maxLoras',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: selectedLoras.isNotEmpty ? theme.colorScheme.secondary : theme.colorScheme.outline,
+                ),
+              ),
+            ),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: () => _openPicker(context),
+              icon: const Icon(Icons.tune, size: 18),
+              label: const Text('Select'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: ThemeConstants.spacingSmall),
-        Wrap(
-          spacing: ThemeConstants.spacingSmall,
-          runSpacing: ThemeConstants.spacingSmall,
-          children: loras.map((lora) {
-            final selected = selectedLoras.contains(lora);
-            final name = lora.split('/').last;
-            final triggers = triggerWords[lora];
-            final hasTriggers = triggers != null && triggers.isNotEmpty;
-            return Tooltip(
-              message: hasTriggers ? 'Triggers: $triggers' : 'No trigger words set',
-              child: FilterChip(
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(name),
-                    if (hasTriggers) ...[
-                      const SizedBox(width: 4),
-                      Icon(Icons.bolt, size: 12, color: theme.colorScheme.secondary),
+        if (selectedLoras.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'No LoRAs selected',
+              style: theme.textTheme.bodySmall,
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: selectedLoras.map((lora) {
+                final name = lora.split('/').last;
+                final hasTriggers = (triggerWords[lora] ?? '').isNotEmpty;
+                return Chip(
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(name, style: const TextStyle(fontSize: 12)),
+                      if (hasTriggers) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.bolt, size: 12, color: theme.colorScheme.secondary),
+                      ],
                     ],
-                  ],
-                ),
-                selected: selected,
-                onSelected: (selected) {
-                  if (selected) {
-                    if (selectedLoras.length < maxLoras) {
-                      onChanged([...selectedLoras, lora]);
-                    }
-                  } else {
-                    onChanged(selectedLoras.where((l) => l != lora).toList());
-                  }
-                },
-              ),
-            );
-          }).toList(),
-        ),
+                  ),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () => onChanged(selectedLoras.where((l) => l != lora).toList()),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                );
+              }).toList(),
+            ),
+          ),
       ],
     );
+  }
+
+  void _openPicker(BuildContext context) async {
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (_) => LoraPickerDialog(
+        loras: loras,
+        triggerWords: triggerWords,
+        selectedLoras: selectedLoras,
+        maxLoras: maxLoras,
+      ),
+    );
+    if (result != null) {
+      onChanged(result);
+    }
   }
 }
 

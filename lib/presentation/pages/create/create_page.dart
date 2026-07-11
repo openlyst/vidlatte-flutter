@@ -140,8 +140,8 @@ class _CreatePageState extends State<CreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final isWide = width >= ThemeConstants.tabletBreakpoint;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isWide = screenWidth >= ThemeConstants.tabletBreakpoint;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Create')),
@@ -167,9 +167,10 @@ class _CreatePageState extends State<CreatePage> {
 
           return BlocBuilder<GenerationBloc, GenerationState>(
             builder: (context, genState) {
-              return isWide
-                  ? _wideLayout(context, genState, serversState, effectiveServer, catalog)
-                  : _narrowLayout(context, genState, serversState, effectiveServer, catalog);
+              if (isWide) {
+                return _wideLayout(context, genState, serversState, effectiveServer, catalog);
+              }
+              return _narrowLayout(context, genState, serversState, effectiveServer, catalog);
             },
           );
         },
@@ -177,7 +178,7 @@ class _CreatePageState extends State<CreatePage> {
     );
   }
 
-  Widget _narrowLayout(
+  Widget _buildConfigPanel(
     BuildContext context,
     GenerationState genState,
     ServersState serversState,
@@ -186,8 +187,8 @@ class _CreatePageState extends State<CreatePage> {
   ) {
     final visibleLoras = serversState.visibleLorasFor(server.id);
     final triggerWords = serversState.triggerWordsFor(server.id);
-    return ListView(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         PromptInput(
           controller: _promptController,
@@ -220,14 +221,30 @@ class _CreatePageState extends State<CreatePage> {
             _selectedLoras = [];
           }),
         ),
-        const SizedBox(height: ThemeConstants.spacingMedium),
+        const SizedBox(height: ThemeConstants.spacingLarge),
         FilledButton.icon(
           onPressed: genState.status == GenerationStatus.generating ? null : _generate,
           icon: const Icon(Icons.auto_awesome),
           label: const Text('Generate'),
         ),
-        const SizedBox(height: ThemeConstants.spacingLarge),
+        const SizedBox(height: ThemeConstants.spacingMedium),
         ..._buildActiveJobs(genState),
+      ],
+    );
+  }
+
+  Widget _narrowLayout(
+    BuildContext context,
+    GenerationState genState,
+    ServersState serversState,
+    ComfyServer server,
+    dynamic catalog,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      children: [
+        _buildConfigPanel(context, genState, serversState, server, catalog),
+        const SizedBox(height: ThemeConstants.spacingLarge),
         ..._buildResults(context, genState),
       ],
     );
@@ -240,55 +257,15 @@ class _CreatePageState extends State<CreatePage> {
     ComfyServer server,
     dynamic catalog,
   ) {
-    final visibleLoras = serversState.visibleLorasFor(server.id);
-    final triggerWords = serversState.triggerWordsFor(server.id);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 380,
+          width: 400,
           child: ListView(
             padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
             children: [
-              PromptInput(
-                controller: _promptController,
-                maxLength: ComfyConstants.maxPromptLength,
-              ),
-              const SizedBox(height: ThemeConstants.spacingMedium),
-              GenerationControls(
-                models: catalog?.models as List<String>? ?? [],
-                loras: visibleLoras,
-                triggerWords: triggerWords,
-                maxLoras: server.maxLoras,
-                selectedModel: _selectedModel,
-                selectedLoras: _selectedLoras,
-                creativity: _creativity,
-                customSteps: _customSteps,
-                customHiresFix: _customHiresFix,
-                width: _width,
-                height: _height,
-                servers: serversState.servers,
-                selectedServerId: server.id,
-                onModelChanged: (m) => setState(() => _selectedModel = m),
-                onLorasChanged: (l) => setState(() => _selectedLoras = l),
-                onCreativityChanged: (c) => setState(() => _creativity = c),
-                onStepsChanged: (s) => setState(() => _customSteps = s),
-                onHiresFixChanged: (h) => setState(() => _customHiresFix = h),
-                onDimensionsChanged: (dims) => setState(() { _width = dims.$1; _height = dims.$2; }),
-                onServerChanged: (id) => setState(() {
-                  _selectedServerId = id;
-                  _selectedModel = '';
-                  _selectedLoras = [];
-                }),
-              ),
-              const SizedBox(height: ThemeConstants.spacingMedium),
-              FilledButton.icon(
-                onPressed: genState.status == GenerationStatus.generating ? null : _generate,
-                icon: const Icon(Icons.auto_awesome),
-                label: const Text('Generate'),
-              ),
-              const SizedBox(height: ThemeConstants.spacingMedium),
-              ..._buildActiveJobs(genState),
+              _buildConfigPanel(context, genState, serversState, server, catalog),
             ],
           ),
         ),
