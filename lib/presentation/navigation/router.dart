@@ -24,32 +24,47 @@ class AppRouter {
         routes: [
           GoRoute(
             path: '/create',
+            pageBuilder: (context, state) => _noTransitionPage(const CreatePage()),
             builder: (context, state) => const CreatePage(),
           ),
           GoRoute(
             path: '/gallery',
+            pageBuilder: (context, state) => _noTransitionPage(const GalleryPage()),
             builder: (context, state) => const GalleryPage(),
           ),
           GoRoute(
             path: '/studio',
+            pageBuilder: (context, state) => _noTransitionPage(const StudioPage()),
             builder: (context, state) => const StudioPage(),
           ),
           GoRoute(
             path: '/settings',
+            pageBuilder: (context, state) => _noTransitionPage(const SettingsPage()),
             builder: (context, state) => const SettingsPage(),
           ),
         ],
       ),
       GoRoute(
         path: '/auto-image',
+        pageBuilder: (context, state) => _noTransitionPage(const AutoImagePage()),
         builder: (context, state) => const AutoImagePage(),
       ),
       GoRoute(
         path: '/browse',
+        pageBuilder: (context, state) => _noTransitionPage(const BrowsePage()),
         builder: (context, state) => const BrowsePage(),
       ),
     ],
   );
+
+  static CustomTransitionPage _noTransitionPage(Widget child) {
+    return CustomTransitionPage(
+      child: child,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+    );
+  }
 
   static int _indexFromLocation(String location) {
     for (var i = 0; i < AppDestination.values.length; i++) {
