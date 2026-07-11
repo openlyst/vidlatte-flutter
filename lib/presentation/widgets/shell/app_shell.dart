@@ -6,10 +6,8 @@ import '../../../config/theme.dart';
 
 enum AppDestination {
   create(Icons.auto_awesome_outlined, Icons.auto_awesome, 'Create', '/create'),
-  autoImage(Icons.bolt_outlined, Icons.bolt, 'Auto Image', '/auto-image'),
-  studio(Icons.dashboard_outlined, Icons.dashboard, 'Studio', '/studio'),
   gallery(Icons.photo_library_outlined, Icons.photo_library, 'Gallery', '/gallery'),
-  browse(Icons.explore_outlined, Icons.explore, 'Browse', '/browse'),
+  studio(Icons.dashboard_outlined, Icons.dashboard, 'Studio', '/studio'),
   settings(Icons.settings_outlined, Icons.settings, 'Settings', '/settings');
 
   final IconData icon;

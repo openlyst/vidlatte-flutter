@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../bloc/autogen/autogen_bloc.dart';
 import '../../../bloc/llm/llm_bloc.dart';
@@ -66,6 +67,10 @@ class _AutoImagePageState extends State<AutoImagePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Auto Image'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/create'),
+        ),
         actions: [
           BlocBuilder<AutoGenBloc, AutoGenState>(
             builder: (context, state) {

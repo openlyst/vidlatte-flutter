@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../config/constants.dart';
@@ -37,6 +38,10 @@ class _BrowsePageState extends State<BrowsePage> with SingleTickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         title: const Text('Browse'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/create'),
+        ),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

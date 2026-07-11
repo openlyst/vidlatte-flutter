@@ -27,26 +27,26 @@ class AppRouter {
             builder: (context, state) => const CreatePage(),
           ),
           GoRoute(
-            path: '/auto-image',
-            builder: (context, state) => const AutoImagePage(),
+            path: '/gallery',
+            builder: (context, state) => const GalleryPage(),
           ),
           GoRoute(
             path: '/studio',
             builder: (context, state) => const StudioPage(),
           ),
           GoRoute(
-            path: '/gallery',
-            builder: (context, state) => const GalleryPage(),
-          ),
-          GoRoute(
-            path: '/browse',
-            builder: (context, state) => const BrowsePage(),
-          ),
-          GoRoute(
             path: '/settings',
             builder: (context, state) => const SettingsPage(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/auto-image',
+        builder: (context, state) => const AutoImagePage(),
+      ),
+      GoRoute(
+        path: '/browse',
+        builder: (context, state) => const BrowsePage(),
       ),
     ],
   );

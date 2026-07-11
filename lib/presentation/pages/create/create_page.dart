@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../bloc/generation/generation_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
@@ -146,7 +147,21 @@ class _CreatePageState extends State<CreatePage> {
     final isWide = screenWidth >= ThemeConstants.tabletBreakpoint;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create')),
+      appBar: AppBar(
+        title: const Text('Create'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.explore_outlined),
+            tooltip: 'Browse Models & LoRAs',
+            onPressed: () => context.go('/browse'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.bolt_outlined),
+            tooltip: 'Auto Image',
+            onPressed: () => context.go('/auto-image'),
+          ),
+        ],
+      ),
       body: BlocBuilder<ServersBloc, ServersState>(
         builder: (context, serversState) {
           if (serversState.servers.isEmpty) {
