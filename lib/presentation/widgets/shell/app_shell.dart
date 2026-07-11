@@ -306,37 +306,6 @@ class _DesktopSidebar extends StatelessWidget {
               },
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: ext.surfaceElevated,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: ext.border, width: 0.5),
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: ext.accent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.person, size: 18, color: Colors.white),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Local', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
-                      Text('ComfyUI', style: TextStyle(fontSize: 11, color: ext.muted)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
