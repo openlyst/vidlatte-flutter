@@ -1053,11 +1053,26 @@ class _GalleryPrivacySection extends StatelessWidget {
   }
 
   void _confirmRemovePassword(BuildContext context) {
+    final pwdController = TextEditingController();
+    final currentPassword = context.read<SettingsBloc>().state.settings.galleryPassword;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove Password'),
-        content: const Text('Hidden images will be visible to anyone with access to this device.'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter your current password to remove password protection.'),
+            const SizedBox(height: ThemeConstants.spacingSmall),
+            TextField(
+              controller: pwdController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Current password',
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -1065,6 +1080,12 @@ class _GalleryPrivacySection extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () {
+              if (pwdController.text != currentPassword) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Incorrect password')),
+                );
+                return;
+              }
               final settings = context.read<SettingsBloc>().state.settings;
               context.read<SettingsBloc>().add(SettingsUpdated(
                 settings.copyWith(galleryPassword: null),
