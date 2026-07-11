@@ -526,12 +526,25 @@ class _GalleryPageState extends State<GalleryPage> {
                     ],
                   ),
                 ),
+                if (state.hasPassword)
+                  ListTile(
+                    leading: Icon(
+                      image.isHidden ? Icons.lock : Icons.lock_outline,
+                      color: image.isHidden ? Theme.of(context).extension<AppColors>()!.accent : null,
+                    ),
+                    title: const Text('Locked'),
+                    onTap: () {
+                      context.read<GalleryBloc>().add(GalleryImageHiddenToggled(image.id));
+                      Navigator.of(ctx).pop();
+                    },
+                  ),
                 if (currentCollections.isEmpty && !state.hasPassword)
                   const Padding(
                     padding: EdgeInsets.all(ThemeConstants.spacingLarge),
                     child: Text('No playlists yet. Tap "New playlist" below to create one.'),
                   )
-                else ...[
+                else if (currentCollections.isNotEmpty) ...[
+                  const Divider(height: 1),
                   ...currentCollections.map((c) {
                     final selected = c.id == image.collectionId;
                     return ListTile(
@@ -549,20 +562,6 @@ class _GalleryPageState extends State<GalleryPage> {
                       },
                     );
                   }),
-                  if (state.hasPassword) ...[
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: Icon(
-                        image.isHidden ? Icons.lock : Icons.lock_outline,
-                        color: image.isHidden ? Theme.of(context).extension<AppColors>()!.accent : null,
-                      ),
-                      title: const Text('Locked'),
-                      onTap: () {
-                        context.read<GalleryBloc>().add(GalleryImageHiddenToggled(image.id));
-                        Navigator.of(ctx).pop();
-                      },
-                    ),
-                  ],
                 ],
                 const Divider(height: 1),
                 ListTile(
