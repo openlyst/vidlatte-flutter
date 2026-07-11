@@ -15,6 +15,7 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
   final StorageService _storage;
   final ComfyService _comfy;
   final Uuid _uuid;
+  bool _processing = false;
 
   GenerationBloc({
     required this._storage,
@@ -28,6 +29,8 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
     on<GenerationCleared>(_onCleared);
     on<GenerationImageDeleted>(_onImageDeleted);
     on<GenerationImageFavoriteToggled>(_onFavoriteToggled);
+    on<GenerationReordered>(_onReordered);
+    on<GenerationRetried>(_onRetried);
   }
 
   Future<void> _onSubmitted(GenerationSubmitted event, Emitter<GenerationState> emit) async {
@@ -40,6 +43,7 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
       model: event.model,
       loras: event.loras,
       creativity: event.creativity,
+      cfg: event.cfg,
       steps: event.steps ?? event.server.steps,
       hiresFix: event.hiresFix ?? event.server.hiresFix,
       width: event.width,
@@ -49,43 +53,93 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
       serverUrl: event.server.url,
       status: JobStatus.queued,
       createdAt: now,
-      startedAt: now,
     );
 
+    final newQueue = [...state.queue, job];
     emit(state.copyWith(
+      queue: newQueue,
       status: GenerationStatus.generating,
-      activeJobs: [...state.activeJobs, job],
       errorMessage: null,
     ));
 
+    await _processQueue(emit);
+  }
+
+  Future<void> _processQueue(Emitter<GenerationState> emit) async {
+    if (_processing) return;
+    _processing = true;
+
+    while (state.queue.isNotEmpty && !state.isProcessing) {
+      final job = state.queue.first;
+      final remaining = state.queue.skip(1).toList();
+
+      emit(state.copyWith(
+        currentJob: job.copyWith(
+          status: JobStatus.executing,
+          startedAt: DateTime.now(),
+        ),
+        queue: remaining,
+        status: GenerationStatus.generating,
+      ));
+
+      await _runJob(job, emit);
+
+      if (state.currentJob?.isFailed == true) break;
+    }
+
+    if (state.queue.isEmpty && (state.currentJob == null || state.currentJob!.isDone)) {
+      final hasError = state.currentJob?.isFailed == true;
+      emit(state.copyWith(
+        status: hasError ? GenerationStatus.error : GenerationStatus.idle,
+        currentJob: null,
+      ));
+    }
+
+    _processing = false;
+  }
+
+  Future<void> _runJob(GenerationJob job, Emitter<GenerationState> emit) async {
+    final servers = _storage.getServers();
+    final server = servers.where((s) => s.id == job.serverId).firstOrNull;
+    if (server == null) {
+      emit(state.copyWith(
+        currentJob: job.copyWith(
+          status: JobStatus.failed,
+          errorMessage: 'Server not found',
+          completedAt: DateTime.now(),
+        ),
+        status: GenerationStatus.error,
+      ));
+      return;
+    }
+
     try {
       final result = await _comfy.generateImage(
-        event.server,
-        prompt: event.prompt,
-        model: event.model,
-        loras: event.loras,
-        creativity: event.creativity,
-        cfg: event.cfg,
-        steps: event.steps,
-        hiresFix: event.hiresFix,
-        width: event.width,
-        height: event.height,
-        seed: event.seed,
+        server,
+        prompt: job.prompt,
+        model: job.model,
+        loras: job.loras,
+        creativity: job.creativity,
+        cfg: job.cfg,
+        steps: job.steps,
+        hiresFix: job.hiresFix,
+        width: job.width,
+        height: job.height,
+        seed: job.seed,
         onPreview: (msg) {
-          final updatedJobs = state.activeJobs.map((j) {
-            if (j.id != jobId) return j;
-            return j.copyWith(
+          if (state.currentJob?.id != job.id) return;
+          emit(state.copyWith(
+            currentJob: state.currentJob!.copyWith(
               status: msg.type == 'progress'
                   ? JobStatus.progress
                   : msg.type == 'executing'
                       ? JobStatus.executing
-                      : j.status,
+                      : state.currentJob!.status,
               progressValue: msg.progressValue,
               progressMax: msg.progressMax,
               currentNode: msg.node,
-            );
-          }).toList();
-          emit(state.copyWith(activeJobs: updatedJobs));
+            ),
+          ));
         },
       );
 
@@ -95,79 +149,108 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
 
         final image = GeneratedImage(
           id: _uuid.v4(),
-          prompt: event.prompt,
-          model: event.model,
-          loras: event.loras,
-          creativity: event.creativity,
-          steps: event.steps ?? event.server.steps,
-          hiresFix: event.hiresFix ?? event.server.hiresFix,
-          width: event.width,
-          height: event.height,
+          prompt: job.prompt,
+          model: job.model,
+          loras: job.loras,
+          creativity: job.creativity,
+          steps: job.steps,
+          hiresFix: job.hiresFix,
+          width: job.width,
+          height: job.height,
           seed: job.seed,
           status: ImageStatus.completed,
           localPath: localPath,
-          serverUrl: event.server.url,
+          serverUrl: job.serverUrl,
           comfyFilename: result.filename,
           comfySubfolder: result.subfolder,
           comfyType: result.type,
-          createdAt: now,
+          createdAt: job.createdAt,
           completedAt: DateTime.now(),
         );
 
         await _storage.saveImage(image);
 
-        final updatedJobs = state.activeJobs.where((j) => j.id != jobId).toList();
         emit(state.copyWith(
           status: GenerationStatus.success,
-          activeJobs: updatedJobs,
+          currentJob: job.copyWith(
+            status: JobStatus.completed,
+            completedAt: DateTime.now(),
+          ),
           images: [image, ...state.images],
         ));
       } else {
-        final updatedJobs = state.activeJobs.map((j) {
-          if (j.id != jobId) return j;
-          return j.copyWith(
+        emit(state.copyWith(
+          status: GenerationStatus.error,
+          currentJob: job.copyWith(
             status: JobStatus.failed,
             errorMessage: result.error ?? 'Unknown error',
             completedAt: DateTime.now(),
-          );
-        }).toList();
-        emit(state.copyWith(
-          status: GenerationStatus.error,
-          activeJobs: updatedJobs,
+          ),
           errorMessage: result.error,
         ));
       }
     } catch (e) {
-      final updatedJobs = state.activeJobs.map((j) {
-        if (j.id != jobId) return j;
-        return j.copyWith(
+      emit(state.copyWith(
+        status: GenerationStatus.error,
+        currentJob: job.copyWith(
           status: JobStatus.failed,
           errorMessage: e.toString(),
           completedAt: DateTime.now(),
-        );
-      }).toList();
-      emit(state.copyWith(
-        status: GenerationStatus.error,
-        activeJobs: updatedJobs,
+        ),
         errorMessage: e.toString(),
       ));
     }
   }
 
   void _onCancelled(GenerationCancelled event, Emitter<GenerationState> emit) {
-    final updatedJobs = state.activeJobs.where((j) => j.id != event.jobId).toList();
-    emit(state.copyWith(
-      activeJobs: updatedJobs,
-      status: updatedJobs.isEmpty ? GenerationStatus.idle : state.status,
-    ));
+    if (state.currentJob?.id == event.jobId) {
+      emit(state.copyWith(
+        currentJob: state.currentJob!.copyWith(
+          status: JobStatus.cancelled,
+          completedAt: DateTime.now(),
+        ),
+        status: GenerationStatus.idle,
+      ));
+    } else {
+      emit(state.copyWith(
+        queue: state.queue.where((j) => j.id != event.jobId).toList(),
+        status: state.queue.length <= 1 ? GenerationStatus.idle : state.status,
+      ));
+    }
   }
 
   void _onCleared(GenerationCleared event, Emitter<GenerationState> emit) {
+    _processing = false;
     emit(state.copyWith(
       status: GenerationStatus.idle,
-      activeJobs: [],
+      queue: [],
+      currentJob: null,
       errorMessage: null,
     ));
+  }
+
+  void _onReordered(GenerationReordered event, Emitter<GenerationState> emit) {
+    emit(state.copyWith(queue: event.queue));
+  }
+
+  Future<void> _onRetried(GenerationRetried event, Emitter<GenerationState> emit) async {
+    if (state.currentJob?.id == event.jobId && state.currentJob!.isFailed) {
+      final retriedJob = state.currentJob!.copyWith(
+        status: JobStatus.queued,
+        errorMessage: null,
+        progressValue: null,
+        progressMax: null,
+        currentNode: null,
+        startedAt: null,
+        completedAt: null,
+      );
+      emit(state.copyWith(
+        currentJob: null,
+        queue: [retriedJob, ...state.queue],
+        status: GenerationStatus.generating,
+      ));
+      await _processQueue(emit);
+    }
   }
 
   Future<void> _onImageDeleted(GenerationImageDeleted event, Emitter<GenerationState> emit) async {

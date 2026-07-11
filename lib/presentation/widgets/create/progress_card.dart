@@ -6,15 +6,22 @@ import '../../../data/models/generation_job.dart';
 
 class ProgressCard extends StatelessWidget {
   final GenerationJob job;
+  final VoidCallback? onCancel;
+  final VoidCallback? onRetry;
 
-  const ProgressCard({super.key, required this.job});
+  const ProgressCard({
+    super.key,
+    required this.job,
+    this.onCancel,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
     final progress = job.progressFraction;
-    final isActive = job.status != JobStatus.failed && job.status != JobStatus.completed;
+    final isActive = job.status != JobStatus.failed && job.status != JobStatus.completed && job.status != JobStatus.cancelled;
 
     return Container(
       decoration: BoxDecoration(
@@ -39,6 +46,8 @@ class ProgressCard extends StatelessWidget {
                 )
               else if (job.status == JobStatus.failed)
                 Icon(Icons.error_outline, color: theme.colorScheme.error, size: 18)
+              else if (job.status == JobStatus.cancelled)
+                Icon(Icons.cancel_outlined, color: theme.colorScheme.onSurfaceVariant, size: 18)
               else
                 Icon(Icons.check_circle, color: ext.accent, size: 18),
               const SizedBox(width: 10),
@@ -50,6 +59,20 @@ class ProgressCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (isActive && onCancel != null)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: onCancel,
+                  tooltip: 'Cancel',
+                  visualDensity: VisualDensity.compact,
+                ),
+              if (job.status == JobStatus.failed && onRetry != null)
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  onPressed: onRetry,
+                  tooltip: 'Retry',
+                  visualDensity: VisualDensity.compact,
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -70,6 +93,11 @@ class ProgressCard extends StatelessWidget {
             Text(
               job.errorMessage ?? 'Generation failed',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+            ),
+          ] else if (job.status == JobStatus.cancelled) ...[
+            Text(
+              'Cancelled',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ] else ...[
             Text(

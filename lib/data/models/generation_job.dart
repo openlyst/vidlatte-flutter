@@ -48,6 +48,7 @@ class GenerationJob extends Equatable {
   final String model;
   final List<String> loras;
   final Creativity creativity;
+  final double? cfg;
   final int steps;
   final bool hiresFix;
   final int width;
@@ -77,6 +78,7 @@ class GenerationJob extends Equatable {
     required this.model,
     this.loras = const [],
     this.creativity = Creativity.normal,
+    this.cfg,
     this.steps = 20,
     this.hiresFix = false,
     this.width = 1024,
@@ -107,6 +109,7 @@ class GenerationJob extends Equatable {
     String? model,
     List<String>? loras,
     Creativity? creativity,
+    double? cfg,
     int? steps,
     bool? hiresFix,
     int? width,
@@ -136,6 +139,7 @@ class GenerationJob extends Equatable {
       model: model ?? this.model,
       loras: loras ?? this.loras,
       creativity: creativity ?? this.creativity,
+      cfg: cfg ?? this.cfg,
       steps: steps ?? this.steps,
       hiresFix: hiresFix ?? this.hiresFix,
       width: width ?? this.width,
@@ -174,7 +178,7 @@ class GenerationJob extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, prompt, model, loras, creativity, steps, hiresFix,
+        id, prompt, model, loras, creativity, cfg, steps, hiresFix,
         width, height, seed, serverId, serverUrl, status,
         progressValue, progressMax, currentNode, previewBase64,
         resultLocalPath, resultFilename, resultSubfolder, resultType,

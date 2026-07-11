@@ -14,6 +14,7 @@ import '../../widgets/common/image_grid.dart';
 import '../../widgets/create/generation_controls.dart';
 import '../../widgets/create/prompt_input.dart';
 import '../../widgets/create/progress_card.dart';
+import '../../widgets/create/queue_card.dart';
 
 class CreatePage extends StatefulWidget {
   const CreatePage({super.key});
@@ -258,7 +259,7 @@ class _CreatePageState extends State<CreatePage> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: isGenerating ? null : _generate,
+            onPressed: _generate,
             icon: isGenerating
                 ? SizedBox(
                     width: 18,
@@ -266,7 +267,7 @@ class _CreatePageState extends State<CreatePage> {
                     child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                   )
                 : const Icon(Icons.auto_awesome),
-            label: Text(isGenerating ? 'Generating...' : 'Generate'),
+            label: Text(isGenerating ? 'Add to Queue' : 'Generate'),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
@@ -323,12 +324,53 @@ class _CreatePageState extends State<CreatePage> {
   }
 
   List<Widget> _buildActiveJobs(GenerationState state) {
-    return state.activeJobs.map((job) {
-      return Padding(
+    final widgets = <Widget>[];
+
+    if (state.currentJob != null) {
+      widgets.add(Padding(
         padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
-        child: ProgressCard(job: job),
-      );
-    }).toList();
+        child: ProgressCard(
+          job: state.currentJob!,
+          onCancel: state.currentJob!.isActive
+              ? () => context.read<GenerationBloc>().add(GenerationCancelled(state.currentJob!.id))
+              : null,
+          onRetry: state.currentJob!.isFailed
+              ? () => context.read<GenerationBloc>().add(GenerationRetried(state.currentJob!.id))
+              : null,
+        ),
+      ));
+    }
+
+    if (state.queue.isNotEmpty) {
+      widgets.add(Padding(
+        padding: const EdgeInsets.only(top: ThemeConstants.spacingSmall, bottom: 4),
+        child: Row(
+          children: [
+            Icon(Icons.queue_music, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              'Queue (${state.queue.length})',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ),
+      ));
+      for (var i = 0; i < state.queue.length; i++) {
+        final job = state.queue[i];
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
+          child: QueueCard(
+            job: job,
+            position: i + 1,
+            onCancel: () => context.read<GenerationBloc>().add(GenerationCancelled(job.id)),
+          ),
+        ));
+      }
+    }
+
+    return widgets;
   }
 
   List<Widget> _buildResults(BuildContext context, GenerationState state) {

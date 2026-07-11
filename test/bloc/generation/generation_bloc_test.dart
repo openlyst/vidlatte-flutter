@@ -38,6 +38,7 @@ void main() {
       model: '',
       createdAt: DateTime(2025, 1, 1),
     ));
+    when(() => storage.getServers()).thenReturn([server]);
   });
 
   group('GenerationBloc', () {
@@ -71,11 +72,14 @@ void main() {
         prompt: 'a cat',
         model: 'model.safetensors',
       )),
-      skip: 1,
+      skip: 2,
       expect: () => [
         isA<GenerationState>()
             .having((s) => s.status, 'status', GenerationStatus.success)
             .having((s) => s.images.length, 'images', 1),
+        isA<GenerationState>()
+            .having((s) => s.status, 'status', GenerationStatus.idle)
+            .having((s) => s.currentJob, 'currentJob', isNull),
       ],
     );
 
@@ -105,27 +109,29 @@ void main() {
         prompt: 'a cat',
         model: 'model.safetensors',
       )),
-      skip: 1,
+      skip: 2,
       expect: () => [
         isA<GenerationState>()
             .having((s) => s.status, 'status', GenerationStatus.error)
             .having((s) => s.errorMessage, 'error', 'Connection refused'),
+        isA<GenerationState>()
+            .having((s) => s.status, 'status', GenerationStatus.error)
+            .having((s) => s.currentJob, 'currentJob', isNull),
       ],
     );
 
     blocTest<GenerationBloc, GenerationState>(
-      'clears active jobs on GenerationCleared',
+      'clears queue on GenerationCleared',
       build: () => GenerationBloc(storage: storage, comfy: comfy)
         ..emit(const GenerationState(
           status: GenerationStatus.generating,
-          activeJobs: [],
         )),
       act: (bloc) => bloc.add(GenerationCleared()),
       expect: () => [
-        const GenerationState(
-          status: GenerationStatus.idle,
-          activeJobs: [],
-        ),
+        isA<GenerationState>()
+            .having((s) => s.status, 'status', GenerationStatus.idle)
+            .having((s) => s.queue, 'queue', isEmpty)
+            .having((s) => s.currentJob, 'currentJob', isNull),
       ],
     );
 

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../data/models/comfy_server.dart';
+import '../../data/models/generation_job.dart';
 
 abstract class GenerationEvent extends Equatable {
   const GenerationEvent();
@@ -66,4 +67,22 @@ class GenerationImageFavoriteToggled extends GenerationEvent {
 
   @override
   List<Object?> get props => [imageId];
+}
+
+class GenerationReordered extends GenerationEvent {
+  final List<GenerationJob> queue;
+
+  const GenerationReordered(this.queue);
+
+  @override
+  List<Object?> get props => [queue];
+}
+
+class GenerationRetried extends GenerationEvent {
+  final String jobId;
+
+  const GenerationRetried(this.jobId);
+
+  @override
+  List<Object?> get props => [jobId];
 }
