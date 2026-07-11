@@ -4,6 +4,7 @@ export 'servers_event.dart';
 export 'servers_state.dart';
 
 import '../../data/models/comfy_server.dart';
+import '../../data/models/lora_metadata.dart';
 import '../../data/models/model_catalog.dart';
 import '../../services/comfyui_service.dart';
 import '../../services/storage_service.dart';
@@ -24,6 +25,10 @@ class ServersBloc extends Bloc<ServersEvent, ServersState> {
     on<ServerSetDefaultRequested>(_onSetDefault);
     on<ServerHealthCheckRequested>(_onHealthCheck);
     on<ServerModelsFetchRequested>(_onModelsFetch);
+    on<LoraMetadataLoadRequested>(_onLoraMetaLoad);
+    on<LoraMetadataSaveRequested>(_onLoraMetaSave);
+    on<LoraTriggerWordsSaveRequested>(_onLoraTriggersSave);
+    on<LoraVisibilitySaveRequested>(_onLoraVisibilitySave);
   }
 
   void _onLoad(ServersLoadRequested event, Emitter<ServersState> emit) {
@@ -68,15 +73,18 @@ class ServersBloc extends Bloc<ServersEvent, ServersState> {
 
   Future<void> _onDelete(ServerDeleteRequested event, Emitter<ServersState> emit) async {
     await _storage.deleteServer(event.id);
+    await _storage.deleteAllLoraMetadata(event.id);
     final servers = _storage.getServers();
     final healthStatuses = Map<String, ServerHealth>.from(state.healthStatuses)..remove(event.id);
     final catalogs = Map<String, ModelCatalog>.from(state.catalogs)..remove(event.id);
+    final loraMeta = Map<String, List<LoraMetadata>>.from(state.loraMetadata)..remove(event.id);
     emit(state.copyWith(
       status: ServersStatus.loaded,
       servers: servers,
       defaultServer: _storage.getDefaultServer(),
       healthStatuses: healthStatuses,
       catalogs: catalogs,
+      loraMetadata: loraMeta,
     ));
   }
 
@@ -111,5 +119,78 @@ class ServersBloc extends Bloc<ServersEvent, ServersState> {
     } catch (e) {
       emit(state.copyWith(errorMessage: e.toString()));
     }
+  }
+
+  void _onLoraMetaLoad(LoraMetadataLoadRequested event, Emitter<ServersState> emit) {
+    final metas = _storage.getAllLoraMetadata(event.serverId);
+    final loraMeta = Map<String, List<LoraMetadata>>.from(state.loraMetadata);
+    loraMeta[event.serverId] = metas;
+    emit(state.copyWith(loraMetadata: loraMeta));
+  }
+
+  Future<void> _onLoraMetaSave(LoraMetadataSaveRequested event, Emitter<ServersState> emit) async {
+    await _storage.saveLoraMetadataBatch(event.serverId, event.items);
+    final metas = _storage.getAllLoraMetadata(event.serverId);
+    final loraMeta = Map<String, List<LoraMetadata>>.from(state.loraMetadata);
+    loraMeta[event.serverId] = metas;
+    emit(state.copyWith(loraMetadata: loraMeta));
+  }
+
+  Future<void> _onLoraTriggersSave(
+      LoraTriggerWordsSaveRequested event, Emitter<ServersState> emit) async {
+    final existing = _storage.getAllLoraMetadata(event.serverId);
+    final existingMap = {for (final m in existing) m.loraName: m};
+    final now = DateTime.now();
+
+    for (final entry in event.triggerWords.entries) {
+      final prev = existingMap[entry.key];
+      final meta = LoraMetadata(
+        serverId: event.serverId,
+        loraName: entry.key,
+        triggerWords: entry.value,
+        isEnabled: prev?.isEnabled ?? true,
+        updatedAt: now,
+      );
+      await _storage.saveLoraMetadata(meta);
+    }
+
+    final metas = _storage.getAllLoraMetadata(event.serverId);
+    final loraMeta = Map<String, List<LoraMetadata>>.from(state.loraMetadata);
+    loraMeta[event.serverId] = metas;
+    emit(state.copyWith(loraMetadata: loraMeta));
+  }
+
+  Future<void> _onLoraVisibilitySave(
+      LoraVisibilitySaveRequested event, Emitter<ServersState> emit) async {
+    final existing = _storage.getAllLoraMetadata(event.serverId);
+    final existingMap = {for (final m in existing) m.loraName: m};
+    final now = DateTime.now();
+
+    final catalog = state.catalogs[event.serverId];
+    final allLoras = catalog?.loras ?? existing.map((m) => m.loraName).toList();
+
+    for (final loraName in allLoras) {
+      final prev = existingMap[loraName];
+      final isEnabled = !event.disabledLoras.contains(loraName);
+      if (prev == null) {
+        await _storage.saveLoraMetadata(LoraMetadata(
+          serverId: event.serverId,
+          loraName: loraName,
+          triggerWords: '',
+          isEnabled: isEnabled,
+          updatedAt: now,
+        ));
+      } else if (prev.isEnabled != isEnabled) {
+        await _storage.saveLoraMetadata(prev.copyWith(
+          isEnabled: isEnabled,
+          updatedAt: now,
+        ));
+      }
+    }
+
+    final metas = _storage.getAllLoraMetadata(event.serverId);
+    final loraMeta = Map<String, List<LoraMetadata>>.from(state.loraMetadata);
+    loraMeta[event.serverId] = metas;
+    emit(state.copyWith(loraMetadata: loraMeta));
   }
 }

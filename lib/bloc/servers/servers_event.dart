@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../data/models/comfy_server.dart';
+import '../../data/models/lora_metadata.dart';
 
 abstract class ServersEvent extends Equatable {
   const ServersEvent();
@@ -72,4 +73,35 @@ class ServerModelsFetchRequested extends ServersEvent {
 
   @override
   List<Object?> get props => [id];
+}
+
+class LoraMetadataLoadRequested extends ServersEvent {
+  final String serverId;
+  const LoraMetadataLoadRequested(this.serverId);
+  @override
+  List<Object?> get props => [serverId];
+}
+
+class LoraMetadataSaveRequested extends ServersEvent {
+  final String serverId;
+  final List<LoraMetadata> items;
+  const LoraMetadataSaveRequested(this.serverId, this.items);
+  @override
+  List<Object?> get props => [serverId, items];
+}
+
+class LoraTriggerWordsSaveRequested extends ServersEvent {
+  final String serverId;
+  final Map<String, String> triggerWords;
+  const LoraTriggerWordsSaveRequested(this.serverId, this.triggerWords);
+  @override
+  List<Object?> get props => [serverId, triggerWords];
+}
+
+class LoraVisibilitySaveRequested extends ServersEvent {
+  final String serverId;
+  final Set<String> disabledLoras;
+  const LoraVisibilitySaveRequested(this.serverId, this.disabledLoras);
+  @override
+  List<Object?> get props => [serverId, disabledLoras];
 }

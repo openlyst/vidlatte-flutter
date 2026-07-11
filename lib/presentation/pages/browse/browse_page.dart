@@ -63,7 +63,11 @@ class _BrowsePageState extends State<BrowsePage> with SingleTickerProviderStateM
             controller: _tabController,
             children: [
               _ModelList(models: catalog.models, serverName: server.name),
-              _LoraList(loras: catalog.loras, serverName: server.name),
+              _LoraList(
+                loras: state.visibleLorasFor(server.id),
+                triggerWords: state.triggerWordsFor(server.id),
+                serverName: server.name,
+              ),
             ],
           );
         },
@@ -121,9 +125,14 @@ class _ModelList extends StatelessWidget {
 
 class _LoraList extends StatelessWidget {
   final List<String> loras;
+  final Map<String, String> triggerWords;
   final String serverName;
 
-  const _LoraList({required this.loras, required this.serverName});
+  const _LoraList({
+    required this.loras,
+    required this.triggerWords,
+    required this.serverName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -142,13 +151,38 @@ class _LoraList extends StatelessWidget {
         final lora = loras[index];
         final name = lora.split('/').last;
         final folder = lora.contains('/') ? lora.substring(0, lora.lastIndexOf('/')) : '';
+        final triggers = triggerWords[lora];
 
         return Card(
           margin: const EdgeInsets.only(bottom: ThemeConstants.spacingSmall),
           child: ListTile(
             leading: const Icon(Icons.style_outlined),
             title: Text(name),
-            subtitle: folder.isNotEmpty ? Text(folder) : Text('From: $serverName'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (folder.isNotEmpty)
+                  Text(folder, style: Theme.of(context).textTheme.bodySmall)
+                else
+                  Text('From: $serverName', style: Theme.of(context).textTheme.bodySmall),
+                if (triggers != null && triggers.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 4,
+                    children: triggers
+                        .split(',')
+                        .map((t) => t.trim())
+                        .where((t) => t.isNotEmpty)
+                        .map((t) => Chip(
+                              label: Text(t, style: const TextStyle(fontSize: 11)),
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                            ))
+                        .toList(),
+                  ),
+                ],
+              ],
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.copy),
               tooltip: 'Copy name',

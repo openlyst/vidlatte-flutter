@@ -9,6 +9,7 @@ import '../../../data/models/comfy_server.dart';
 import '../../../data/models/llm_server.dart';
 import '../../../data/models/model_catalog.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/settings/lora_manager_dialog.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -212,6 +213,11 @@ class _ServerCard extends StatelessWidget {
                       icon: const Icon(Icons.download),
                       label: const Text('Fetch Models'),
                     ),
+                    FilledButton.tonalIcon(
+                      onPressed: () => _showLoraManager(context, server),
+                      icon: const Icon(Icons.style),
+                      label: const Text('Manage LoRAs'),
+                    ),
                     if (!isDefault)
                       FilledButton.tonalIcon(
                         onPressed: () => context
@@ -257,6 +263,14 @@ class _ServerCard extends StatelessWidget {
               ));
         },
       ),
+    );
+  }
+
+  void _showLoraManager(BuildContext context, ComfyServer server) {
+    context.read<ServersBloc>().add(LoraMetadataLoadRequested(server.id));
+    showDialog(
+      context: context,
+      builder: (ctx) => LoraManagerDialog(server: server),
     );
   }
 

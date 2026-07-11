@@ -324,8 +324,8 @@ class _AutoImagePageState extends State<AutoImagePage> {
                     onChanged: (id) => setState(() => _imageModel = id ?? ''),
                   ),
                   const SizedBox(height: ThemeConstants.spacingSmall),
-                  // LoRAs
-                  if ((state.catalogs[_selectedImageServerId]?.loras ?? []).isNotEmpty) ...[
+                  // LoRAs (visible only, with trigger words)
+                  if (state.visibleLorasFor(_selectedImageServerId!).isNotEmpty) ...[
                     Text('LoRAs', style: Theme.of(context).textTheme.labelLarge),
                     const SizedBox(height: 4),
                     Container(
@@ -336,12 +336,20 @@ class _AutoImagePageState extends State<AutoImagePage> {
                       ),
                       child: ListView(
                         shrinkWrap: true,
-                        children: (state.catalogs[_selectedImageServerId]?.loras ?? [])
-                            .map((lora) {
+                        children: state.visibleLorasFor(_selectedImageServerId!).map((lora) {
                           final name = lora.split('/').last;
+                          final triggers = state.triggerWordsFor(_selectedImageServerId!)[lora];
+                          final hasTriggers = triggers != null && triggers.isNotEmpty;
                           return CheckboxListTile(
                             dense: true,
-                            title: Text(name, overflow: TextOverflow.ellipsis),
+                            title: Row(
+                              children: [
+                                Expanded(child: Text(name, overflow: TextOverflow.ellipsis)),
+                                if (hasTriggers)
+                                  Icon(Icons.bolt, size: 14, color: Theme.of(context).colorScheme.secondary),
+                              ],
+                            ),
+                            subtitle: hasTriggers ? Text(triggers, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
                             value: _selectedLoras.contains(lora),
                             onChanged: (checked) {
                               setState(() {

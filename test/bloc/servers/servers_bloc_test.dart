@@ -72,6 +72,7 @@ void main() {
         when(() => storage.getServers()).thenReturn([]);
         when(() => storage.getDefaultServer()).thenReturn(null);
         when(() => storage.deleteServer(any())).thenAnswer((_) async {});
+        when(() => storage.deleteAllLoraMetadata(any())).thenAnswer((_) async {});
         return ServersBloc(storage: storage, comfy: comfy)
           ..emit(ServersState(
             status: ServersStatus.loaded,

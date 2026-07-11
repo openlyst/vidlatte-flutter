@@ -184,6 +184,8 @@ class _CreatePageState extends State<CreatePage> {
     ComfyServer server,
     dynamic catalog,
   ) {
+    final visibleLoras = serversState.visibleLorasFor(server.id);
+    final triggerWords = serversState.triggerWordsFor(server.id);
     return ListView(
       padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       children: [
@@ -194,7 +196,8 @@ class _CreatePageState extends State<CreatePage> {
         const SizedBox(height: ThemeConstants.spacingMedium),
         GenerationControls(
           models: catalog?.models as List<String>? ?? [],
-          loras: catalog?.loras as List<String>? ?? [],
+          loras: visibleLoras,
+          triggerWords: triggerWords,
           maxLoras: server.maxLoras,
           selectedModel: _selectedModel,
           selectedLoras: _selectedLoras,
@@ -237,6 +240,8 @@ class _CreatePageState extends State<CreatePage> {
     ComfyServer server,
     dynamic catalog,
   ) {
+    final visibleLoras = serversState.visibleLorasFor(server.id);
+    final triggerWords = serversState.triggerWordsFor(server.id);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -252,7 +257,8 @@ class _CreatePageState extends State<CreatePage> {
               const SizedBox(height: ThemeConstants.spacingMedium),
               GenerationControls(
                 models: catalog?.models as List<String>? ?? [],
-                loras: catalog?.loras as List<String>? ?? [],
+                loras: visibleLoras,
+                triggerWords: triggerWords,
                 maxLoras: server.maxLoras,
                 selectedModel: _selectedModel,
                 selectedLoras: _selectedLoras,

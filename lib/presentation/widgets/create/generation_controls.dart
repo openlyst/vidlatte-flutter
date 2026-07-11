@@ -6,6 +6,7 @@ import '../../../data/models/comfy_server.dart';
 class GenerationControls extends StatelessWidget {
   final List<String> models;
   final List<String> loras;
+  final Map<String, String> triggerWords;
   final int maxLoras;
   final String selectedModel;
   final List<String> selectedLoras;
@@ -29,6 +30,7 @@ class GenerationControls extends StatelessWidget {
     super.key,
     required this.models,
     required this.loras,
+    this.triggerWords = const {},
     required this.maxLoras,
     required this.selectedModel,
     required this.selectedLoras,
@@ -68,6 +70,7 @@ class GenerationControls extends StatelessWidget {
         if (loras.isNotEmpty) ...[
           _LoraSelector(
             loras: loras,
+            triggerWords: triggerWords,
             selectedLoras: selectedLoras,
             maxLoras: maxLoras,
             onChanged: onLorasChanged,
@@ -161,12 +164,14 @@ class _ModelSelector extends StatelessWidget {
 
 class _LoraSelector extends StatelessWidget {
   final List<String> loras;
+  final Map<String, String> triggerWords;
   final List<String> selectedLoras;
   final int maxLoras;
   final ValueChanged<List<String>> onChanged;
 
   const _LoraSelector({
     required this.loras,
+    required this.triggerWords,
     required this.selectedLoras,
     required this.maxLoras,
     required this.onChanged,
@@ -195,18 +200,32 @@ class _LoraSelector extends StatelessWidget {
           children: loras.map((lora) {
             final selected = selectedLoras.contains(lora);
             final name = lora.split('/').last;
-            return FilterChip(
-              label: Text(name),
-              selected: selected,
-              onSelected: (selected) {
-                if (selected) {
-                  if (selectedLoras.length < maxLoras) {
-                    onChanged([...selectedLoras, lora]);
+            final triggers = triggerWords[lora];
+            final hasTriggers = triggers != null && triggers.isNotEmpty;
+            return Tooltip(
+              message: hasTriggers ? 'Triggers: $triggers' : 'No trigger words set',
+              child: FilterChip(
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(name),
+                    if (hasTriggers) ...[
+                      const SizedBox(width: 4),
+                      Icon(Icons.bolt, size: 12, color: theme.colorScheme.secondary),
+                    ],
+                  ],
+                ),
+                selected: selected,
+                onSelected: (selected) {
+                  if (selected) {
+                    if (selectedLoras.length < maxLoras) {
+                      onChanged([...selectedLoras, lora]);
+                    }
+                  } else {
+                    onChanged(selectedLoras.where((l) => l != lora).toList());
                   }
-                } else {
-                  onChanged(selectedLoras.where((l) => l != lora).toList());
-                }
-              },
+                },
+              ),
             );
           }).toList(),
         ),

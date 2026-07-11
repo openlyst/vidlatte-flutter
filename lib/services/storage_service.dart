@@ -12,6 +12,7 @@ import '../data/models/collection.dart';
 import '../data/models/comfy_server.dart';
 import '../data/models/generated_image.dart';
 import '../data/models/llm_server.dart';
+import '../data/models/lora_metadata.dart';
 import '../data/models/studio_session.dart';
 
 class StorageService {
@@ -21,6 +22,7 @@ class StorageService {
   late Box _settingsBox;
   late Box _sessionsBox;
   late Box _llmServersBox;
+  late Box _loraMetaBox;
   late Directory _imageDir;
 
   Future<void> init() async {
@@ -32,6 +34,7 @@ class StorageService {
     _settingsBox = await Hive.openBox(StorageKeys.settings);
     _sessionsBox = await Hive.openBox('sessions');
     _llmServersBox = await Hive.openBox('llm_servers');
+    _loraMetaBox = await Hive.openBox('lora_metadata');
 
     final appDir = await getApplicationDocumentsDirectory();
     _imageDir = Directory(p.join(appDir.path, 'vidlatte_images'));
@@ -216,6 +219,7 @@ class StorageService {
     await _settingsBox.clear();
     await _sessionsBox.clear();
     await _llmServersBox.clear();
+    await _loraMetaBox.clear();
     if (_imageDir.existsSync()) {
       await _imageDir.delete(recursive: true);
       await _imageDir.create(recursive: true);
@@ -245,5 +249,67 @@ class StorageService {
     if (raw == null) return null;
     final json = jsonDecode(raw as String) as Map<String, dynamic>;
     return LlmServer.fromJson(json);
+  }
+
+  // --- LoRA Metadata ---
+
+  String _loraMetaKey(String serverId, String loraName) => '$serverId::$loraName';
+
+  List<LoraMetadata> getAllLoraMetadata(String serverId) {
+    final prefix = '$serverId::';
+    return _loraMetaBox.keys
+        .where((k) => (k as String).startsWith(prefix))
+        .map((k) {
+          final raw = _loraMetaBox.get(k);
+          if (raw == null) return null;
+          return LoraMetadata.fromJson(jsonDecode(raw as String) as Map<String, dynamic>);
+        })
+        .whereType<LoraMetadata>()
+        .toList()
+      ..sort((a, b) => a.loraName.compareTo(b.loraName));
+  }
+
+  LoraMetadata? getLoraMetadata(String serverId, String loraName) {
+    final raw = _loraMetaBox.get(_loraMetaKey(serverId, loraName));
+    if (raw == null) return null;
+    return LoraMetadata.fromJson(jsonDecode(raw as String) as Map<String, dynamic>);
+  }
+
+  Future<void> saveLoraMetadata(LoraMetadata meta) async {
+    await _loraMetaBox.put(
+      _loraMetaKey(meta.serverId, meta.loraName),
+      jsonEncode(meta.toJson()),
+    );
+  }
+
+  Future<void> saveLoraMetadataBatch(String serverId, List<LoraMetadata> items) async {
+    for (final meta in items) {
+      await _loraMetaBox.put(
+        _loraMetaKey(meta.serverId, meta.loraName),
+        jsonEncode(meta.toJson()),
+      );
+    }
+  }
+
+  Future<void> deleteLoraMetadata(String serverId, String loraName) async {
+    await _loraMetaBox.delete(_loraMetaKey(serverId, loraName));
+  }
+
+  Future<void> deleteAllLoraMetadata(String serverId) async {
+    final prefix = '$serverId::';
+    final keys = _loraMetaBox.keys.where((k) => (k as String).startsWith(prefix)).toList();
+    await _loraMetaBox.deleteAll(keys);
+  }
+
+  Map<String, String> getLoraTriggerWords(String serverId) {
+    final metas = getAllLoraMetadata(serverId);
+    return {for (final m in metas) m.loraName: m.triggerWords};
+  }
+
+  Set<String> getDisabledLoras(String serverId) {
+    return getAllLoraMetadata(serverId)
+        .where((m) => !m.isEnabled)
+        .map((m) => m.loraName)
+        .toSet();
   }
 }
