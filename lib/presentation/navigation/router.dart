@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../pages/browse/browse_page.dart';
 import '../pages/create/create_page.dart';
+import '../pages/create/inpaint_page.dart';
 import '../pages/gallery/gallery_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/studio/studio_page.dart';
@@ -42,6 +43,10 @@ class AppRouter {
       GoRoute(
         path: '/browse',
         builder: (context, state) => const BrowsePage(),
+      ),
+      GoRoute(
+        path: '/inpaint',
+        builder: (context, state) => const InpaintPage(),
       ),
     ],
   );

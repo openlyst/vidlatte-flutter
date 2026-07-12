@@ -263,6 +263,11 @@ class _CreatePageState extends State<CreatePage> {
               onPressed: _showPromptHistory,
             ),
             IconButton(
+              icon: const Icon(Icons.brush),
+              tooltip: s.inpaint,
+              onPressed: () => context.push('/inpaint'),
+            ),
+            IconButton(
               icon: const Icon(Icons.bolt_outlined),
               tooltip: s.autoImageTooltip,
               onPressed: () => setState(() => _isAutoImageMode = true),

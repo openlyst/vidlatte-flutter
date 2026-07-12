@@ -96,6 +96,17 @@ abstract class AppStrings {
   String get upscaleDone;
   String get upscaleFailed;
 
+  // Inpainting
+  String get inpaint;
+  String get inpaintHint;
+  String get brushSize;
+  String get clearMask;
+  String get maskEraser;
+  String get inpaintDenoise;
+  String get inpaintDenoiseHint;
+  String get noInpaintImage;
+  String get selectInpaintImage;
+
   // Create page
   String get createTitle;
   String get autoImageTitle;

@@ -157,6 +157,24 @@ class AppStringsEn extends AppStrings {
   String get upscaleDone => 'Upscaling complete';
   @override
   String get upscaleFailed => 'Upscaling failed';
+  @override
+  String get inpaint => 'Inpaint';
+  @override
+  String get inpaintHint => 'Paint over areas to regenerate';
+  @override
+  String get brushSize => 'Brush Size';
+  @override
+  String get clearMask => 'Clear Mask';
+  @override
+  String get maskEraser => 'Eraser';
+  @override
+  String get inpaintDenoise => 'Inpaint Strength';
+  @override
+  String get inpaintDenoiseHint => 'How much to change the masked area';
+  @override
+  String get noInpaintImage => 'Select an image to start inpainting';
+  @override
+  String get selectInpaintImage => 'Select Image';
 
   @override
   String get createTitle => 'Create';

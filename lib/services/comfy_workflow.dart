@@ -294,4 +294,133 @@ class ComfyWorkflow {
       },
     };
   }
+
+  static Map<String, dynamic> inpaint(
+    String imageFilename,
+    String imageSubfolder,
+    String imageType,
+    String maskFilename,
+    String maskSubfolder,
+    String maskType, {
+    required String prompt,
+    String negativePrompt = '',
+    required String model,
+    List<String> loras = const [],
+    Map<String, double> loraWeights = const {},
+    int seed = 0,
+    int steps = 20,
+    double cfg = 7.0,
+    double denoise = 0.75,
+  }) {
+    final loadImageInputs = <String, dynamic>{
+      'image': imageFilename,
+    };
+    if (imageSubfolder.isNotEmpty) loadImageInputs['subfolder'] = imageSubfolder;
+    if (imageType.isNotEmpty) loadImageInputs['type'] = imageType;
+
+    final loadMaskInputs = <String, dynamic>{
+      'image': maskFilename,
+    };
+    if (maskSubfolder.isNotEmpty) loadMaskInputs['subfolder'] = maskSubfolder;
+    if (maskType.isNotEmpty) loadMaskInputs['type'] = maskType;
+
+    final workflow = <String, dynamic>{
+      '1': {
+        'inputs': {'ckpt_name': model},
+        'class_type': 'CheckpointLoaderSimple',
+      },
+      '2': {
+        'inputs': {
+          'text': prompt,
+          'clip': ['1', 1],
+        },
+        'class_type': 'CLIPTextEncode',
+      },
+      '3': {
+        'inputs': {
+          'text': negativePrompt,
+          'clip': ['1', 1],
+        },
+        'class_type': 'CLIPTextEncode',
+      },
+      '10': {
+        'inputs': loadImageInputs,
+        'class_type': 'LoadImage',
+      },
+      '11': {
+        'inputs': loadMaskInputs,
+        'class_type': 'LoadImage',
+      },
+      '12': {
+        'inputs': {
+          'pixels': ['10', 0],
+          'vae': ['1', 2],
+        },
+        'class_type': 'VAEEncode',
+      },
+      '13': {
+        'inputs': {
+          'samples': ['12', 0],
+          'mask': ['11', 1],
+        },
+        'class_type': 'SetLatentMask',
+      },
+      '5': {
+        'inputs': {
+          'seed': seed,
+          'steps': steps,
+          'cfg': cfg,
+          'sampler_name': 'euler',
+          'scheduler': 'normal',
+          'denoise': denoise,
+          'model': ['1', 0],
+          'positive': ['2', 0],
+          'negative': ['3', 0],
+          'latent_image': ['13', 0],
+        },
+        'class_type': 'KSampler',
+      },
+      '6': {
+        'inputs': {
+          'samples': ['5', 0],
+          'vae': ['1', 2],
+        },
+        'class_type': 'VAEDecode',
+      },
+      '7': {
+        'inputs': {
+          'filename_prefix': 'vidlatte_inpaint',
+          'images': ['6', 0],
+        },
+        'class_type': 'SaveImage',
+      },
+    };
+
+    if (loras.isNotEmpty) {
+      var currentModelRef = ['1', 0];
+      var currentClipRef = ['1', 1];
+      var nodeId = 20;
+      for (final lora in loras) {
+        final weight = loraWeights[lora] ?? 0.8;
+        workflow[nodeId.toString()] = {
+          'inputs': {
+            'lora_name': lora,
+            'strength_model': weight,
+            'strength_clip': weight,
+            'model': currentModelRef,
+            'clip': currentClipRef,
+          },
+          'class_type': 'LoraLoader',
+        };
+        currentModelRef = [nodeId.toString(), 0];
+        currentClipRef = [nodeId.toString(), 1];
+        nodeId++;
+      }
+      workflow['5']['inputs']['model'] = currentModelRef;
+      workflow['2']['inputs']['clip'] = currentClipRef;
+      workflow['3']['inputs']['clip'] = currentClipRef;
+    }
+
+    return workflow;
+  }
 }
