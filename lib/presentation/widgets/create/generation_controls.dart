@@ -4,6 +4,7 @@ import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/comfy_server.dart';
 import '../../../i18n/app_strings.dart';
+import '../common/model_dropdown.dart';
 import 'lora_picker_dialog.dart';
 
 class GenerationControls extends StatelessWidget {
@@ -32,6 +33,7 @@ class GenerationControls extends StatelessWidget {
   final ValueChanged<bool?> onHiresFixChanged;
   final ValueChanged<(int, int)> onDimensionsChanged;
   final ValueChanged<String> onServerChanged;
+  final VoidCallback? onRefreshModels;
 
   const GenerationControls({
     super.key,
@@ -59,6 +61,7 @@ class GenerationControls extends StatelessWidget {
     required this.onHiresFixChanged,
     required this.onDimensionsChanged,
     required this.onServerChanged,
+    this.onRefreshModels,
   });
 
   @override
@@ -74,10 +77,14 @@ class GenerationControls extends StatelessWidget {
           ),
           const SizedBox(height: ThemeConstants.spacingMedium),
         ],
-        _ModelSelector(
+        ModelDropdown(
           models: models,
-          selectedModel: selectedModel,
-          onChanged: onModelChanged,
+          selectedModel: selectedModel.isEmpty ? null : selectedModel,
+          onChanged: (v) => onModelChanged(v ?? ''),
+          label: AppStrings.of(context).model,
+          hintText: models.isEmpty ? AppStrings.of(context).loadingModels : AppStrings.of(context).selectModelHint,
+          onRefresh: onRefreshModels,
+          displayAsFilename: true,
         ),
         const SizedBox(height: ThemeConstants.spacingMedium),
         if (loras.isNotEmpty) ...[
@@ -136,40 +143,6 @@ class _ServerSelector extends StatelessWidget {
           decoration: InputDecoration(hintText: AppStrings.of(context).selectServer),
           items: servers.map((s) {
             return DropdownMenuItem(value: s.id, child: Text(s.name));
-          }).toList(),
-          onChanged: (v) => onChanged(v!),
-        ),
-      ],
-    );
-  }
-}
-
-class _ModelSelector extends StatelessWidget {
-  final List<String> models;
-  final String selectedModel;
-  final ValueChanged<String> onChanged;
-
-  const _ModelSelector({
-    required this.models,
-    required this.selectedModel,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(AppStrings.of(context).model, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: ThemeConstants.spacingSmall),
-        DropdownButtonFormField<String>(
-          initialValue: selectedModel.isEmpty ? null : selectedModel,
-          decoration: InputDecoration(
-            hintText: models.isEmpty ? AppStrings.of(context).loadingModels : AppStrings.of(context).selectModelHint,
-          ),
-          items: models.map((m) {
-            final name = m.split('/').last;
-            return DropdownMenuItem(value: m, child: Text(name, overflow: TextOverflow.ellipsis));
           }).toList(),
           onChanged: (v) => onChanged(v!),
         ),

@@ -265,16 +265,36 @@ class _InpaintPageState extends State<InpaintPage> {
                       padding: const EdgeInsets.symmetric(
                         horizontal: ThemeConstants.spacingMedium,
                       ),
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedModel.isEmpty ? null : _selectedModel,
-                        decoration: InputDecoration(
-                          hintText: models.isEmpty ? s.loadingModels : s.selectModelHint,
-                          isDense: true,
-                        ),
-                        items: models.map((m) {
-                          return DropdownMenuItem(value: m, child: Text(m, overflow: TextOverflow.ellipsis));
-                        }).toList(),
-                        onChanged: (v) => setState(() => _selectedModel = v ?? ''),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(s.model, style: Theme.of(context).textTheme.labelMedium),
+                              const Spacer(),
+                              IconButton(
+                                onPressed: server != null
+                                    ? () => context.read<ServersBloc>().add(ServerModelsFetchRequested(server.id))
+                                    : null,
+                                icon: const Icon(Icons.refresh, size: 20),
+                                tooltip: 'Refresh',
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedModel.isEmpty ? null : _selectedModel,
+                            decoration: InputDecoration(
+                              hintText: models.isEmpty ? s.loadingModels : s.selectModelHint,
+                              isDense: true,
+                            ),
+                            items: models.map((m) {
+                              return DropdownMenuItem(value: m, child: Text(m, overflow: TextOverflow.ellipsis));
+                            }).toList(),
+                            onChanged: (v) => setState(() => _selectedModel = v ?? ''),
+                          ),
+                        ],
                       ),
                     );
                   },

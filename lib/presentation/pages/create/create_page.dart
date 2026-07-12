@@ -421,6 +421,7 @@ class _CreatePageState extends State<CreatePage> {
             onModelChanged: (m) => setState(() => _controlnetModel = m),
             onImageChanged: (bytes) => setState(() => _controlImageBytes = bytes),
             onStrengthChanged: (v) => setState(() => _controlnetStrength = v),
+            onRefreshModels: () => context.read<ServersBloc>().add(ServerModelsFetchRequested(server.id)),
           ),
         ],
         const SizedBox(height: ThemeConstants.spacingMedium),
@@ -454,6 +455,7 @@ class _CreatePageState extends State<CreatePage> {
             _selectedLoras = [];
             _loraWeights = {};
           }),
+          onRefreshModels: () => context.read<ServersBloc>().add(ServerModelsFetchRequested(server.id)),
         ),
         const SizedBox(height: ThemeConstants.spacingLarge),
         SizedBox(
