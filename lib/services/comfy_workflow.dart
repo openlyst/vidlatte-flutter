@@ -407,7 +407,7 @@ class ComfyWorkflow {
           'samples': ['12', 0],
           'mask': ['11', 1],
         },
-        'class_type': 'SetLatentMask',
+        'class_type': 'SetLatentNoiseMask',
       },
       '5': {
         'inputs': {

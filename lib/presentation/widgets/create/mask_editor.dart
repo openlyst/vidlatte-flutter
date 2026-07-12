@@ -10,12 +10,11 @@ class MaskEditor extends StatefulWidget {
   final GlobalKey<MaskEditorState> exportKey;
 
   const MaskEditor({
-    super.key,
     required this.imageBytes,
     this.brushSize = 30,
     this.isEraser = false,
     required this.exportKey,
-  });
+  }) : super(key: exportKey);
 
   @override
   State<MaskEditor> createState() => MaskEditorState();
@@ -96,44 +95,51 @@ class MaskEditorState extends State<MaskEditor> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final displayWidth = constraints.maxWidth;
-        final displayHeight = _imageSize.height * (displayWidth / _imageSize.width);
+        final availW = constraints.maxWidth;
+        final availH = constraints.maxHeight;
+        final imgAspect = _imageSize.width / _imageSize.height;
 
-        return Column(
-          children: [
-            SizedBox(
-              width: displayWidth,
-              height: displayHeight,
-              child: GestureDetector(
-                onPanStart: (details) {
-                  _points.clear();
-                  _points.add(_toImageCoords(details.localPosition, Size(displayWidth, displayHeight)));
-                  _strokes.add(List.from(_points));
-                },
-                onPanUpdate: (details) {
-                  final point = _toImageCoords(details.localPosition, Size(displayWidth, displayHeight));
-                  _points.add(point);
-                  _strokes.last.add(point);
-                  _repaintNotifier.notifyListeners();
-                },
-                onPanEnd: (_) {
-                  _repaintNotifier.notifyListeners();
-                },
-                child: ClipRect(
-                  child: CustomPaint(
-                    painter: _MaskPainter(
-                      image: _image!,
-                      strokes: _strokes,
-                      brushSize: widget.brushSize,
-                      isEraser: widget.isEraser,
-                      repaintNotifier: _repaintNotifier,
-                    ),
-                    size: Size(displayWidth, displayHeight),
+        double displayWidth = availW;
+        double displayHeight = displayWidth / imgAspect;
+
+        if (displayHeight > availH) {
+          displayHeight = availH;
+          displayWidth = displayHeight * imgAspect;
+        }
+
+        return Center(
+          child: SizedBox(
+            width: displayWidth,
+            height: displayHeight,
+            child: GestureDetector(
+              onPanStart: (details) {
+                _points.clear();
+                _points.add(_toImageCoords(details.localPosition, Size(displayWidth, displayHeight)));
+                _strokes.add(List.from(_points));
+              },
+              onPanUpdate: (details) {
+                final point = _toImageCoords(details.localPosition, Size(displayWidth, displayHeight));
+                _points.add(point);
+                _strokes.last.add(point);
+                _repaintNotifier.notifyListeners();
+              },
+              onPanEnd: (_) {
+                _repaintNotifier.notifyListeners();
+              },
+              child: ClipRect(
+                child: CustomPaint(
+                  painter: _MaskPainter(
+                    image: _image!,
+                    strokes: _strokes,
+                    brushSize: widget.brushSize,
+                    isEraser: widget.isEraser,
+                    repaintNotifier: _repaintNotifier,
                   ),
+                  size: Size(displayWidth, displayHeight),
                 ),
               ),
             ),
-          ],
+          ),
         );
       },
     );

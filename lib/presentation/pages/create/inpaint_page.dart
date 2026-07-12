@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
+import '../../../bloc/settings/settings_bloc.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/generated_image.dart';
@@ -26,11 +27,25 @@ class _InpaintPageState extends State<InpaintPage> {
   double _brushSize = 30;
   bool _isEraser = false;
   double _denoise = 0.75;
+  String _selectedModel = '';
+  bool _loadedSettings = false;
   final _promptController = TextEditingController();
   final _negativeController = TextEditingController();
   final _maskKey = GlobalKey<MaskEditorState>();
   final _picker = ImagePicker();
   bool _uploading = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loadedSettings) {
+      _loadedSettings = true;
+      final settings = context.read<SettingsBloc>().state.settings;
+      if (settings.lastModel.isNotEmpty) {
+        _selectedModel = settings.lastModel;
+      }
+    }
+  }
 
   void _pickImage() async {
     final result = await _picker.pickImage(source: ImageSource.gallery);
@@ -55,6 +70,16 @@ class _InpaintPageState extends State<InpaintPage> {
       return;
     }
     final server = serversState.servers.first;
+
+    if (_selectedModel.isEmpty) {
+      debugPrint('[inpaint] no model selected');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.selectModel)),
+        );
+      }
+      return;
+    }
 
     final maskState = _maskKey.currentState;
     if (maskState == null) {
@@ -116,7 +141,7 @@ class _InpaintPageState extends State<InpaintPage> {
         maskType: uploadedMask.type,
         prompt: _promptController.text.trim(),
         negativePrompt: _negativeController.text.trim(),
-        model: '',
+        model: _selectedModel,
         denoise: _denoise,
       );
       debugPrint('[inpaint] result success=${result.success} hasBytes=${result.imageBytes != null}');
@@ -132,7 +157,7 @@ class _InpaintPageState extends State<InpaintPage> {
           id: uuid,
           prompt: _promptController.text.trim(),
           negativePrompt: _negativeController.text.trim(),
-          model: '',
+          model: _selectedModel,
           loras: const [],
           loraWeights: const {},
           width: 0,
@@ -227,6 +252,32 @@ class _InpaintPageState extends State<InpaintPage> {
                     ),
                     maxLines: 2,
                   ),
+                ),
+                BlocBuilder<ServersBloc, ServersState>(
+                  builder: (context, serversState) {
+                    final server = serversState.servers.isNotEmpty
+                        ? serversState.servers.first
+                        : null;
+                    final models = server != null
+                        ? (serversState.catalogs[server.id]?.models ?? [])
+                        : <String>[];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ThemeConstants.spacingMedium,
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedModel.isEmpty ? null : _selectedModel,
+                        decoration: InputDecoration(
+                          hintText: models.isEmpty ? s.loadingModels : s.selectModelHint,
+                          isDense: true,
+                        ),
+                        items: models.map((m) {
+                          return DropdownMenuItem(value: m, child: Text(m, overflow: TextOverflow.ellipsis));
+                        }).toList(),
+                        onChanged: (v) => setState(() => _selectedModel = v ?? ''),
+                      ),
+                    );
+                  },
                 ),
                 Expanded(
                   child: Padding(
