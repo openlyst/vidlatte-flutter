@@ -75,48 +75,17 @@ class _StudioPageState extends State<StudioPage> {
             );
           }
 
-          return _SessionDetail(session: state.selectedSession);
+          return _SessionDetail(
+            session: state.selectedSession,
+            sessions: state.sessions,
+          );
         },
       ),
     );
   }
 
   void _createSession(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('New Session'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Session name'),
-            onSubmitted: (_) {
-              if (controller.text.trim().isNotEmpty) {
-                context.read<StudioBloc>().add(StudioSessionCreated(controller.text.trim()));
-              }
-              Navigator.of(ctx).pop();
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  context.read<StudioBloc>().add(StudioSessionCreated(controller.text.trim()));
-                }
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        );
-      },
-    );
+    _showCreateSessionDialog(context);
   }
 }
 
@@ -200,8 +169,9 @@ class _SessionList extends StatelessWidget {
 
 class _SessionDetail extends StatefulWidget {
   final StudioSession? session;
+  final List<StudioSession> sessions;
 
-  const _SessionDetail({this.session});
+  const _SessionDetail({this.session, this.sessions = const []});
 
   @override
   State<_SessionDetail> createState() => _SessionDetailState();
@@ -428,43 +398,167 @@ class _SessionDetailState extends State<_SessionDetail> {
 
   Widget _buildSessionHeader(BuildContext context, StudioSession s) {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final hasMultipleSessions = widget.sessions.length > 1;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: ext.surfaceElevated,
         borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
         border: Border.all(color: ext.border, width: 0.5),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: ThemeConstants.spacingLarge,
-          vertical: ThemeConstants.spacingMedium,
+      child: InkWell(
+        onTap: hasMultipleSessions ? () => _showSessionPicker(context) : null,
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: ThemeConstants.spacingLarge,
+            vertical: ThemeConstants.spacingMedium,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.folder, color: ext.accent, size: 28),
+              const SizedBox(width: ThemeConstants.spacingMedium),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.title, style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${s.images.length} images',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ext.muted),
+                    ),
+                  ],
+                ),
+              ),
+              if (hasMultipleSessions)
+                Padding(
+                  padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
+                  child: Icon(Icons.unfold_more, color: ext.muted, size: 20),
+                ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                color: ext.muted,
+                onPressed: () => _confirmDelete(context, s.id),
+                tooltip: 'Delete Session',
+              ),
+            ],
+          ),
         ),
-        child: Row(
+      ),
+    );
+  }
+
+  void _showSessionPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      ),
+      builder: (ctx) {
+        final ext = Theme.of(ctx).extension<AppColors>()!;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.folder, color: ext.accent, size: 28),
-            const SizedBox(width: ThemeConstants.spacingMedium),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                ThemeConstants.spacingLarge,
+                ThemeConstants.spacingMedium,
+                ThemeConstants.spacingLarge,
+                ThemeConstants.spacingSmall,
+              ),
+              child: Row(
                 children: [
-                  Text(s.title, style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${s.images.length} images',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ext.muted),
+                  Text('Sessions', style: Theme.of(ctx).textTheme.titleLarge),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      _showCreateSessionDialog(context);
+                    },
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('New'),
                   ),
                 ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              color: ext.muted,
-              onPressed: () => _confirmDelete(context, s.id),
-              tooltip: 'Delete Session',
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(
+                  ThemeConstants.spacingSmall,
+                  0,
+                  ThemeConstants.spacingSmall,
+                  ThemeConstants.spacingMedium,
+                ),
+                itemCount: widget.sessions.length,
+                itemBuilder: (ctx, index) {
+                  final session = widget.sessions[index];
+                  final selected = session.id == widget.session?.id;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: ThemeConstants.spacingXSmall),
+                    child: Material(
+                      color: selected ? ext.accent.withValues(alpha: 0.12) : ext.surfaceElevated,
+                      borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                      clipBehavior: Clip.antiAlias,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: selected ? ext.accent.withValues(alpha: 0.4) : ext.border,
+                            width: 0.5,
+                          ),
+                          borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            context.read<StudioBloc>().add(StudioSessionSelected(session.id));
+                            Navigator.of(ctx).pop();
+                          },
+                          borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: ThemeConstants.spacingMedium,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.folder_outlined,
+                                  size: 20,
+                                  color: selected ? ext.accent : ext.muted,
+                                ),
+                                const SizedBox(width: ThemeConstants.spacingSmall),
+                                Expanded(
+                                  child: Text(
+                                    session.title,
+                                    style: TextStyle(
+                                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                                      color: selected
+                                          ? Theme.of(ctx).colorScheme.onSurface
+                                          : ext.muted,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  '${session.images.length}',
+                                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                                        color: selected ? ext.accent : ext.muted,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -531,4 +625,42 @@ class _SessionDetailState extends State<_SessionDetail> {
       builder: (_) => ImageDetailModal(image: image),
     );
   }
+}
+
+void _showCreateSessionDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      final controller = TextEditingController();
+      return AlertDialog(
+        title: const Text('New Session'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Session name'),
+          onSubmitted: (_) {
+            if (controller.text.trim().isNotEmpty) {
+              context.read<StudioBloc>().add(StudioSessionCreated(controller.text.trim()));
+            }
+            Navigator.of(ctx).pop();
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                context.read<StudioBloc>().add(StudioSessionCreated(controller.text.trim()));
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      );
+    },
+  );
 }
