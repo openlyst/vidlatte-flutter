@@ -1,6 +1,6 @@
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class MaskEditor extends StatefulWidget {
@@ -49,7 +49,10 @@ class MaskEditorState extends State<MaskEditor> {
   }
 
   Future<Uint8List> exportMask() async {
-    if (_image == null) return Uint8List(0);
+    if (_image == null) {
+      debugPrint('[mask] exportMask called before image loaded');
+      return Uint8List(0);
+    }
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -73,7 +76,11 @@ class MaskEditorState extends State<MaskEditor> {
     final picture = recorder.endRecording();
     final img = await picture.toImage(_image!.width, _image!.height);
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
+    if (byteData == null) {
+      debugPrint('[mask] toByteData returned null');
+      return Uint8List(0);
+    }
+    return byteData.buffer.asUint8List();
   }
 
   Offset _toImageCoords(Offset localPos, Size widgetSize) {

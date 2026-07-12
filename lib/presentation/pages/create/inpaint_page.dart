@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -42,7 +41,10 @@ class _InpaintPageState extends State<InpaintPage> {
   }
 
   void _generate() async {
-    if (_imageBytes == null) return;
+    if (_imageBytes == null) {
+      debugPrint('[inpaint] _generate called with no image bytes');
+      return;
+    }
     final s = AppStrings.of(context);
 
     final serversState = context.read<ServersBloc>().state;
@@ -54,25 +56,56 @@ class _InpaintPageState extends State<InpaintPage> {
     }
     final server = serversState.servers.first;
 
+    final maskState = _maskKey.currentState;
+    if (maskState == null) {
+      debugPrint('[inpaint] MaskEditor state is null — widget not mounted yet');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Mask editor not ready, try again')),
+        );
+      }
+      return;
+    }
+
     setState(() => _uploading = true);
 
     try {
       final comfy = ComfyService();
       final ts = DateTime.now().millisecondsSinceEpoch;
 
+      debugPrint('[inpaint] uploading source image');
       final uploadedImage = await comfy.uploadImage(
         server,
         _imageBytes!,
         'vidlatte_inpaint_$ts.png',
       );
+      debugPrint('[inpaint] uploaded image: ${uploadedImage.filename}');
 
-      final maskBytes = await _maskKey.currentState!.exportMask();
+      debugPrint('[inpaint] exporting mask');
+      final maskBytes = await maskState.exportMask();
+      debugPrint('[inpaint] mask bytes length: ${maskBytes.length}');
+
+      if (maskBytes.isEmpty) {
+        debugPrint('[inpaint] mask is empty — image may still be loading');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Image still loading, try again in a moment')),
+          );
+        }
+        comfy.dispose();
+        if (mounted) setState(() => _uploading = false);
+        return;
+      }
+
+      debugPrint('[inpaint] uploading mask');
       final uploadedMask = await comfy.uploadImage(
         server,
         maskBytes,
         'vidlatte_mask_$ts.png',
       );
+      debugPrint('[inpaint] uploaded mask: ${uploadedMask.filename}');
 
+      debugPrint('[inpaint] submitting inpaint workflow');
       final result = await comfy.inpaint(
         server,
         imageFilename: uploadedImage.filename,
@@ -86,6 +119,7 @@ class _InpaintPageState extends State<InpaintPage> {
         model: '',
         denoise: _denoise,
       );
+      debugPrint('[inpaint] result success=${result.success} hasBytes=${result.imageBytes != null}');
       comfy.dispose();
 
       if (result.success && result.imageBytes != null) {
@@ -125,7 +159,8 @@ class _InpaintPageState extends State<InpaintPage> {
           SnackBar(content: Text(s.faceRestoreFailed)),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[inpaint] error: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Inpaint failed: $e')),
