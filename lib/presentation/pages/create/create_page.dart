@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../bloc/autogen/autogen_bloc.dart';
 import '../../../bloc/generation/generation_bloc.dart';
+import '../../../bloc/prompt_history/prompt_history_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../bloc/settings/settings_bloc.dart';
 import '../../../config/constants.dart';
@@ -21,7 +22,9 @@ import '../../widgets/create/generation_controls.dart';
 import '../../widgets/create/img2img_input.dart';
 import '../../widgets/create/prompt_input.dart';
 import '../../widgets/create/progress_card.dart';
+import '../../widgets/create/prompt_history_sheet.dart';
 import '../../widgets/create/queue_card.dart';
+import '../../../data/models/prompt_history_entry.dart';
 import '../../../i18n/app_strings.dart';
 
 class CreatePage extends StatefulWidget {
@@ -122,6 +125,21 @@ class _CreatePageState extends State<CreatePage> {
     } catch (_) {}
   }
 
+  Future<void> _showPromptHistory() async {
+    final result = await showModalBottomSheet<PromptHistoryEntry>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => const PromptHistorySheet(),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _promptController.text = result.prompt;
+        _negativePromptController.text = result.negativePrompt ?? '';
+      });
+    }
+  }
+
   Future<void> _generate() async {
     final serversState = context.read<ServersBloc>().state;
     ComfyServer? server;
@@ -161,6 +179,15 @@ class _CreatePageState extends State<CreatePage> {
     }
 
     _persistSettings();
+
+    context.read<PromptHistoryBloc>().add(PromptHistoryEntryAdded(
+          prompt: _promptController.text.trim(),
+          negativePrompt: _negativePromptController.text.trim().isEmpty
+              ? null
+              : _negativePromptController.text.trim(),
+          model: _selectedModel,
+          loras: _selectedLoras,
+        ));
 
     String? refFilename;
     String? refSubfolder;
@@ -229,6 +256,11 @@ class _CreatePageState extends State<CreatePage> {
               icon: const Icon(Icons.explore_outlined),
               tooltip: s.browseModelsLoras,
               onPressed: () => context.go('/browse'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: s.promptHistoryTooltip,
+              onPressed: _showPromptHistory,
             ),
             IconButton(
               icon: const Icon(Icons.bolt_outlined),

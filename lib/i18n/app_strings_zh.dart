@@ -341,6 +341,23 @@ class AppStringsZh extends AppStrings {
   String get deletePlaylistTooltip => '删除播放列表';
 
   @override
+  String get selectMode => '选择';
+  @override
+  String get selectAll => '全选';
+  @override
+  String get deselectAll => '取消全选';
+  @override
+  String get bulkDelete => '删除所选';
+  @override
+  String get bulkFavorite => '收藏所选';
+  @override
+  String get bulkMoveToCollection => '移到合集';
+  @override
+  String get selectedCount => '已选';
+  @override
+  String confirmBulkDelete(int count) => '删除 $count 张图片？';
+
+  @override
   String get studioTitle => '工作室';
   @override
   String get noStudioSessions => '无工作室会话';
@@ -545,4 +562,17 @@ class AppStringsZh extends AppStrings {
   String get lorasCount => 'LoRA';
   @override
   String imageMeta(String model, int width, int height, int seed) => '$model · ${width}x$height · 种子：$seed';
+
+  @override
+  String get promptHistory => '提示词历史';
+  @override
+  String get noPromptHistory => '暂无历史';
+  @override
+  String get noPromptHistoryMsg => '生成的提示词将显示在这里';
+  @override
+  String get clearHistory => '全部清除';
+  @override
+  String get searchPrompts => '搜索提示词...';
+  @override
+  String get promptHistoryTooltip => '提示词历史';
 }

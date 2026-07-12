@@ -341,6 +341,23 @@ class AppStringsEn extends AppStrings {
   String get deletePlaylistTooltip => 'Delete playlist';
 
   @override
+  String get selectMode => 'Select';
+  @override
+  String get selectAll => 'Select All';
+  @override
+  String get deselectAll => 'Deselect All';
+  @override
+  String get bulkDelete => 'Delete Selected';
+  @override
+  String get bulkFavorite => 'Favorite Selected';
+  @override
+  String get bulkMoveToCollection => 'Move to Collection';
+  @override
+  String get selectedCount => 'selected';
+  @override
+  String confirmBulkDelete(int count) => 'Delete $count images?';
+
+  @override
   String get studioTitle => 'Studio';
   @override
   String get noStudioSessions => 'No Studio Sessions';
@@ -545,4 +562,17 @@ class AppStringsEn extends AppStrings {
   String get lorasCount => 'LoRAs';
   @override
   String imageMeta(String model, int width, int height, int seed) => '$model · ${width}x$height · seed: $seed';
+
+  @override
+  String get promptHistory => 'Prompt History';
+  @override
+  String get noPromptHistory => 'No history yet';
+  @override
+  String get noPromptHistoryMsg => 'Your generated prompts will appear here';
+  @override
+  String get clearHistory => 'Clear All';
+  @override
+  String get searchPrompts => 'Search prompts...';
+  @override
+  String get promptHistoryTooltip => 'Prompt History';
 }
