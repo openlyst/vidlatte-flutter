@@ -4,8 +4,10 @@ import '../data/models/comfy_server.dart';
 
 class WorkflowInputs {
   final String prompt;
+  final String negativePrompt;
   final String model;
   final List<String> loras;
+  final Map<String, double> loraWeights;
   final int width;
   final int height;
   final int seed;
@@ -16,9 +18,11 @@ class WorkflowInputs {
   WorkflowInputs({
     required this.prompt,
     required this.model,
+    this.negativePrompt = '',
     this.loras = const [],
-    this.width = 1024,
-    this.height = 1024,
+    this.loraWeights = const {},
+    this.width = 768,
+    this.height = 768,
     int? seed,
     this.steps = 20,
     this.cfg,
@@ -47,7 +51,7 @@ class ComfyWorkflow {
       },
       '3': {
         'inputs': {
-          'text': '',
+          'text': inputs.negativePrompt,
           'clip': ['1', 1],
         },
         'class_type': 'CLIPTextEncode',
@@ -95,11 +99,12 @@ class ComfyWorkflow {
       var currentModelRef = ['1', 0];
       var currentClipRef = ['1', 1];
       for (final lora in inputs.loras) {
+        final strength = inputs.loraWeights[lora] ?? 0.8;
         workflow[nodeId.toString()] = {
           'inputs': {
             'lora_name': lora,
-            'strength_model': 0.8,
-            'strength_clip': 0.8,
+            'strength_model': strength,
+            'strength_clip': strength,
             'model': currentModelRef,
             'clip': currentClipRef,
           },

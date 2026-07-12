@@ -45,8 +45,10 @@ extension JobStatusExtension on JobStatus {
 class GenerationJob extends Equatable {
   final String id;
   final String prompt;
+  final String negativePrompt;
   final String model;
   final List<String> loras;
+  final Map<String, double> loraWeights;
   final Creativity creativity;
   final double? cfg;
   final int steps;
@@ -75,8 +77,10 @@ class GenerationJob extends Equatable {
   const GenerationJob({
     required this.id,
     required this.prompt,
+    this.negativePrompt = '',
     required this.model,
     this.loras = const [],
+    this.loraWeights = const {},
     this.creativity = Creativity.normal,
     this.cfg,
     this.steps = 20,
@@ -106,8 +110,10 @@ class GenerationJob extends Equatable {
   GenerationJob copyWith({
     String? id,
     String? prompt,
+    String? negativePrompt,
     String? model,
     List<String>? loras,
+    Map<String, double>? loraWeights,
     Creativity? creativity,
     double? cfg,
     int? steps,
@@ -136,8 +142,10 @@ class GenerationJob extends Equatable {
     return GenerationJob(
       id: id ?? this.id,
       prompt: prompt ?? this.prompt,
+      negativePrompt: negativePrompt ?? this.negativePrompt,
       model: model ?? this.model,
       loras: loras ?? this.loras,
+      loraWeights: loraWeights ?? this.loraWeights,
       creativity: creativity ?? this.creativity,
       cfg: cfg ?? this.cfg,
       steps: steps ?? this.steps,
@@ -178,7 +186,7 @@ class GenerationJob extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, prompt, model, loras, creativity, cfg, steps, hiresFix,
+        id, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix,
         width, height, seed, serverId, serverUrl, status,
         progressValue, progressMax, currentNode, previewBase64,
         resultLocalPath, resultFilename, resultSubfolder, resultType,

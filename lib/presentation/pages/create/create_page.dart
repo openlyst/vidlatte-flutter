@@ -29,8 +29,10 @@ class CreatePage extends StatefulWidget {
 
 class _CreatePageState extends State<CreatePage> {
   final _promptController = TextEditingController();
+  final _negativePromptController = TextEditingController();
   String _selectedModel = '';
   List<String> _selectedLoras = [];
+  Map<String, double> _loraWeights = {};
   Creativity _creativity = Creativity.normal;
   double? _customCfg;
   int? _customSteps;
@@ -59,6 +61,7 @@ class _CreatePageState extends State<CreatePage> {
     setState(() {
       _selectedModel = settings.lastModel;
       _selectedLoras = settings.lastLoras;
+      _loraWeights = Map.from(settings.lastLoraWeights);
       _creativity = _parseCreativity(settings.lastCreativity);
       _customCfg = settings.lastCustomCfg;
       _customSteps = settings.lastCustomSteps;
@@ -68,6 +71,7 @@ class _CreatePageState extends State<CreatePage> {
       _selectedServerId = settings.defaultServerId;
     });
     _promptController.text = settings.lastPrompt;
+    _negativePromptController.text = settings.lastNegativePrompt;
   }
 
   Creativity _parseCreativity(String value) {
@@ -87,6 +91,7 @@ class _CreatePageState extends State<CreatePage> {
   void dispose() {
     _persistSettings();
     _promptController.dispose();
+    _negativePromptController.dispose();
     super.dispose();
   }
 
@@ -96,6 +101,7 @@ class _CreatePageState extends State<CreatePage> {
       final updated = bloc.state.settings.copyWith(
         lastModel: _selectedModel,
         lastLoras: _selectedLoras,
+        lastLoraWeights: _loraWeights,
         lastCreativity: _creativity.name,
         lastCustomCfg: _customCfg,
         lastCustomSteps: _customSteps,
@@ -103,6 +109,7 @@ class _CreatePageState extends State<CreatePage> {
         lastWidth: _width,
         lastHeight: _height,
         lastPrompt: _promptController.text.trim(),
+        lastNegativePrompt: _negativePromptController.text.trim(),
       );
       bloc.add(SettingsUpdated(updated));
     } catch (_) {}
@@ -151,8 +158,10 @@ class _CreatePageState extends State<CreatePage> {
     context.read<GenerationBloc>().add(GenerationSubmitted(
           server: server,
           prompt: _promptController.text.trim(),
+          negativePrompt: _negativePromptController.text.trim(),
           model: _selectedModel,
           loras: _selectedLoras,
+          loraWeights: _loraWeights,
           creativity: _creativity,
           cfg: _customCfg,
           steps: _customSteps,
@@ -272,6 +281,7 @@ class _CreatePageState extends State<CreatePage> {
       children: [
         PromptInput(
           controller: _promptController,
+          negativeController: _negativePromptController,
           maxLength: ComfyConstants.maxPromptLength,
         ),
         const SizedBox(height: ThemeConstants.spacingMedium),
@@ -282,6 +292,7 @@ class _CreatePageState extends State<CreatePage> {
           maxLoras: server.maxLoras,
           selectedModel: _selectedModel,
           selectedLoras: _selectedLoras,
+          loraWeights: _loraWeights,
           creativity: _creativity,
           customCfg: _customCfg,
           customSteps: _customSteps,
@@ -292,6 +303,7 @@ class _CreatePageState extends State<CreatePage> {
           selectedServerId: server.id,
           onModelChanged: (m) => setState(() => _selectedModel = m),
           onLorasChanged: (l) => setState(() => _selectedLoras = l),
+          onLoraWeightsChanged: (w) => setState(() => _loraWeights = w),
           onCreativityChanged: (c) => setState(() => _creativity = c),
           onCfgChanged: (v) => setState(() => _customCfg = v),
           onStepsChanged: (s) => setState(() => _customSteps = s),
@@ -301,6 +313,7 @@ class _CreatePageState extends State<CreatePage> {
             _selectedServerId = id;
             _selectedModel = '';
             _selectedLoras = [];
+            _loraWeights = {};
           }),
         ),
         const SizedBox(height: ThemeConstants.spacingLarge),

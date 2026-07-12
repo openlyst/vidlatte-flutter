@@ -67,12 +67,23 @@ class ComfyService {
     return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
 
+  Options _authOptions(ComfyServer server, {Map<String, dynamic>? headers, ResponseType? responseType, Duration? sendTimeout, Duration? receiveTimeout}) {
+    final authHeaders = server.authHeaders();
+    final mergedHeaders = <String, dynamic>{...authHeaders, ...?headers};
+    return Options(
+      headers: mergedHeaders.isNotEmpty ? mergedHeaders : null,
+      responseType: responseType,
+      sendTimeout: sendTimeout,
+      receiveTimeout: receiveTimeout,
+    );
+  }
+
   Future<ServerHealth> checkHealth(ComfyServer server) async {
     final baseUrl = _normalizeUrl(server.url);
     try {
       final response = await _dio.get(
         '$baseUrl/system_stats',
-        options: Options(
+        options: _authOptions(server,
           responseType: ResponseType.json,
           sendTimeout: const Duration(milliseconds: ComfyConstants.healthCheckTimeoutMs),
           receiveTimeout: const Duration(milliseconds: ComfyConstants.healthCheckTimeoutMs),
@@ -133,9 +144,9 @@ class ComfyService {
     try {
       final responses = await Future.wait([
         _dio.get('$baseUrl/object_info/CheckpointLoaderSimple',
-            options: Options(responseType: ResponseType.json)),
+            options: _authOptions(server, responseType: ResponseType.json)),
         _dio.get('$baseUrl/object_info/LoraLoader',
-            options: Options(responseType: ResponseType.json)),
+            options: _authOptions(server, responseType: ResponseType.json)),
       ]);
 
       final modelsJson = responses[0].data as Map<String, dynamic>;
@@ -176,7 +187,7 @@ class ComfyService {
       final response = await _dio.get(
         '$baseUrl/view_metadata/loras',
         queryParameters: {'filename': filename},
-        options: Options(responseType: ResponseType.json),
+        options: _authOptions(server, responseType: ResponseType.json),
       );
       if (response.statusCode == 200 && response.data != null) {
         return response.data as Map<String, dynamic>;
@@ -196,7 +207,7 @@ class ComfyService {
       final response = await _dio.post(
         '$baseUrl/prompt',
         data: jsonEncode({'prompt': workflow}),
-        options: Options(
+        options: _authOptions(server,
           headers: {'Content-Type': 'application/json'},
           responseType: ResponseType.json,
         ),
@@ -228,7 +239,7 @@ class ComfyService {
 
     WebSocketChannel? ws;
     if (onPreview != null) {
-      ws = _connectWebSocket(baseUrl, promptId, onPreview);
+      ws = _connectWebSocket(baseUrl, promptId, onPreview, server);
     }
 
     try {
@@ -238,7 +249,7 @@ class ComfyService {
         try {
           final historyRes = await _dio.get(
             '$baseUrl/history/$promptId',
-            options: Options(responseType: ResponseType.json),
+            options: _authOptions(server, responseType: ResponseType.json),
           );
 
           if (historyRes.statusCode != 200) continue;
@@ -266,7 +277,7 @@ class ComfyService {
                 '$baseUrl/view?filename=${Uri.encodeComponent(filename)}&subfolder=${Uri.encodeComponent(subfolder)}&type=${Uri.encodeComponent(type)}';
             final imageRes = await _dio.get(
               imageUrl,
-              options: Options(responseType: ResponseType.bytes),
+              options: _authOptions(server, responseType: ResponseType.bytes),
             );
 
             if (imageRes.statusCode != 200) {
@@ -299,7 +310,9 @@ class ComfyService {
     ComfyServer server, {
     required String prompt,
     required String model,
+    String negativePrompt = '',
     List<String> loras = const [],
+    Map<String, double> loraWeights = const {},
     Creativity creativity = Creativity.normal,
     double? cfg,
     int? steps,
@@ -314,8 +327,10 @@ class ComfyService {
 
     var workflow = ComfyWorkflow.generate(WorkflowInputs(
       prompt: prompt,
+      negativePrompt: negativePrompt,
       model: model,
       loras: loras,
+      loraWeights: loraWeights,
       creativity: creativity,
       cfg: cfg,
       steps: actualSteps,
@@ -347,7 +362,7 @@ class ComfyService {
         '$baseUrl/view?filename=${Uri.encodeComponent(filename)}&subfolder=${Uri.encodeComponent(subfolder)}&type=${Uri.encodeComponent(type)}';
     final response = await _dio.get(
       imageUrl,
-      options: Options(responseType: ResponseType.bytes),
+      options: _authOptions(server, responseType: ResponseType.bytes),
     );
     return Uint8List.fromList(response.data as List<int>);
   }
@@ -356,8 +371,16 @@ class ComfyService {
     String baseUrl,
     String promptId,
     void Function(PreviewMessage) onPreview,
+    ComfyServer server,
   ) {
-    final wsUrl = '${baseUrl.replaceFirst(RegExp(r'^http'), 'ws')}/ws';
+    var wsUrl = '${baseUrl.replaceFirst(RegExp(r'^http'), 'ws')}/ws';
+    if (server.authType == ServerAuthType.basic &&
+        server.authUsername != null &&
+        server.authPassword != null) {
+      wsUrl = wsUrl.replaceFirst('://', '://${Uri.encodeComponent(server.authUsername!)}:${Uri.encodeComponent(server.authPassword!)}@');
+    } else if (server.authType == ServerAuthType.bearer && server.authToken != null) {
+      wsUrl = '$wsUrl?token=${Uri.encodeComponent(server.authToken!)}';
+    }
     final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
     channel.stream.listen(

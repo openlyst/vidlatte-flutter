@@ -13,6 +13,7 @@ class GenerationControls extends StatelessWidget {
   final int maxLoras;
   final String selectedModel;
   final List<String> selectedLoras;
+  final Map<String, double> loraWeights;
   final Creativity creativity;
   final double? customCfg;
   final int? customSteps;
@@ -24,6 +25,7 @@ class GenerationControls extends StatelessWidget {
 
   final ValueChanged<String> onModelChanged;
   final ValueChanged<List<String>> onLorasChanged;
+  final ValueChanged<Map<String, double>> onLoraWeightsChanged;
   final ValueChanged<Creativity> onCreativityChanged;
   final ValueChanged<double?> onCfgChanged;
   final ValueChanged<int?> onStepsChanged;
@@ -39,6 +41,7 @@ class GenerationControls extends StatelessWidget {
     required this.maxLoras,
     required this.selectedModel,
     required this.selectedLoras,
+    this.loraWeights = const {},
     required this.creativity,
     this.customCfg,
     required this.customSteps,
@@ -49,6 +52,7 @@ class GenerationControls extends StatelessWidget {
     required this.selectedServerId,
     required this.onModelChanged,
     required this.onLorasChanged,
+    required this.onLoraWeightsChanged,
     required this.onCreativityChanged,
     required this.onCfgChanged,
     required this.onStepsChanged,
@@ -81,8 +85,10 @@ class GenerationControls extends StatelessWidget {
             loras: loras,
             triggerWords: triggerWords,
             selectedLoras: selectedLoras,
+            loraWeights: loraWeights,
             maxLoras: maxLoras,
             onChanged: onLorasChanged,
+            onWeightsChanged: onLoraWeightsChanged,
           ),
           const SizedBox(height: ThemeConstants.spacingMedium),
         ],
@@ -176,15 +182,19 @@ class _LoraSummary extends StatelessWidget {
   final List<String> loras;
   final Map<String, String> triggerWords;
   final List<String> selectedLoras;
+  final Map<String, double> loraWeights;
   final int maxLoras;
   final ValueChanged<List<String>> onChanged;
+  final ValueChanged<Map<String, double>> onWeightsChanged;
 
   const _LoraSummary({
     required this.loras,
     required this.triggerWords,
     required this.selectedLoras,
+    required this.loraWeights,
     required this.maxLoras,
     required this.onChanged,
+    required this.onWeightsChanged,
   });
 
   @override
@@ -245,11 +255,21 @@ class _LoraSummary extends StatelessWidget {
               children: selectedLoras.map((lora) {
                 final name = lora.split('/').last;
                 final hasTriggers = (triggerWords[lora] ?? '').isNotEmpty;
+                final weight = loraWeights[lora] ?? 0.8;
                 return Chip(
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(name, style: const TextStyle(fontSize: 12)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${(weight * 100).round()}%',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: ext.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       if (hasTriggers) ...[
                         const SizedBox(width: 4),
                         Icon(Icons.bolt, size: 12, color: ext.accent),
@@ -257,7 +277,12 @@ class _LoraSummary extends StatelessWidget {
                     ],
                   ),
                   deleteIcon: const Icon(Icons.close, size: 16),
-                  onDeleted: () => onChanged(selectedLoras.where((l) => l != lora).toList()),
+                  onDeleted: () {
+                    final newLoras = selectedLoras.where((l) => l != lora).toList();
+                    final newWeights = Map<String, double>.from(loraWeights)..remove(lora);
+                    onChanged(newLoras);
+                    onWeightsChanged(newWeights);
+                  },
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                 );
@@ -269,17 +294,19 @@ class _LoraSummary extends StatelessWidget {
   }
 
   void _openPicker(BuildContext context) async {
-    final result = await showDialog<List<String>>(
+    final result = await showDialog<LoraPickerResult>(
       context: context,
       builder: (_) => LoraPickerDialog(
         loras: loras,
         triggerWords: triggerWords,
         selectedLoras: selectedLoras,
+        loraWeights: loraWeights,
         maxLoras: maxLoras,
       ),
     );
     if (result != null) {
-      onChanged(result);
+      onChanged(result.selectedLoras);
+      onWeightsChanged(result.weights);
     }
   }
 }

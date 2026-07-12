@@ -40,8 +40,10 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
     final job = GenerationJob(
       id: jobId,
       prompt: event.prompt,
+      negativePrompt: event.negativePrompt,
       model: event.model,
       loras: event.loras,
+      loraWeights: event.loraWeights,
       creativity: event.creativity,
       cfg: event.cfg,
       steps: event.steps ?? event.server.steps,
@@ -117,8 +119,10 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
       final result = await _comfy.generateImage(
         server,
         prompt: job.prompt,
+        negativePrompt: job.negativePrompt,
         model: job.model,
         loras: job.loras,
+        loraWeights: job.loraWeights,
         creativity: job.creativity,
         cfg: job.cfg,
         steps: job.steps,
@@ -150,8 +154,10 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
         final image = GeneratedImage(
           id: _uuid.v4(),
           prompt: job.prompt,
+          negativePrompt: job.negativePrompt,
           model: job.model,
           loras: job.loras,
+          loraWeights: job.loraWeights,
           creativity: job.creativity,
           steps: job.steps,
           hiresFix: job.hiresFix,

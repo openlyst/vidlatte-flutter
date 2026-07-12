@@ -51,6 +51,10 @@ class ServersBloc extends Bloc<ServersEvent, ServersState> {
       maxLoras: event.maxLoras,
       steps: event.steps,
       hiresFix: event.hiresFix,
+      authType: event.authType,
+      authUsername: event.authUsername,
+      authPassword: event.authPassword,
+      authToken: event.authToken,
       isDefault: _storage.getServers().isEmpty,
       createdAt: DateTime.now(),
     );

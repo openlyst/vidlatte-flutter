@@ -12,8 +12,10 @@ abstract class GenerationEvent extends Equatable {
 class GenerationSubmitted extends GenerationEvent {
   final ComfyServer server;
   final String prompt;
+  final String negativePrompt;
   final String model;
   final List<String> loras;
+  final Map<String, double> loraWeights;
   final Creativity creativity;
   final double? cfg;
   final int? steps;
@@ -25,19 +27,21 @@ class GenerationSubmitted extends GenerationEvent {
   const GenerationSubmitted({
     required this.server,
     required this.prompt,
+    this.negativePrompt = '',
     required this.model,
     this.loras = const [],
+    this.loraWeights = const {},
     this.creativity = Creativity.normal,
     this.cfg,
     this.steps,
     this.hiresFix,
-    this.width = 1024,
-    this.height = 1024,
+    this.width = 768,
+    this.height = 768,
     this.seed,
   });
 
   @override
-  List<Object?> get props => [server, prompt, model, loras, creativity, cfg, steps, hiresFix, width, height, seed];
+  List<Object?> get props => [server, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix, width, height, seed];
 }
 
 class GenerationCancelled extends GenerationEvent {
