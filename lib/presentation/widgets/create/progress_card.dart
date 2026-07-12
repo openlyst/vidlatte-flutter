@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../../config/constants.dart';
@@ -76,6 +78,19 @@ class ProgressCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (isActive && job.previewBase64 != null) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+              child: Image.memory(
+                base64Decode(job.previewBase64!),
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           if (progress != null) ...[
             ClipRRect(
