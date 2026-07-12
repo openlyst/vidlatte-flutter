@@ -47,8 +47,8 @@ class ComfyConstants {
   static const int minSteps = 1;
   static const int defaultMaxLoras = 5;
   static const double defaultLoraStrength = 0.8;
-  static const int defaultWidth = 1024;
-  static const int defaultHeight = 1024;
+  static const int defaultWidth = 768;
+  static const int defaultHeight = 768;
   static const int pollIntervalMs = 1000;
   static const int maxPollAttempts = 300;
   static const int healthCheckTimeoutMs = 5000;
