@@ -23,6 +23,10 @@ class GenerationSubmitted extends GenerationEvent {
   final int width;
   final int height;
   final int? seed;
+  final String? refImageFilename;
+  final String? refImageSubfolder;
+  final String? refImageType;
+  final double denoise;
 
   const GenerationSubmitted({
     required this.server,
@@ -38,10 +42,14 @@ class GenerationSubmitted extends GenerationEvent {
     this.width = 768,
     this.height = 768,
     this.seed,
+    this.refImageFilename,
+    this.refImageSubfolder,
+    this.refImageType,
+    this.denoise = 0.5,
   });
 
   @override
-  List<Object?> get props => [server, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix, width, height, seed];
+  List<Object?> get props => [server, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix, width, height, seed, refImageFilename, refImageSubfolder, refImageType, denoise];
 }
 
 class GenerationCancelled extends GenerationEvent {

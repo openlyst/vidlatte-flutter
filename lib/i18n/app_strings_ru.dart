@@ -113,6 +113,26 @@ class AppStringsRu extends AppStrings {
   String get negativePromptHint => 'Что исключить из изображения';
   @override
   String get loraWeight => 'Сила';
+  @override
+  String get img2img => 'Изображение в изображение';
+  @override
+  String get txt2img => 'Текст в изображение';
+  @override
+  String get selectRefImage => 'Выбрать исходное изображение';
+  @override
+  String get refImageHint => 'Загрузите или выберите изображение для преобразования';
+  @override
+  String get denoiseStrength => 'Сила денойза';
+  @override
+  String get denoiseHint => 'Выше = больше изменений, ниже = ближе к оригиналу';
+  @override
+  String get uploadImage => 'Загрузить изображение';
+  @override
+  String get pickFromGallery => 'Выбрать из галереи';
+  @override
+  String get noRefImage => 'Исходное изображение не выбрано';
+  @override
+  String get removeRefImage => 'Убрать';
 
   @override
   String get createTitle => 'Создать';

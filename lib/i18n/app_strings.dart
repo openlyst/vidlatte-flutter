@@ -70,6 +70,18 @@ abstract class AppStrings {
   // LoRA weights
   String get loraWeight;
 
+  // img2img
+  String get img2img;
+  String get txt2img;
+  String get selectRefImage;
+  String get refImageHint;
+  String get denoiseStrength;
+  String get denoiseHint;
+  String get uploadImage;
+  String get pickFromGallery;
+  String get noRefImage;
+  String get removeRefImage;
+
   // Create page
   String get createTitle;
   String get autoImageTitle;

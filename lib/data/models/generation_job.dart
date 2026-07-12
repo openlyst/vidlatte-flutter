@@ -56,6 +56,10 @@ class GenerationJob extends Equatable {
   final int width;
   final int height;
   final int seed;
+  final String? refImageFilename;
+  final String? refImageSubfolder;
+  final String? refImageType;
+  final double denoise;
   final String serverId;
   final String? serverUrl;
   final JobStatus status;
@@ -88,6 +92,10 @@ class GenerationJob extends Equatable {
     this.width = 1024,
     this.height = 1024,
     this.seed = 0,
+    this.refImageFilename,
+    this.refImageSubfolder,
+    this.refImageType,
+    this.denoise = 0.5,
     required this.serverId,
     this.serverUrl,
     this.status = JobStatus.queued,
@@ -121,6 +129,10 @@ class GenerationJob extends Equatable {
     int? width,
     int? height,
     int? seed,
+    String? refImageFilename,
+    String? refImageSubfolder,
+    String? refImageType,
+    double? denoise,
     String? serverId,
     String? serverUrl,
     JobStatus? status,
@@ -153,6 +165,10 @@ class GenerationJob extends Equatable {
       width: width ?? this.width,
       height: height ?? this.height,
       seed: seed ?? this.seed,
+      refImageFilename: refImageFilename ?? this.refImageFilename,
+      refImageSubfolder: refImageSubfolder ?? this.refImageSubfolder,
+      refImageType: refImageType ?? this.refImageType,
+      denoise: denoise ?? this.denoise,
       serverId: serverId ?? this.serverId,
       serverUrl: serverUrl ?? this.serverUrl,
       status: status ?? this.status,
@@ -187,7 +203,7 @@ class GenerationJob extends Equatable {
   @override
   List<Object?> get props => [
         id, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix,
-        width, height, seed, serverId, serverUrl, status,
+        width, height, seed, refImageFilename, refImageSubfolder, refImageType, denoise, serverId, serverUrl, status,
         progressValue, progressMax, currentNode, previewBase64,
         resultLocalPath, resultFilename, resultSubfolder, resultType,
         errorMessage, attempts, maxAttempts, createdAt, startedAt, completedAt,

@@ -113,6 +113,26 @@ class AppStringsEn extends AppStrings {
   String get negativePromptHint => 'What to avoid in the image';
   @override
   String get loraWeight => 'Strength';
+  @override
+  String get img2img => 'Image to Image';
+  @override
+  String get txt2img => 'Text to Image';
+  @override
+  String get selectRefImage => 'Select Reference Image';
+  @override
+  String get refImageHint => 'Upload or pick an image to transform';
+  @override
+  String get denoiseStrength => 'Denoise Strength';
+  @override
+  String get denoiseHint => 'Higher = more change, lower = more similar to original';
+  @override
+  String get uploadImage => 'Upload Image';
+  @override
+  String get pickFromGallery => 'Pick from Gallery';
+  @override
+  String get noRefImage => 'No reference image selected';
+  @override
+  String get removeRefImage => 'Remove';
 
   @override
   String get createTitle => 'Create';

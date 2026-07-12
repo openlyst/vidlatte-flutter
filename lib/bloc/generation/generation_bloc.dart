@@ -51,6 +51,10 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
       width: event.width,
       height: event.height,
       seed: event.seed ?? _uuid.v4().hashCode,
+      refImageFilename: event.refImageFilename,
+      refImageSubfolder: event.refImageSubfolder,
+      refImageType: event.refImageType,
+      denoise: event.denoise,
       serverId: event.server.id,
       serverUrl: event.server.url,
       status: JobStatus.queued,
@@ -130,6 +134,10 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
         width: job.width,
         height: job.height,
         seed: job.seed,
+        refImageFilename: job.refImageFilename,
+        refImageSubfolder: job.refImageSubfolder,
+        refImageType: job.refImageType,
+        denoise: job.denoise,
         onPreview: (msg) {
           if (state.currentJob?.id != job.id) return;
           emit(state.copyWith(

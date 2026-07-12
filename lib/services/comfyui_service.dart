@@ -320,6 +320,10 @@ class ComfyService {
     int width = ComfyConstants.defaultWidth,
     int height = ComfyConstants.defaultHeight,
     int? seed,
+    String? refImageFilename,
+    String? refImageSubfolder,
+    String? refImageType,
+    double denoise = 0.5,
     void Function(PreviewMessage)? onPreview,
   }) async {
     final actualSteps = steps ?? server.steps;
@@ -337,6 +341,10 @@ class ComfyService {
       width: width,
       height: height,
       seed: seed,
+      refImageFilename: refImageFilename,
+      refImageSubfolder: refImageSubfolder,
+      refImageType: refImageType,
+      denoise: denoise,
     ));
 
     if (actualHiresFix) {
@@ -365,6 +373,31 @@ class ComfyService {
       options: _authOptions(server, responseType: ResponseType.bytes),
     );
     return Uint8List.fromList(response.data as List<int>);
+  }
+
+  Future<({String filename, String subfolder, String type})> uploadImage(
+    ComfyServer server,
+    Uint8List bytes,
+    String filename,
+  ) async {
+    final baseUrl = _normalizeUrl(server.url);
+    final formData = FormData.fromMap({
+      'image': MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final response = await _dio.post(
+      '$baseUrl/upload/image',
+      data: formData,
+      options: _authOptions(server, responseType: ResponseType.json),
+    );
+    if (response.statusCode != 200) {
+      throw ComfyApiException('Upload failed: HTTP ${response.statusCode}');
+    }
+    final data = response.data as Map<String, dynamic>;
+    return (
+      filename: data['name'] as String,
+      subfolder: data['subfolder'] as String? ?? '',
+      type: data['type'] as String? ?? 'input',
+    );
   }
 
   WebSocketChannel _connectWebSocket(

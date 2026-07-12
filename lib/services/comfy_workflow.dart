@@ -14,6 +14,10 @@ class WorkflowInputs {
   final int steps;
   final double? cfg;
   final Creativity creativity;
+  final String? refImageFilename;
+  final String? refImageSubfolder;
+  final String? refImageType;
+  final double denoise;
 
   WorkflowInputs({
     required this.prompt,
@@ -27,7 +31,13 @@ class WorkflowInputs {
     this.steps = 20,
     this.cfg,
     this.creativity = Creativity.normal,
+    this.refImageFilename,
+    this.refImageSubfolder,
+    this.refImageType,
+    this.denoise = 0.5,
   }) : seed = seed ?? Random().nextInt(2147483647);
+
+  bool get isImg2Img => refImageFilename != null;
 }
 
 class ComfyWorkflow {
@@ -63,7 +73,7 @@ class ComfyWorkflow {
           'cfg': cfgScale,
           'sampler_name': 'euler',
           'scheduler': 'normal',
-          'denoise': 1,
+          'denoise': inputs.isImg2Img ? inputs.denoise : 1,
           'model': ['1', 0],
           'positive': ['2', 0],
           'negative': ['3', 0],
@@ -71,14 +81,22 @@ class ComfyWorkflow {
         },
         'class_type': 'KSampler',
       },
-      '4': {
-        'inputs': {
-          'width': inputs.width,
-          'height': inputs.height,
-          'batch_size': 1,
-        },
-        'class_type': 'EmptyLatentImage',
-      },
+      '4': inputs.isImg2Img
+          ? {
+              'inputs': {
+                'pixels': ['9', 0],
+                'vae': ['1', 2],
+              },
+              'class_type': 'VAEEncode',
+            }
+          : {
+              'inputs': {
+                'width': inputs.width,
+                'height': inputs.height,
+                'batch_size': 1,
+              },
+              'class_type': 'EmptyLatentImage',
+            },
       '6': {
         'inputs': {
           'samples': ['5', 0],
@@ -94,6 +112,22 @@ class ComfyWorkflow {
         'class_type': 'SaveImage',
       },
     };
+
+    if (inputs.isImg2Img) {
+      final loadImageInputs = <String, dynamic>{
+        'image': inputs.refImageFilename!,
+      };
+      if (inputs.refImageSubfolder != null && inputs.refImageSubfolder!.isNotEmpty) {
+        loadImageInputs['subfolder'] = inputs.refImageSubfolder;
+      }
+      if (inputs.refImageType != null) {
+        loadImageInputs['type'] = inputs.refImageType;
+      }
+      workflow['9'] = {
+        'inputs': loadImageInputs,
+        'class_type': 'LoadImage',
+      };
+    }
 
     if (inputs.loras.isNotEmpty) {
       var currentModelRef = ['1', 0];
