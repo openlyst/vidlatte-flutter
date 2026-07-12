@@ -27,6 +27,12 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     on<GalleryImageHiddenToggled>(_onHiddenToggled);
     on<GalleryUnlockAttempted>(_onUnlockAttempted);
     on<GalleryLockRequested>(_onLockRequested);
+    on<GallerySelectModeToggled>(_onSelectModeToggled);
+    on<GalleryImageSelectionToggled>(_onImageSelectionToggled);
+    on<GallerySelectAllToggled>(_onSelectAllToggled);
+    on<GalleryBulkDeleteRequested>(_onBulkDelete);
+    on<GalleryBulkFavoriteRequested>(_onBulkFavorite);
+    on<GalleryBulkCollectionRequested>(_onBulkCollection);
   }
 
   void _onLoad(GalleryLoadRequested event, Emitter<GalleryState> emit) {
@@ -166,6 +172,73 @@ class GalleryBloc extends Bloc<GalleryEvent, GalleryState> {
     emit(state.copyWith(
       isLocked: true,
       filteredImages: _applyFilter(state.allImages, state.filter, state.searchQuery, state.selectedCollectionId, true),
+    ));
+  }
+
+  void _onSelectModeToggled(GallerySelectModeToggled event, Emitter<GalleryState> emit) {
+    final newMode = !state.isSelectMode;
+    emit(state.copyWith(
+      isSelectMode: newMode,
+      selectedImageIds: newMode ? state.selectedImageIds : const {},
+    ));
+  }
+
+  void _onImageSelectionToggled(GalleryImageSelectionToggled event, Emitter<GalleryState> emit) {
+    final ids = Set<String>.from(state.selectedImageIds);
+    if (ids.contains(event.imageId)) {
+      ids.remove(event.imageId);
+    } else {
+      ids.add(event.imageId);
+    }
+    emit(state.copyWith(selectedImageIds: ids));
+  }
+
+  void _onSelectAllToggled(GallerySelectAllToggled event, Emitter<GalleryState> emit) {
+    final allIds = state.filteredImages.map((img) => img.id).toSet();
+    final allSelected = allIds.difference(state.selectedImageIds).isEmpty;
+    if (allSelected) {
+      emit(state.copyWith(selectedImageIds: const {}));
+    } else {
+      emit(state.copyWith(selectedImageIds: allIds));
+    }
+  }
+
+  Future<void> _onBulkDelete(GalleryBulkDeleteRequested event, Emitter<GalleryState> emit) async {
+    for (final id in state.selectedImageIds) {
+      await _storage.deleteImage(id);
+    }
+    final images = _storage.getImages();
+    emit(state.copyWith(
+      allImages: images,
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, state.isLocked),
+      isSelectMode: false,
+      selectedImageIds: const {},
+    ));
+  }
+
+  Future<void> _onBulkFavorite(GalleryBulkFavoriteRequested event, Emitter<GalleryState> emit) async {
+    for (final id in state.selectedImageIds) {
+      await _storage.toggleFavorite(id);
+    }
+    final images = _storage.getImages();
+    emit(state.copyWith(
+      allImages: images,
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, state.isLocked),
+      isSelectMode: false,
+      selectedImageIds: const {},
+    ));
+  }
+
+  Future<void> _onBulkCollection(GalleryBulkCollectionRequested event, Emitter<GalleryState> emit) async {
+    for (final id in state.selectedImageIds) {
+      await _storage.setImageCollection(id, event.collectionId);
+    }
+    final images = _storage.getImages();
+    emit(state.copyWith(
+      allImages: images,
+      filteredImages: _applyFilter(images, state.filter, state.searchQuery, state.selectedCollectionId, state.isLocked),
+      isSelectMode: false,
+      selectedImageIds: const {},
     ));
   }
 

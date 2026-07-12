@@ -112,4 +112,30 @@ class GalleryUnlockAttempted extends GalleryEvent {
 
 class GalleryLockRequested extends GalleryEvent {}
 
+class GallerySelectModeToggled extends GalleryEvent {}
+
+class GalleryImageSelectionToggled extends GalleryEvent {
+  final String imageId;
+
+  const GalleryImageSelectionToggled(this.imageId);
+
+  @override
+  List<Object?> get props => [imageId];
+}
+
+class GallerySelectAllToggled extends GalleryEvent {}
+
+class GalleryBulkDeleteRequested extends GalleryEvent {}
+
+class GalleryBulkFavoriteRequested extends GalleryEvent {}
+
+class GalleryBulkCollectionRequested extends GalleryEvent {
+  final String? collectionId;
+
+  const GalleryBulkCollectionRequested(this.collectionId);
+
+  @override
+  List<Object?> get props => [collectionId];
+}
+
 enum GalleryFilter { all, favorites, collection, hidden }
