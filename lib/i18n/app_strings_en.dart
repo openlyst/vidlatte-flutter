@@ -133,6 +133,30 @@ class AppStringsEn extends AppStrings {
   String get noRefImage => 'No reference image selected';
   @override
   String get removeRefImage => 'Remove';
+  @override
+  String get faceRestore => 'Face Restore';
+  @override
+  String get faceRestoreStrength => 'Strength';
+  @override
+  String get useCodeFormer => 'Use CodeFormer';
+  @override
+  String get upscaleImage => 'Upscale';
+  @override
+  String get upscaleModel => 'Upscale Model';
+  @override
+  String get upscaleScale => 'Scale';
+  @override
+  String get processing => 'Processing...';
+  @override
+  String get processingMsg => 'This may take a moment';
+  @override
+  String get faceRestoreDone => 'Face restoration complete';
+  @override
+  String get faceRestoreFailed => 'Face restoration failed';
+  @override
+  String get upscaleDone => 'Upscaling complete';
+  @override
+  String get upscaleFailed => 'Upscaling failed';
 
   @override
   String get createTitle => 'Create';

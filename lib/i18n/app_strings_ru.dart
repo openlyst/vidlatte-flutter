@@ -133,6 +133,30 @@ class AppStringsRu extends AppStrings {
   String get noRefImage => 'Исходное изображение не выбрано';
   @override
   String get removeRefImage => 'Убрать';
+  @override
+  String get faceRestore => 'Восстановление лиц';
+  @override
+  String get faceRestoreStrength => 'Сила';
+  @override
+  String get useCodeFormer => 'Использовать CodeFormer';
+  @override
+  String get upscaleImage => 'Апскейл';
+  @override
+  String get upscaleModel => 'Модель апскейла';
+  @override
+  String get upscaleScale => 'Масштаб';
+  @override
+  String get processing => 'Обработка...';
+  @override
+  String get processingMsg => 'Это может занять время';
+  @override
+  String get faceRestoreDone => 'Восстановление лиц завершено';
+  @override
+  String get faceRestoreFailed => 'Ошибка восстановления лиц';
+  @override
+  String get upscaleDone => 'Апскейл завершён';
+  @override
+  String get upscaleFailed => 'Ошибка апскейла';
 
   @override
   String get createTitle => 'Создать';

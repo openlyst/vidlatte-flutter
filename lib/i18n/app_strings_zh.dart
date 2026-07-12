@@ -133,6 +133,30 @@ class AppStringsZh extends AppStrings {
   String get noRefImage => '未选择参考图片';
   @override
   String get removeRefImage => '移除';
+  @override
+  String get faceRestore => '人脸修复';
+  @override
+  String get faceRestoreStrength => '强度';
+  @override
+  String get useCodeFormer => '使用 CodeFormer';
+  @override
+  String get upscaleImage => '放大';
+  @override
+  String get upscaleModel => '放大模型';
+  @override
+  String get upscaleScale => '倍率';
+  @override
+  String get processing => '处理中...';
+  @override
+  String get processingMsg => '请稍候';
+  @override
+  String get faceRestoreDone => '人脸修复完成';
+  @override
+  String get faceRestoreFailed => '人脸修复失败';
+  @override
+  String get upscaleDone => '放大完成';
+  @override
+  String get upscaleFailed => '放大失败';
 
   @override
   String get createTitle => '创作';

@@ -223,4 +223,75 @@ class ComfyWorkflow {
 
     return workflow;
   }
+
+  static Map<String, dynamic> faceRestore(
+    String filename,
+    String subfolder,
+    String type, {
+    double strength = 0.7,
+    bool useCodeFormer = false,
+  }) {
+    final loadImageInputs = <String, dynamic>{
+      'image': filename,
+    };
+    if (subfolder.isNotEmpty) loadImageInputs['subfolder'] = subfolder;
+    if (type.isNotEmpty) loadImageInputs['type'] = type;
+
+    return {
+      '1': {
+        'inputs': loadImageInputs,
+        'class_type': 'LoadImage',
+      },
+      '2': {
+        'inputs': {
+          'image': ['1', 0],
+          'strength': strength,
+        },
+        'class_type': useCodeFormer ? 'CodeFormerReconstruction' : 'GFPGAN',
+      },
+      '3': {
+        'inputs': {
+          'filename_prefix': 'vidlatte_face',
+          'images': ['2', 0],
+        },
+        'class_type': 'SaveImage',
+      },
+    };
+  }
+
+  static Map<String, dynamic> upscale(
+    String filename,
+    String subfolder,
+    String type, {
+    String model = 'RealESRGAN_x4plus.pth',
+    double scale = 2.0,
+  }) {
+    final loadImageInputs = <String, dynamic>{
+      'image': filename,
+    };
+    if (subfolder.isNotEmpty) loadImageInputs['subfolder'] = subfolder;
+    if (type.isNotEmpty) loadImageInputs['type'] = type;
+
+    return {
+      '1': {
+        'inputs': loadImageInputs,
+        'class_type': 'LoadImage',
+      },
+      '2': {
+        'inputs': {
+          'model_name': model,
+          'image': ['1', 0],
+          'tile_size': 512,
+        },
+        'class_type': 'UpscaleImage',
+      },
+      '3': {
+        'inputs': {
+          'filename_prefix': 'vidlatte_upscale',
+          'images': ['2', 0],
+        },
+        'class_type': 'SaveImage',
+      },
+    };
+  }
 }
