@@ -359,6 +359,46 @@ class ComfyService {
     return pollForResult(server, promptId, onPreview: onPreview);
   }
 
+  Future<ComfyJobResult> faceRestore(
+    ComfyServer server, {
+    required String filename,
+    String subfolder = '',
+    String type = 'output',
+    double strength = 0.7,
+    bool useCodeFormer = false,
+    void Function(PreviewMessage)? onPreview,
+  }) async {
+    final workflow = ComfyWorkflow.faceRestore(
+      filename,
+      subfolder,
+      type,
+      strength: strength,
+      useCodeFormer: useCodeFormer,
+    );
+    final promptId = await submitWorkflow(server, workflow);
+    return pollForResult(server, promptId, onPreview: onPreview);
+  }
+
+  Future<ComfyJobResult> upscale(
+    ComfyServer server, {
+    required String filename,
+    String subfolder = '',
+    String type = 'output',
+    String model = 'RealESRGAN_x4plus.pth',
+    double scale = 2.0,
+    void Function(PreviewMessage)? onPreview,
+  }) async {
+    final workflow = ComfyWorkflow.upscale(
+      filename,
+      subfolder,
+      type,
+      model: model,
+      scale: scale,
+    );
+    final promptId = await submitWorkflow(server, workflow);
+    return pollForResult(server, promptId, onPreview: onPreview);
+  }
+
   Future<Uint8List> getImage(
     ComfyServer server,
     String filename,

@@ -82,6 +82,20 @@ abstract class AppStrings {
   String get noRefImage;
   String get removeRefImage;
 
+  // Face restore + upscale
+  String get faceRestore;
+  String get faceRestoreStrength;
+  String get useCodeFormer;
+  String get upscaleImage;
+  String get upscaleModel;
+  String get upscaleScale;
+  String get processing;
+  String get processingMsg;
+  String get faceRestoreDone;
+  String get faceRestoreFailed;
+  String get upscaleDone;
+  String get upscaleFailed;
+
   // Create page
   String get createTitle;
   String get autoImageTitle;

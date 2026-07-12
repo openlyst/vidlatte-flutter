@@ -22,7 +22,9 @@ class VidlatteApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return RepositoryProvider.value(
+      value: storageService,
+      child: MultiBlocProvider(
       providers: [
         BlocProvider(
           create: (_) => SettingsBloc(storage: storageService)..add(SettingsLoadRequested()),
@@ -84,6 +86,7 @@ class VidlatteApp extends StatelessWidget {
             routerConfig: AppRouter.config,
           );
         },
+      ),
       ),
     );
   }
