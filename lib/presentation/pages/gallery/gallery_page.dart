@@ -79,7 +79,7 @@ class _GalleryPageState extends State<GalleryPage> {
                   ? 3
                   : 2;
 
-          return CustomScrollView(
+          final grid = CustomScrollView(
             slivers: [
               _buildHeader(context, ext, state),
               SliverToBoxAdapter(child: _buildFilterBar(context, ext, state)),
@@ -114,6 +114,23 @@ class _GalleryPageState extends State<GalleryPage> {
                 else
                   _buildImageGrid(context, ext, state, crossAxisCount),
               ],
+            ],
+          );
+
+          if (!state.isSelectMode) return grid;
+
+          return Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 56),
+                child: grid,
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildSelectActionBar(context, ext, state),
+              ),
             ],
           );
         },
@@ -240,11 +257,178 @@ class _GalleryPageState extends State<GalleryPage> {
                 muted: ext.muted,
               ),
             ),
-          Text(
-            '${state.filteredImages.length} ${s.imagesLabel}',
-            style: Theme.of(context).textTheme.labelMedium,
+          if (state.isSelectMode)
+            Padding(
+              padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
+              child: Text(
+                '${state.selectedImageIds.length} ${s.selectedCount}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: ext.accent,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            )
+          else
+            Text(
+              '${state.filteredImages.length} ${s.imagesLabel}',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          const SizedBox(width: ThemeConstants.spacingSmall),
+          _FilterSegment(
+            label: s.selectMode,
+            icon: Icons.checklist_rounded,
+            selected: state.isSelectMode,
+            onTap: () => context
+                .read<GalleryBloc>()
+                .add(GallerySelectModeToggled()),
+            accent: ext.accent,
+            border: ext.border,
+            muted: ext.muted,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSelectActionBar(BuildContext context, AppColors ext, GalleryState state) {
+    final s = AppStrings.of(context);
+    final allIds = state.filteredImages.map((img) => img.id).toSet();
+    final allSelected = allIds.isNotEmpty && allIds.difference(state.selectedImageIds).isEmpty;
+    final hasSelection = state.selectedImageIds.isNotEmpty;
+
+    return SafeArea(
+      top: false,
+      child: Material(
+        elevation: 8,
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: SizedBox(
+          height: 56,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: ThemeConstants.spacingMedium),
+            children: [
+              _BulkActionButton(
+                icon: allSelected ? Icons.deselect : Icons.select_all,
+                label: allSelected ? s.deselectAll : s.selectAll,
+                onTap: () => context
+                    .read<GalleryBloc>()
+                    .add(GallerySelectAllToggled()),
+                accent: ext.accent,
+                muted: ext.muted,
+              ),
+              const SizedBox(width: ThemeConstants.spacingSmall),
+              _BulkActionButton(
+                icon: Icons.delete_outline,
+                label: s.bulkDelete,
+                onTap: hasSelection ? () => _confirmBulkDelete(context, state.selectedImageIds.length) : null,
+                accent: ext.accent,
+                muted: ext.muted,
+                isDestructive: true,
+              ),
+              const SizedBox(width: ThemeConstants.spacingSmall),
+              _BulkActionButton(
+                icon: Icons.favorite_border,
+                label: s.bulkFavorite,
+                onTap: hasSelection
+                    ? () => context.read<GalleryBloc>().add(GalleryBulkFavoriteRequested())
+                    : null,
+                accent: ext.accent,
+                muted: ext.muted,
+              ),
+              const SizedBox(width: ThemeConstants.spacingSmall),
+              _BulkActionButton(
+                icon: Icons.playlist_add,
+                label: s.bulkMoveToCollection,
+                onTap: hasSelection ? () => _showBulkCollectionPicker(context, state) : null,
+                accent: ext.accent,
+                muted: ext.muted,
+              ),
+              const SizedBox(width: ThemeConstants.spacingSmall),
+              _BulkActionButton(
+                icon: Icons.close,
+                label: s.cancel,
+                onTap: () => context.read<GalleryBloc>().add(GallerySelectModeToggled()),
+                accent: ext.accent,
+                muted: ext.muted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmBulkDelete(BuildContext context, int count) {
+    final s = AppStrings.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.bulkDelete),
+        content: Text(s.confirmBulkDelete(count)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(s.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<GalleryBloc>().add(GalleryBulkDeleteRequested());
+              Navigator.of(ctx).pop();
+            },
+            child: Text(s.delete),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBulkCollectionPicker(BuildContext context, GalleryState state) {
+    final s = AppStrings.of(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+              child: Row(
+                children: [
+                  Icon(Icons.playlist_add, size: 20, color: Theme.of(context).extension<AppColors>()!.accent),
+                  const SizedBox(width: 8),
+                  Text(s.bulkMoveToCollection, style: Theme.of(context).textTheme.titleMedium),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            if (state.collections.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(ThemeConstants.spacingLarge),
+                child: Text(s.noPlaylistsYet),
+              )
+            else
+              ...state.collections.map((c) {
+                return ListTile(
+                  leading: Icon(Icons.playlist_play, color: Theme.of(context).extension<AppColors>()!.accent),
+                  title: Text(c.name),
+                  onTap: () {
+                    context.read<GalleryBloc>().add(GalleryBulkCollectionRequested(c.id));
+                    Navigator.of(ctx).pop();
+                  },
+                );
+              }),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.block),
+              title: Text(s.none),
+              onTap: () {
+                context.read<GalleryBloc>().add(const GalleryBulkCollectionRequested(null));
+                Navigator.of(ctx).pop();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -356,6 +540,13 @@ class _GalleryPageState extends State<GalleryPage> {
             image: state.filteredImages[index],
             collections: state.collections,
             isLocked: state.isLocked,
+            isSelectMode: state.isSelectMode,
+            isSelected: state.selectedImageIds.contains(state.filteredImages[index].id),
+            onToggleSelection: state.isSelectMode
+                ? () => context
+                    .read<GalleryBloc>()
+                    .add(GalleryImageSelectionToggled(state.filteredImages[index].id))
+                : null,
             onTap: (img) => _showImage(context, img),
             onFavorite: (img) => context
                 .read<GalleryBloc>()
@@ -919,6 +1110,9 @@ class _GalleryImageCard extends StatelessWidget {
   final GeneratedImage image;
   final List<Collection> collections;
   final bool isLocked;
+  final bool isSelectMode;
+  final bool isSelected;
+  final VoidCallback? onToggleSelection;
   final void Function(GeneratedImage) onTap;
   final void Function(GeneratedImage) onFavorite;
   final void Function(GeneratedImage) onHide;
@@ -934,6 +1128,9 @@ class _GalleryImageCard extends StatelessWidget {
     required this.onHide,
     required this.onDelete,
     required this.onAddToCollection,
+    this.isSelectMode = false,
+    this.isSelected = false,
+    this.onToggleSelection,
   });
 
   @override
@@ -941,13 +1138,16 @@ class _GalleryImageCard extends StatelessWidget {
     final ext = Theme.of(context).extension<AppColors>()!;
 
     return GestureDetector(
-      onTap: () => onTap(image),
-      onLongPress: () => onAddToCollection(image),
+      onTap: isSelectMode ? onToggleSelection : () => onTap(image),
+      onLongPress: isSelectMode ? null : () => onAddToCollection(image),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: ext.border, width: 0.5),
+            border: Border.all(
+              color: isSelectMode && isSelected ? ext.accent : ext.border,
+              width: isSelectMode && isSelected ? 2 : 0.5,
+            ),
             borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
           ),
           child: Stack(
@@ -991,43 +1191,70 @@ class _GalleryImageCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                top: ThemeConstants.spacingSmall,
-                right: ThemeConstants.spacingSmall,
-                child: Row(
-                  children: [
-                    _ActionButton(
-                      icon: image.isFavorite
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      onTap: () => onFavorite(image),
-                      color: image.isFavorite ? ext.accent : Colors.white,
+              if (isSelectMode)
+                Positioned(
+                  top: ThemeConstants.spacingSmall,
+                  left: ThemeConstants.spacingSmall,
+                  child: GestureDetector(
+                    onTap: onToggleSelection,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+                          ),
+                          child: Icon(
+                            isSelected ? Icons.check_circle : Icons.circle_outlined,
+                            size: 20,
+                            color: isSelected ? ext.accent : Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    _ActionButton(
-                      icon: Icons.playlist_add,
-                      onTap: () => onAddToCollection(image),
-                      color: image.collectionId != null ? ext.accent : Colors.white,
-                    ),
-                    const SizedBox(width: 4),
-                    if (!isLocked) ...[
+                  ),
+                )
+              else
+                Positioned(
+                  top: ThemeConstants.spacingSmall,
+                  right: ThemeConstants.spacingSmall,
+                  child: Row(
+                    children: [
                       _ActionButton(
-                        icon: image.isHidden
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        onTap: () => onHide(image),
-                        color: image.isHidden ? ext.accent : Colors.white,
+                        icon: image.isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        onTap: () => onFavorite(image),
+                        color: image.isFavorite ? ext.accent : Colors.white,
                       ),
                       const SizedBox(width: 4),
+                      _ActionButton(
+                        icon: Icons.playlist_add,
+                        onTap: () => onAddToCollection(image),
+                        color: image.collectionId != null ? ext.accent : Colors.white,
+                      ),
+                      const SizedBox(width: 4),
+                      if (!isLocked) ...[
+                        _ActionButton(
+                          icon: image.isHidden
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          onTap: () => onHide(image),
+                          color: image.isHidden ? ext.accent : Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      _ActionButton(
+                        icon: Icons.delete_outline,
+                        onTap: () => onDelete(image),
+                        color: Colors.white,
+                      ),
                     ],
-                    _ActionButton(
-                      icon: Icons.delete_outline,
-                      onTap: () => onDelete(image),
-                      color: Colors.white,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
               if (image.prompt.isNotEmpty)
                 Positioned(
                   left: ThemeConstants.spacingSmall,
@@ -1079,6 +1306,62 @@ class _ActionButton extends StatelessWidget {
             ),
             child: Icon(icon, size: 16, color: color),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BulkActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final Color accent;
+  final Color muted;
+  final bool isDestructive;
+
+  const _BulkActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.accent,
+    required this.muted,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    final color = isDestructive ? Theme.of(context).colorScheme.error : accent;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: ThemeConstants.animationNormal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingMedium,
+          vertical: 7,
+        ),
+        decoration: BoxDecoration(
+          color: enabled ? color.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+          border: Border.all(
+            color: enabled ? color.withValues(alpha: 0.4) : muted.withValues(alpha: 0.3),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: enabled ? color : muted),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: enabled ? color : muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
         ),
       ),
     );

@@ -191,6 +191,16 @@ abstract class AppStrings {
   String get backToPlaylists;
   String get deletePlaylistTooltip;
 
+  // Batch gallery operations
+  String get selectMode;
+  String get selectAll;
+  String get deselectAll;
+  String get bulkDelete;
+  String get bulkFavorite;
+  String get bulkMoveToCollection;
+  String get selectedCount;
+  String confirmBulkDelete(int count);
+
   // Studio
   String get studioTitle;
   String get noStudioSessions;
@@ -305,4 +315,12 @@ abstract class AppStrings {
   // Image detail
   String get lorasCount;
   String imageMeta(String model, int width, int height, int seed);
+
+  // Prompt History
+  String get promptHistory;
+  String get noPromptHistory;
+  String get noPromptHistoryMsg;
+  String get clearHistory;
+  String get searchPrompts;
+  String get promptHistoryTooltip;
 }

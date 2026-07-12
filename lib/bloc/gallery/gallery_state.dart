@@ -14,6 +14,8 @@ class GalleryState extends Equatable {
   final bool isLoading;
   final bool hasPassword;
   final bool isLocked;
+  final bool isSelectMode;
+  final Set<String> selectedImageIds;
 
   const GalleryState({
     this.allImages = const [],
@@ -25,6 +27,8 @@ class GalleryState extends Equatable {
     this.isLoading = false,
     this.hasPassword = false,
     this.isLocked = false,
+    this.isSelectMode = false,
+    this.selectedImageIds = const {},
   });
 
   GalleryState copyWith({
@@ -37,6 +41,8 @@ class GalleryState extends Equatable {
     bool? isLoading,
     bool? hasPassword,
     bool? isLocked,
+    bool? isSelectMode,
+    Set<String>? selectedImageIds,
   }) {
     return GalleryState(
       allImages: allImages ?? this.allImages,
@@ -50,6 +56,8 @@ class GalleryState extends Equatable {
       isLoading: isLoading ?? this.isLoading,
       hasPassword: hasPassword ?? this.hasPassword,
       isLocked: isLocked ?? this.isLocked,
+      isSelectMode: isSelectMode ?? this.isSelectMode,
+      selectedImageIds: selectedImageIds ?? this.selectedImageIds,
     );
   }
 
@@ -57,6 +65,7 @@ class GalleryState extends Equatable {
   List<Object?> get props => [
         allImages, filteredImages, collections, searchQuery,
         filter, selectedCollectionId, isLoading, hasPassword, isLocked,
+        isSelectMode, selectedImageIds,
       ];
 }
 

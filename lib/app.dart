@@ -6,6 +6,7 @@ import 'bloc/autogen/autogen_bloc.dart';
 import 'bloc/gallery/gallery_bloc.dart';
 import 'bloc/generation/generation_bloc.dart';
 import 'bloc/llm/llm_bloc.dart';
+import 'bloc/prompt_history/prompt_history_bloc.dart';
 import 'bloc/servers/servers_bloc.dart';
 import 'bloc/settings/settings_bloc.dart';
 import 'bloc/studio/studio_bloc.dart';
@@ -43,6 +44,9 @@ class VidlatteApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (_) => AutoGenBloc(storage: storageService),
+        ),
+        BlocProvider(
+          create: (_) => PromptHistoryBloc(storage: storageService)..add(PromptHistoryLoadRequested()),
         ),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(

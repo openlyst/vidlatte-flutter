@@ -13,6 +13,7 @@ import '../data/models/comfy_server.dart';
 import '../data/models/generated_image.dart';
 import '../data/models/llm_server.dart';
 import '../data/models/lora_metadata.dart';
+import '../data/models/prompt_history_entry.dart';
 import '../data/models/studio_session.dart';
 
 class StorageService {
@@ -23,6 +24,7 @@ class StorageService {
   late Box _sessionsBox;
   late Box _llmServersBox;
   late Box _loraMetaBox;
+  late Box _promptHistoryBox;
   late Directory _imageDir;
 
   Future<void> init() async {
@@ -35,6 +37,7 @@ class StorageService {
     _sessionsBox = await Hive.openBox('sessions');
     _llmServersBox = await Hive.openBox('llm_servers');
     _loraMetaBox = await Hive.openBox('lora_metadata');
+    _promptHistoryBox = await Hive.openBox('prompt_history');
 
     final appDir = await getApplicationDocumentsDirectory();
     _imageDir = Directory(p.join(appDir.path, 'vidlatte_images'));
@@ -216,6 +219,30 @@ class StorageService {
     return StudioSession.fromJson(json);
   }
 
+  // --- Prompt History ---
+
+  List<PromptHistoryEntry> getPromptHistory() {
+    final entries = _promptHistoryBox.values.map((v) {
+      final json = jsonDecode(v as String) as Map<String, dynamic>;
+      return PromptHistoryEntry.fromJson(json);
+    }).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    if (entries.length > 100) return entries.sublist(0, 100);
+    return entries;
+  }
+
+  Future<void> savePromptHistoryEntry(PromptHistoryEntry entry) async {
+    await _promptHistoryBox.put(entry.id, jsonEncode(entry.toJson()));
+  }
+
+  Future<void> deletePromptHistoryEntry(String id) async {
+    await _promptHistoryBox.delete(id);
+  }
+
+  Future<void> clearPromptHistory() async {
+    await _promptHistoryBox.clear();
+  }
+
   // --- Cleanup ---
 
   Future<void> clearAll() async {
@@ -226,6 +253,7 @@ class StorageService {
     await _sessionsBox.clear();
     await _llmServersBox.clear();
     await _loraMetaBox.clear();
+    await _promptHistoryBox.clear();
     if (_imageDir.existsSync()) {
       await _imageDir.delete(recursive: true);
       await _imageDir.create(recursive: true);

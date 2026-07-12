@@ -345,6 +345,23 @@ class AppStringsRu extends AppStrings {
   String get deletePlaylistTooltip => 'Удалить плейлист';
 
   @override
+  String get selectMode => 'Выбрать';
+  @override
+  String get selectAll => 'Выбрать все';
+  @override
+  String get deselectAll => 'Снять выделение';
+  @override
+  String get bulkDelete => 'Удалить выбранные';
+  @override
+  String get bulkFavorite => 'В избранное';
+  @override
+  String get bulkMoveToCollection => 'В коллекцию';
+  @override
+  String get selectedCount => 'выбрано';
+  @override
+  String confirmBulkDelete(int count) => 'Удалить $count изображений?';
+
+  @override
   String get studioTitle => 'Студия';
   @override
   String get noStudioSessions => 'Нет сессий студии';
@@ -549,4 +566,17 @@ class AppStringsRu extends AppStrings {
   String get lorasCount => 'LoRA';
   @override
   String imageMeta(String model, int width, int height, int seed) => '$model · ${width}x$height · сид: $seed';
+
+  @override
+  String get promptHistory => 'История промптов';
+  @override
+  String get noPromptHistory => 'Истории нет';
+  @override
+  String get noPromptHistoryMsg => 'Сгенерированные промпты появятся здесь';
+  @override
+  String get clearHistory => 'Очистить всё';
+  @override
+  String get searchPrompts => 'Поиск промптов...';
+  @override
+  String get promptHistoryTooltip => 'История промптов';
 }
