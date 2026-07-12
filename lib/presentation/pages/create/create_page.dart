@@ -18,6 +18,7 @@ import '../../widgets/create/generation_controls.dart';
 import '../../widgets/create/prompt_input.dart';
 import '../../widgets/create/progress_card.dart';
 import '../../widgets/create/queue_card.dart';
+import '../../../i18n/app_strings.dart';
 
 class CreatePage extends StatefulWidget {
   const CreatePage({super.key});
@@ -115,16 +116,17 @@ class _CreatePageState extends State<CreatePage> {
     }
     server ??= serversState.defaultServer ?? (serversState.servers.isNotEmpty ? serversState.servers.first : null);
 
+    final s = AppStrings.of(context);
     if (server == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(ErrorMessages.comfyNoServer)),
+        SnackBar(content: Text(s.comfyNoServerError)),
       );
       return;
     }
 
     if (_promptController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a prompt first.')),
+        SnackBar(content: Text(s.enterPrompt)),
       );
       return;
     }
@@ -132,14 +134,14 @@ class _CreatePageState extends State<CreatePage> {
     final catalog = serversState.catalogs[server.id];
     if (_selectedModel.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a model first.')),
+        SnackBar(content: Text(s.selectModel)),
       );
       return;
     }
 
     if (catalog != null && catalog.models.isNotEmpty && !catalog.models.contains(_selectedModel)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"$_selectedModel" is not available on ${server.name}. Select a model from the list.')),
+        SnackBar(content: Text(s.modelNotAvailableRaw(_selectedModel, server.name))),
       );
       return;
     }
@@ -165,23 +167,24 @@ class _CreatePageState extends State<CreatePage> {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isWide = screenWidth >= ThemeConstants.tabletBreakpoint;
     final ext = Theme.of(context).extension<AppColors>()!;
+    final s = AppStrings.of(context);
 
     return BlocListener<SettingsBloc, SettingsState>(
       listenWhen: (prev, curr) => !_loadedSettings && (curr.settings.lastModel.isNotEmpty || curr.settings.lastPrompt.isNotEmpty),
       listener: (context, state) => _loadSettings(),
       child: Scaffold(
       appBar: AppBar(
-        title: Text(_isAutoImageMode ? 'Auto Image' : 'Create'),
+        title: Text(_isAutoImageMode ? s.autoImageTitle : s.createTitle),
         actions: [
           if (!_isAutoImageMode) ...[
             IconButton(
               icon: const Icon(Icons.explore_outlined),
-              tooltip: 'Browse Models & LoRAs',
+              tooltip: s.browseModelsLoras,
               onPressed: () => context.go('/browse'),
             ),
             IconButton(
               icon: const Icon(Icons.bolt_outlined),
-              tooltip: 'Auto Image',
+              tooltip: s.autoImageTooltip,
               onPressed: () => setState(() => _isAutoImageMode = true),
             ),
           ] else ...[
@@ -191,7 +194,7 @@ class _CreatePageState extends State<CreatePage> {
                   return TextButton.icon(
                     onPressed: () => _autoImageController.stop(),
                     icon: const Icon(Icons.stop_circle, color: Colors.red),
-                    label: const Text('Stop'),
+                    label: Text(s.stop),
                   );
                 }
                 return TextButton.icon(
@@ -200,7 +203,7 @@ class _CreatePageState extends State<CreatePage> {
                       : null,
                   icon: Icon(Icons.play_circle,
                       color: _autoImageController.canStart ? ext.accent : ext.muted),
-                  label: Text('Start',
+                  label: Text(s.start,
                       style: TextStyle(
                           color: _autoImageController.canStart ? ext.accent : ext.muted)),
                 );
@@ -208,7 +211,7 @@ class _CreatePageState extends State<CreatePage> {
             ),
             IconButton(
               icon: const Icon(Icons.close),
-              tooltip: 'Back to Create',
+              tooltip: s.backToCreate,
               onPressed: () => setState(() => _isAutoImageMode = false),
             ),
           ],
@@ -222,10 +225,10 @@ class _CreatePageState extends State<CreatePage> {
           : BlocBuilder<ServersBloc, ServersState>(
               builder: (context, serversState) {
                 if (serversState.servers.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.dns_outlined,
-                    title: 'No ComfyUI Server',
-                    message: 'Add a ComfyUI server in Settings to start generating images.',
+                    title: s.noComfyServer,
+                    message: s.noComfyServerMsg,
                   );
                 }
 
@@ -263,6 +266,7 @@ class _CreatePageState extends State<CreatePage> {
     final visibleLoras = serversState.visibleLorasFor(server.id);
     final triggerWords = serversState.triggerWordsFor(server.id);
     final isGenerating = genState.status == GenerationStatus.generating;
+    final s = AppStrings.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -311,7 +315,7 @@ class _CreatePageState extends State<CreatePage> {
                     child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                   )
                 : const Icon(Icons.auto_awesome),
-            label: Text(isGenerating ? 'Add to Queue' : 'Generate'),
+            label: Text(isGenerating ? s.addToQueue : s.generate),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
@@ -369,6 +373,7 @@ class _CreatePageState extends State<CreatePage> {
 
   List<Widget> _buildActiveJobs(GenerationState state) {
     final widgets = <Widget>[];
+    final s = AppStrings.of(context);
 
     if (state.currentJob != null) {
       widgets.add(Padding(
@@ -393,7 +398,7 @@ class _CreatePageState extends State<CreatePage> {
             Icon(Icons.queue_music, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(width: 6),
             Text(
-              'Queue (${state.queue.length})',
+              '${s.queue} (${state.queue.length})',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -418,19 +423,20 @@ class _CreatePageState extends State<CreatePage> {
   }
 
   List<Widget> _buildResults(BuildContext context, GenerationState state) {
+    final s = AppStrings.of(context);
     if (state.images.isEmpty && state.activeJobs.isEmpty) {
       return [
         const SizedBox(height: ThemeConstants.spacingXXLarge),
-        const EmptyState(
+        EmptyState(
           icon: Icons.image_outlined,
-          title: 'No Images Yet',
-          message: 'Write a prompt and hit Generate to create your first image.',
+          title: s.noImagesYet,
+          message: s.noImagesYetMsg,
         ),
       ];
     }
     return [
       if (state.images.isNotEmpty) ...[
-        Text('Results', style: Theme.of(context).textTheme.titleLarge),
+        Text(s.results, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: ThemeConstants.spacingSmall),
         ImageGrid(
           images: state.images,
@@ -447,12 +453,13 @@ class _CreatePageState extends State<CreatePage> {
   }
 
   Widget _buildResultsArea(BuildContext context, GenerationState state) {
+    final s = AppStrings.of(context);
     if (state.images.isEmpty && state.activeJobs.isEmpty) {
-      return const Center(
+      return Center(
         child: EmptyState(
           icon: Icons.image_outlined,
-          title: 'No Images Yet',
-          message: 'Write a prompt and hit Generate to create your first image.',
+          title: s.noImagesYet,
+          message: s.noImagesYetMsg,
         ),
       );
     }
@@ -460,7 +467,7 @@ class _CreatePageState extends State<CreatePage> {
       padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       children: [
         if (state.images.isNotEmpty) ...[
-          Text('Results', style: Theme.of(context).textTheme.titleLarge),
+          Text(s.results, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: ThemeConstants.spacingSmall),
           ImageGrid(
             images: state.images,

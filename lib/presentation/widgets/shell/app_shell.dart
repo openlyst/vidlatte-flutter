@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
+import '../../../i18n/app_strings.dart';
 
 enum AppDestination {
   create(Icons.auto_awesome_outlined, Icons.auto_awesome, 'Create', '/create'),
@@ -53,6 +54,7 @@ class _PhoneShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final s = AppStrings.of(context);
     return Scaffold(
       body: child,
       bottomNavigationBar: Padding(
@@ -82,7 +84,7 @@ class _PhoneShell extends StatelessWidget {
                   return Expanded(
                     child: _FloatingNavItem(
                       icon: selected ? dest.selectedIcon : dest.icon,
-                      label: dest.label,
+                      label: _localizedLabel(s, dest),
                       selected: selected,
                       onTap: () => context.go(dest.path),
                     ),
@@ -170,6 +172,7 @@ class _NavRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Container(
       width: 72,
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -185,7 +188,7 @@ class _NavRail extends StatelessWidget {
                 final selected = index == currentIndex;
                 return _RailIconItem(
                   icon: selected ? dest.selectedIcon : dest.icon,
-                  label: dest.label,
+                  label: _localizedLabel(s, dest),
                   selected: selected,
                   onTap: () => context.go(dest.path),
                 );
@@ -274,6 +277,7 @@ class _DesktopSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Container(
       width: 220,
       padding: const EdgeInsets.fromLTRB(16, 20, 12, 16),
@@ -294,7 +298,7 @@ class _DesktopSidebar extends StatelessWidget {
                 final selected = index == currentIndex;
                 return _SidebarItem(
                   icon: selected ? dest.selectedIcon : dest.icon,
-                  label: dest.label,
+                  label: _localizedLabel(s, dest),
                   selected: selected,
                   onTap: () => context.go(dest.path),
                 );
@@ -402,4 +406,13 @@ class _GradientLogo extends StatelessWidget {
       ],
     );
   }
+}
+
+String _localizedLabel(AppStrings s, AppDestination dest) {
+  return switch (dest) {
+    AppDestination.create => s.create,
+    AppDestination.gallery => s.gallery,
+    AppDestination.studio => s.studio,
+    AppDestination.settings => s.settings,
+  };
 }

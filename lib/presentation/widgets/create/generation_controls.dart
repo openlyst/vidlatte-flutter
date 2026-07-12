@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/comfy_server.dart';
+import '../../../i18n/app_strings.dart';
 import 'lora_picker_dialog.dart';
 
 class GenerationControls extends StatelessWidget {
@@ -122,11 +123,11 @@ class _ServerSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Server', style: Theme.of(context).textTheme.titleMedium),
+        Text(AppStrings.of(context).server, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: ThemeConstants.spacingSmall),
         DropdownButtonFormField<String>(
           initialValue: selectedId,
-          decoration: const InputDecoration(hintText: 'Select server'),
+          decoration: InputDecoration(hintText: AppStrings.of(context).selectServer),
           items: servers.map((s) {
             return DropdownMenuItem(value: s.id, child: Text(s.name));
           }).toList(),
@@ -153,12 +154,12 @@ class _ModelSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Model', style: Theme.of(context).textTheme.titleMedium),
+        Text(AppStrings.of(context).model, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: ThemeConstants.spacingSmall),
         DropdownButtonFormField<String>(
           initialValue: selectedModel.isEmpty ? null : selectedModel,
           decoration: InputDecoration(
-            hintText: models.isEmpty ? 'Loading models...' : 'Select a model',
+            hintText: models.isEmpty ? AppStrings.of(context).loadingModels : AppStrings.of(context).selectModelHint,
           ),
           items: models.map((m) {
             final name = m.split('/').last;
@@ -195,7 +196,7 @@ class _LoraSummary extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('LoRAs', style: theme.textTheme.titleMedium),
+            Text(AppStrings.of(context).loras, style: theme.textTheme.titleMedium),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -218,7 +219,7 @@ class _LoraSummary extends StatelessWidget {
             TextButton.icon(
               onPressed: () => _openPicker(context),
               icon: const Icon(Icons.tune, size: 18),
-              label: const Text('Select'),
+              label: Text(AppStrings.of(context).select),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 minimumSize: Size.zero,
@@ -231,7 +232,7 @@ class _LoraSummary extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'No LoRAs selected',
+              AppStrings.of(context).noLorasSelected,
               style: theme.textTheme.bodySmall,
             ),
           )
@@ -299,7 +300,7 @@ class _CreativitySelector extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Creativity (CFG)', style: theme.textTheme.titleMedium),
+            Text(AppStrings.of(context).creativityCfg, style: theme.textTheme.titleMedium),
             const Spacer(),
             Text(
               '${creativity.label} · ${creativity.cfgScale}',
@@ -376,7 +377,7 @@ class _AdvancedControlsState extends State<_AdvancedControls> {
           onTap: () => setState(() => _expanded = !_expanded),
           child: Row(
             children: [
-              Text('Advanced', style: Theme.of(context).textTheme.titleMedium),
+              Text(AppStrings.of(context).advanced, style: Theme.of(context).textTheme.titleMedium),
               const Spacer(),
               Icon(_expanded ? Icons.expand_less : Icons.expand_more),
             ],
@@ -391,10 +392,10 @@ class _AdvancedControlsState extends State<_AdvancedControls> {
           ),
           const SizedBox(height: ThemeConstants.spacingMedium),
           SwitchListTile(
-            title: const Text('Custom CFG'),
+            title: Text(AppStrings.of(context).customCfg),
             subtitle: Text(_useCustomCfg
-                ? 'Override creativity slider with a custom value'
-                : 'Use creativity slider value'),
+                ? AppStrings.of(context).customCfgSubtitleOn
+                : AppStrings.of(context).customCfgSubtitleOff),
             value: _useCustomCfg,
             onChanged: (v) {
               setState(() => _useCustomCfg = v);
@@ -411,11 +412,11 @@ class _AdvancedControlsState extends State<_AdvancedControls> {
             TextField(
               controller: _cfgController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 isDense: true,
-                labelText: 'CFG Scale',
+                labelText: AppStrings.of(context).cfgScale,
                 hintText: 'e.g. 7.0',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               onChanged: (v) {
                 final parsed = double.tryParse(v);
@@ -432,8 +433,8 @@ class _AdvancedControlsState extends State<_AdvancedControls> {
           ),
           const SizedBox(height: ThemeConstants.spacingMedium),
           SwitchListTile(
-            title: const Text('Hires Fix'),
-            subtitle: const Text('Upscale by 1.5x after generation'),
+            title: Text(AppStrings.of(context).hiresFix),
+            subtitle: Text(AppStrings.of(context).hiresFixSubtitle),
             value: widget.customHiresFix ?? false,
             onChanged: (v) => widget.onHiresFixChanged(v),
             contentPadding: EdgeInsets.zero,
@@ -470,7 +471,7 @@ class _DimensionSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Dimensions', style: Theme.of(context).textTheme.titleSmall),
+        Text(AppStrings.of(context).dimensions, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: ThemeConstants.spacingSmall),
         Wrap(
           spacing: ThemeConstants.spacingSmall,
@@ -501,7 +502,7 @@ class _StepsSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Steps (${customSteps ?? 'server default'})', style: Theme.of(context).textTheme.titleSmall),
+        Text('${AppStrings.of(context).stepsWithDefault} (${customSteps ?? 'server default'})', style: Theme.of(context).textTheme.titleSmall),
         Slider(
           value: (customSteps ?? ComfyConstants.defaultSteps).toDouble(),
           min: ComfyConstants.minSteps.toDouble(),

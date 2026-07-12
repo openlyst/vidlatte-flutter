@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../config/constants.dart';
+import '../../../i18n/app_strings.dart';
 
 class PromptInput extends StatelessWidget {
   final TextEditingController controller;
@@ -20,8 +21,8 @@ class PromptInput extends StatelessWidget {
       maxLines: 4,
       minLines: 3,
       textInputAction: TextInputAction.newline,
-      decoration: const InputDecoration(
-        hintText: 'Describe the image you want to generate...',
+      decoration: InputDecoration(
+        hintText: AppStrings.of(context).describeImage,
         alignLabelWithHint: true,
       ),
     );

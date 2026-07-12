@@ -16,6 +16,7 @@ import '../../widgets/common/image_grid.dart';
 import '../../widgets/create/generation_controls.dart';
 import '../../widgets/create/progress_card.dart';
 import '../../widgets/create/prompt_input.dart';
+import '../../../i18n/app_strings.dart';
 
 class StudioPage extends StatefulWidget {
   const StudioPage({super.key});
@@ -27,13 +28,14 @@ class StudioPage extends StatefulWidget {
 class _StudioPageState extends State<StudioPage> {
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final ext = Theme.of(context).extension<AppColors>()!;
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= ThemeConstants.tabletBreakpoint;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Studio'),
+        title: Text(s.studioTitle),
         actions: [
           BlocBuilder<StudioBloc, StudioState>(
             builder: (context, state) {
@@ -43,7 +45,7 @@ class _StudioPageState extends State<StudioPage> {
                 child: FilledButton.icon(
                   onPressed: () => _createSession(context),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('New Session'),
+                  label: Text(s.newSession),
                 ),
               );
             },
@@ -55,12 +57,12 @@ class _StudioPageState extends State<StudioPage> {
           if (state.sessions.isEmpty) {
             return EmptyState(
               icon: Icons.dashboard_outlined,
-              title: 'No Studio Sessions',
-              message: 'Create a session to organize your generations by project.',
+              title: s.noStudioSessions,
+              message: s.noStudioSessionsMsg,
               action: FilledButton.icon(
                 onPressed: () => _createSession(context),
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('New Session'),
+                label: Text(s.newSession),
               ),
             );
           }
@@ -235,21 +237,21 @@ class _SessionDetailState extends State<_SessionDetail> {
 
     if (server == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(ErrorMessages.comfyNoServer)),
+        SnackBar(content: Text(AppStrings.of(context).comfyNoServerError)),
       );
       return;
     }
 
     if (_promptController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a prompt first.')),
+        SnackBar(content: Text(AppStrings.of(context).enterPrompt)),
       );
       return;
     }
 
     if (_selectedModel.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a model first.')),
+        SnackBar(content: Text(AppStrings.of(context).selectModel)),
       );
       return;
     }
@@ -275,10 +277,10 @@ class _SessionDetailState extends State<_SessionDetail> {
   @override
   Widget build(BuildContext context) {
     if (widget.session == null) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.dashboard_outlined,
-        title: 'Select a Session',
-        message: 'Choose a session from the list to view its images.',
+        title: AppStrings.of(context).selectSession,
+        message: AppStrings.of(context).selectSessionMsg,
       );
     }
 
@@ -305,10 +307,10 @@ class _SessionDetailState extends State<_SessionDetail> {
     final effectiveServer = server ?? serversState.defaultServer ?? (serversState.servers.isNotEmpty ? serversState.servers.first : null);
 
     if (serversState.servers.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.dns_outlined,
-        title: 'No ComfyUI Server',
-        message: 'Add a ComfyUI server in Settings to start generating images.',
+        title: AppStrings.of(context).noComfyServer,
+        message: AppStrings.of(context).noComfyServerMsg,
       );
     }
 
@@ -370,7 +372,7 @@ class _SessionDetailState extends State<_SessionDetail> {
                         child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)),
                       )
                     : const Icon(Icons.auto_awesome),
-                label: Text(isGenerating ? 'Add to Queue' : 'Generate'),
+                label: Text(isGenerating ? AppStrings.of(context).addToQueue : AppStrings.of(context).generate),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -380,7 +382,7 @@ class _SessionDetailState extends State<_SessionDetail> {
             ..._buildActiveJobs(genState),
             if (s.images.isNotEmpty) ...[
               const SizedBox(height: ThemeConstants.spacingMedium),
-              Text('Session Images', style: Theme.of(context).textTheme.titleLarge),
+              Text(AppStrings.of(context).sessionImages, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: ThemeConstants.spacingSmall),
               ImageGrid(
                 images: s.images,
@@ -424,7 +426,7 @@ class _SessionDetailState extends State<_SessionDetail> {
                     Text(s.title, style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 2),
                     Text(
-                      '${s.images.length} images',
+                      '${s.images.length} ${AppStrings.of(context).imagesLabel}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ext.muted),
                     ),
                   ],
@@ -439,7 +441,7 @@ class _SessionDetailState extends State<_SessionDetail> {
                 icon: const Icon(Icons.delete_outline),
                 color: ext.muted,
                 onPressed: () => _confirmDelete(context, s.id),
-                tooltip: 'Delete Session',
+                tooltip: AppStrings.of(context).deleteSession,
               ),
             ],
           ),
@@ -469,7 +471,7 @@ class _SessionDetailState extends State<_SessionDetail> {
               ),
               child: Row(
                 children: [
-                  Text('Sessions', style: Theme.of(ctx).textTheme.titleLarge),
+                  Text(AppStrings.of(context).sessions, style: Theme.of(ctx).textTheme.titleLarge),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: () {
@@ -477,7 +479,7 @@ class _SessionDetailState extends State<_SessionDetail> {
                       _showCreateSessionDialog(context);
                     },
                     icon: const Icon(Icons.add, size: 18),
-                    label: const Text('New'),
+                    label: Text(AppStrings.of(context).new_),
                   ),
                 ],
               ),
@@ -600,19 +602,19 @@ class _SessionDetailState extends State<_SessionDetail> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Session'),
-        content: const Text('Are you sure? This will remove the session and its images.'),
+        title: Text(AppStrings.of(context).deleteSession),
+        content: Text(AppStrings.of(context).deleteSessionMsg),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
               context.read<StudioBloc>().add(StudioSessionDeleted(id));
               Navigator.of(ctx).pop();
             },
-            child: const Text('Delete'),
+            child: Text(AppStrings.of(context).delete),
           ),
         ],
       ),
@@ -633,11 +635,11 @@ void _showCreateSessionDialog(BuildContext context) {
     builder: (ctx) {
       final controller = TextEditingController();
       return AlertDialog(
-        title: const Text('New Session'),
+        title: Text(AppStrings.of(context).newSession),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Session name'),
+          decoration: InputDecoration(hintText: AppStrings.of(context).sessionName),
           onSubmitted: (_) {
             if (controller.text.trim().isNotEmpty) {
               context.read<StudioBloc>().add(StudioSessionCreated(controller.text.trim()));
@@ -648,7 +650,7 @@ void _showCreateSessionDialog(BuildContext context) {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -657,7 +659,7 @@ void _showCreateSessionDialog(BuildContext context) {
               }
               Navigator.of(ctx).pop();
             },
-            child: const Text('Create'),
+            child: Text(AppStrings.of(context).create),
           ),
         ],
       );

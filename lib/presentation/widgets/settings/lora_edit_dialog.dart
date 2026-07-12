@@ -5,6 +5,7 @@ import '../../../bloc/servers/servers_bloc.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/lora_metadata.dart';
+import '../../../i18n/app_strings.dart';
 
 class LoraEditDialog extends StatefulWidget {
   final String serverId;
@@ -63,9 +64,9 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
             ),
           TextField(
             controller: _triggerController,
-            decoration: const InputDecoration(
-              labelText: 'Trigger words',
-              hintText: 'Comma-separated, e.g. cat girl, anime style',
+            decoration: InputDecoration(
+              labelText: AppStrings.of(context).triggerWords,
+              hintText: AppStrings.of(context).triggerWordsHint,
             ),
             maxLines: 2,
           ),
@@ -74,11 +75,11 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(AppStrings.of(context).cancel),
         ),
         FilledButton(
           onPressed: _save,
-          child: const Text('Save'),
+          child: Text(AppStrings.of(context).save),
         ),
       ],
     );
@@ -95,7 +96,7 @@ class _LoraEditDialogState extends State<LoraEditDialog> {
     context.read<ServersBloc>().add(LoraMetadataSaveRequested(widget.serverId, [meta]));
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved: ${widget.loraName.split('/').last}')),
+      SnackBar(content: Text(AppStrings.of(context).savedLoraName(widget.loraName.split('/').last))),
     );
   }
 }

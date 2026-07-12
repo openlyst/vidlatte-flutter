@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../config/constants.dart';
+import '../../../i18n/app_strings.dart';
 
 class ErrorState extends StatelessWidget {
   final String message;
@@ -23,7 +24,7 @@ class ErrorState extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error.withValues(alpha: 0.5)),
             const SizedBox(height: ThemeConstants.spacingMedium),
-            Text('Something went wrong', style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+            Text(AppStrings.of(context).somethingWentWrong, style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: ThemeConstants.spacingSmall),
             Text(message, style: theme.textTheme.bodyMedium, textAlign: TextAlign.center),
             if (onRetry != null) ...[
@@ -31,7 +32,7 @@ class ErrorState extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(AppStrings.of(context).retry),
               ),
             ],
           ],

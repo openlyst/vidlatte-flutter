@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/generation_job.dart';
+import '../../../i18n/app_strings.dart';
 
 class QueueCard extends StatelessWidget {
   final GenerationJob job;
@@ -71,7 +72,7 @@ class QueueCard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.close, size: 18),
             onPressed: onCancel,
-            tooltip: 'Cancel',
+            tooltip: AppStrings.of(context).cancelTooltip,
             visualDensity: VisualDensity.compact,
           ),
         ],

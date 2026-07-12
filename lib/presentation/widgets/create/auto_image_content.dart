@@ -11,6 +11,7 @@ import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/generated_image.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../../i18n/app_strings.dart';
 
 class AutoImageController {
   VoidCallback? _start;
@@ -117,7 +118,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
           !catalog.models.contains(_imageModel)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('"$_imageModel" is not available on the selected server.')),
+              content: Text(AppStrings.of(context).modelNotOnServerRaw(_imageModel))),
         );
         return;
       }
@@ -174,15 +175,16 @@ class _AutoImageContentState extends State<AutoImageContent> {
   }
 
   Widget _buildConfigPanel() {
+    final s = AppStrings.of(context);
     final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       children: [
-        Text('Auto Image', style: theme.textTheme.headlineSmall),
+        Text(s.autoImageTitle, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 2),
-        Text('AI-powered automated image generation',
+        Text(s.autoImageSubtitle,
             style: theme.textTheme.bodySmall),
         const SizedBox(height: ThemeConstants.spacingLarge),
 
@@ -191,7 +193,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Generation Mode', style: theme.textTheme.labelLarge),
+              Text(s.generationMode, style: theme.textTheme.labelLarge),
               const SizedBox(height: ThemeConstants.spacingSmall),
               SegmentedButton<AutoGenMode>(
                 style: ButtonStyle(
@@ -212,16 +214,16 @@ class _AutoImageContentState extends State<AutoImageContent> {
                         BorderRadius.circular(ThemeConstants.borderRadiusSmall),
                   )),
                 ),
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: AutoGenMode.auto,
-                    icon: Icon(Icons.auto_awesome, size: 16),
-                    label: Text('Auto'),
+                    icon: const Icon(Icons.auto_awesome, size: 16),
+                    label: Text(s.auto),
                   ),
                   ButtonSegment(
                     value: AutoGenMode.variation,
-                    icon: Icon(Icons.shuffle, size: 16),
-                    label: Text('Variation'),
+                    icon: const Icon(Icons.shuffle, size: 16),
+                    label: Text(s.variation),
                   ),
                 ],
                 selected: {_mode},
@@ -234,31 +236,30 @@ class _AutoImageContentState extends State<AutoImageContent> {
               if (_mode == AutoGenMode.auto) ...[
                 TextField(
                   controller: _topicController,
-                  decoration: const InputDecoration(
-                    labelText: 'Topic / Idea (optional)',
-                    hintText: 'e.g., cyberpunk city, fantasy portrait...',
+                  decoration: InputDecoration(
+                    labelText: s.topicOptional,
+                    hintText: s.topicHint,
                     isDense: true,
                   ),
                   onChanged: (v) => _topic = v,
                 ),
                 const SizedBox(height: 4),
-                Text('Leave empty for completely random prompts',
+                Text(s.leaveEmptyRandom,
                     style: theme.textTheme.bodySmall),
               ] else ...[
                 TextField(
                   controller: _basePromptController,
                   maxLines: 5,
-                  decoration: const InputDecoration(
-                    labelText: 'Base Prompt',
-                    hintText:
-                        'Paste your prompt here. The AI will create variations...',
+                  decoration: InputDecoration(
+                    labelText: s.basePrompt,
+                    hintText: s.basePromptHint,
                     isDense: true,
                   ),
                   onChanged: (v) => _basePrompt = v,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                    'The AI will vary style, lighting, and details while preserving your core content',
+                    s.variationDesc,
                     style: theme.textTheme.bodySmall),
               ],
             ],
@@ -271,12 +272,12 @@ class _AutoImageContentState extends State<AutoImageContent> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Must Include Tags', style: theme.textTheme.labelLarge),
+              Text(s.mustIncludeTags, style: theme.textTheme.labelLarge),
               const SizedBox(height: ThemeConstants.spacingSmall),
               TextField(
                 controller: _mustIncludeController,
-                decoration: const InputDecoration(
-                  hintText: 'e.g., red hair, specific pose...',
+                decoration: InputDecoration(
+                  hintText: s.mustIncludeHint,
                   isDense: true,
                 ),
                 onChanged: (v) => _mustIncludeTags = v,
@@ -284,7 +285,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
               const SizedBox(height: ThemeConstants.spacingMedium),
               Row(
                 children: [
-                  Text('Max Images', style: theme.textTheme.labelLarge),
+                  Text(s.maxImages, style: theme.textTheme.labelLarge),
                   const Spacer(),
                   SizedBox(
                     width: 80,
@@ -316,7 +317,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   padding: const EdgeInsets.symmetric(
                       vertical: ThemeConstants.spacingSmall),
                   child: Text(
-                      'No LLM servers configured. Add one in Settings.',
+                      s.noLlmServersConfigured,
                       style: theme.textTheme.bodyMedium),
                 ),
               );
@@ -326,7 +327,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('LLM Server', style: theme.textTheme.labelLarge),
+                  Text(s.llmServer, style: theme.textTheme.labelLarge),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedLlmServerId ?? state.servers.first.id,
@@ -348,7 +349,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   if (_selectedLlmServerId != null &&
                       (state.models[_selectedLlmServerId] ?? []).isNotEmpty) ...[
-                    Text('LLM Model', style: theme.textTheme.labelLarge),
+                    Text(s.llmModel, style: theme.textTheme.labelLarge),
                     const SizedBox(height: ThemeConstants.spacingSmall),
                     DropdownButtonFormField<String>(
                       value: _selectedLlmModel,
@@ -378,7 +379,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   padding: const EdgeInsets.symmetric(
                       vertical: ThemeConstants.spacingSmall),
                   child: Text(
-                      'No ComfyUI servers configured. Add one in Settings.',
+                      s.noComfyServersConfigured,
                       style: theme.textTheme.bodyMedium),
                 ),
               );
@@ -388,7 +389,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Image Server', style: theme.textTheme.labelLarge),
+                  Text(s.imageServer, style: theme.textTheme.labelLarge),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   DropdownButtonFormField<String>(
                     initialValue:
@@ -408,7 +409,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   ),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   if (_selectedImageServerId != null) ...[
-                    Text('Image Model', style: theme.textTheme.labelLarge),
+                    Text(s.imageModel, style: theme.textTheme.labelLarge),
                     const SizedBox(height: ThemeConstants.spacingSmall),
                     DropdownButtonFormField<String>(
                       value: _imageModel.isEmpty ? null : _imageModel,
@@ -428,7 +429,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                     if (state
                             .visibleLorasFor(_selectedImageServerId!)
                             .isNotEmpty) ...[
-                      Text('LoRAs', style: theme.textTheme.labelLarge),
+                      Text(s.loras, style: theme.textTheme.labelLarge),
                       const SizedBox(height: ThemeConstants.spacingSmall),
                       Container(
                         constraints: const BoxConstraints(maxHeight: 160),
@@ -518,6 +519,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
   }
 
   Widget _buildOutputPanel() {
+    final s = AppStrings.of(context);
     final ext = Theme.of(context).extension<AppColors>()!;
     final isWide = MediaQuery.sizeOf(context).width >= ThemeConstants.tabletBreakpoint;
     return BlocBuilder<AutoGenBloc, AutoGenState>(
@@ -526,15 +528,15 @@ class _AutoImageContentState extends State<AutoImageContent> {
             state.status != AutoGenStatus.generatingPrompt) {
           return EmptyState(
             icon: Icons.auto_awesome_outlined,
-            title: 'Auto Image',
+            title: s.autoImageTitle,
             message:
-                'Configure settings and press Start to begin automated generation.',
+                s.autoImageEmptyMsg,
             action: isWide
                 ? null
                 : FilledButton.icon(
                     onPressed: _canStart() ? _start : null,
                     icon: const Icon(Icons.play_arrow),
-                    label: const Text('Start Generation'),
+                    label: Text(s.startGeneration),
                   ),
           );
         }
@@ -585,16 +587,17 @@ class _StatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
     final statusText = switch (state.status) {
-      AutoGenStatus.idle => 'Idle',
-      AutoGenStatus.generatingPrompt => 'Generating prompt...',
-      AutoGenStatus.generatingImage => 'Generating image...',
-      AutoGenStatus.waiting => 'Waiting...',
-      AutoGenStatus.paused => 'Paused',
-      AutoGenStatus.completed => 'Completed',
-      AutoGenStatus.error => 'Error: ${state.errorMessage ?? "Unknown"}',
+      AutoGenStatus.idle => s.idle,
+      AutoGenStatus.generatingPrompt => s.generatingPrompt,
+      AutoGenStatus.generatingImage => s.generatingImage,
+      AutoGenStatus.waiting => s.waiting,
+      AutoGenStatus.paused => s.paused,
+      AutoGenStatus.completed => s.completed,
+      AutoGenStatus.error => '${s.error}: ${state.errorMessage ?? "Unknown"}',
     };
 
     final color = switch (state.status) {
@@ -670,6 +673,7 @@ class _CurrentPromptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
     return Container(
@@ -689,7 +693,7 @@ class _CurrentPromptCard extends StatelessWidget {
             children: [
               Icon(Icons.text_snippet, size: 16, color: ext.accent),
               const SizedBox(width: ThemeConstants.spacingSmall),
-              Text('Current Prompt', style: theme.textTheme.labelLarge),
+              Text(s.currentPrompt, style: theme.textTheme.labelLarge),
             ],
           ),
           const SizedBox(height: ThemeConstants.spacingSmall),

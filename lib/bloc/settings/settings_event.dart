@@ -63,3 +63,12 @@ class LastCreativityChanged extends SettingsEvent {
   @override
   List<Object?> get props => [creativity];
 }
+
+class LocaleChanged extends SettingsEvent {
+  final String locale;
+
+  const LocaleChanged(this.locale);
+
+  @override
+  List<Object?> get props => [locale];
+}

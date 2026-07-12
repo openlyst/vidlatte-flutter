@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../config/theme.dart';
+import '../../../i18n/app_strings.dart';
 
 class LoraPickerDialog extends StatefulWidget {
   final List<String> loras;
@@ -48,7 +49,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
         _selected.add(lora);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Max ${widget.maxLoras} LoRAs selected')),
+          SnackBar(content: Text(AppStrings.of(context).maxLorasSelected(widget.maxLoras))),
         );
       }
     });
@@ -68,7 +69,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
               padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
               child: Row(
                 children: [
-                  Text('Select LoRAs', style: theme.textTheme.titleLarge),
+                  Text(AppStrings.of(context).selectLoras, style: theme.textTheme.titleLarge),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -97,11 +98,11 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 autofocus: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   isDense: true,
-                  hintText: 'Search by name or trigger words...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+                  hintText: AppStrings.of(context).searchByNameOrTriggers,
+                  prefixIcon: const Icon(Icons.search),
+                  border: const OutlineInputBorder(),
                 ),
                 onChanged: (v) => setState(() => _search = v),
               ),
@@ -132,7 +133,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
               child: _filtered.isEmpty
                   ? Center(
                       child: Text(
-                        _search.isEmpty ? 'No LoRAs available' : 'No matches',
+                        _search.isEmpty ? AppStrings.of(context).noLorasAvailable : AppStrings.of(context).noMatches,
                         style: theme.textTheme.bodyMedium,
                       ),
                     )
@@ -194,12 +195,12 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(AppStrings.of(context).cancel),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
                     onPressed: () => Navigator.of(context).pop(_selected),
-                    child: const Text('Done'),
+                    child: Text(AppStrings.of(context).done),
                   ),
                 ],
               ),

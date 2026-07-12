@@ -7,6 +7,7 @@ import 'package:photo_view/photo_view.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/generated_image.dart';
+import '../../../i18n/app_strings.dart';
 
 class ImageDetailModal extends StatelessWidget {
   final GeneratedImage image;
@@ -95,7 +96,7 @@ class ImageDetailModal extends StatelessWidget {
                             Icon(Icons.bolt, size: 12, color: ext.accent),
                             const SizedBox(width: 4),
                             Text(
-                              '${image.loras.length} LoRAs',
+                              '${image.loras.length} ${AppStrings.of(context).lorasCount}',
                               style: TextStyle(color: ext.accent, fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(width: 8),
@@ -104,7 +105,7 @@ class ImageDetailModal extends StatelessWidget {
                           ],
                           Flexible(
                             child: Text(
-                              '${image.model.split('/').last} · ${image.width}x${image.height} · seed: ${image.seed}',
+                              AppStrings.of(context).imageMeta(image.model.split('/').last, image.width, image.height, image.seed),
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
                               overflow: TextOverflow.ellipsis,
                             ),

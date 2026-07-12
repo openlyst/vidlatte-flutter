@@ -19,6 +19,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<LastModelChanged>(_onLastModelChanged);
     on<LastLorasChanged>(_onLastLorasChanged);
     on<LastCreativityChanged>(_onLastCreativityChanged);
+    on<LocaleChanged>(_onLocaleChanged);
   }
 
   void _onLoad(SettingsLoadRequested event, Emitter<SettingsState> emit) {
@@ -56,6 +57,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Future<void> _onLastCreativityChanged(LastCreativityChanged event, Emitter<SettingsState> emit) async {
     final updated = state.settings.copyWith(lastCreativity: event.creativity);
+    await _storage.saveSettings(updated);
+    emit(state.copyWith(settings: updated));
+  }
+
+  Future<void> _onLocaleChanged(LocaleChanged event, Emitter<SettingsState> emit) async {
+    final updated = state.settings.copyWith(locale: event.locale);
     await _storage.saveSettings(updated);
     emit(state.copyWith(settings: updated));
   }

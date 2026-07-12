@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class AppSettings extends Equatable {
   final String themeMode;
+  final String locale;
   final String? defaultServerId;
   final String lastModel;
   final List<String> lastLoras;
@@ -18,6 +19,7 @@ class AppSettings extends Equatable {
 
   const AppSettings({
     this.themeMode = 'system',
+    this.locale = 'system',
     this.defaultServerId,
     this.lastModel = '',
     this.lastLoras = const [],
@@ -35,6 +37,7 @@ class AppSettings extends Equatable {
 
   AppSettings copyWith({
     String? themeMode,
+    String? locale,
     String? defaultServerId,
     String? lastModel,
     List<String>? lastLoras,
@@ -51,6 +54,7 @@ class AppSettings extends Equatable {
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
+      locale: locale ?? this.locale,
       defaultServerId: defaultServerId ?? this.defaultServerId,
       lastModel: lastModel ?? this.lastModel,
       lastLoras: lastLoras ?? this.lastLoras,
@@ -72,6 +76,7 @@ class AppSettings extends Equatable {
   factory AppSettings.fromJson(Map<String, dynamic> json) {
     return AppSettings(
       themeMode: json['themeMode'] as String? ?? 'system',
+      locale: json['locale'] as String? ?? 'system',
       defaultServerId: json['defaultServerId'] as String?,
       lastModel: json['lastModel'] as String? ?? '',
       lastLoras: (json['lastLoras'] as List?)?.map((e) => e as String).toList() ?? [],
@@ -90,6 +95,7 @@ class AppSettings extends Equatable {
 
   Map<String, dynamic> toJson() => {
         'themeMode': themeMode,
+        'locale': locale,
         'defaultServerId': defaultServerId,
         'lastModel': lastModel,
         'lastLoras': lastLoras,
@@ -107,7 +113,7 @@ class AppSettings extends Equatable {
 
   @override
   List<Object?> get props => [
-        themeMode, defaultServerId, lastModel, lastLoras, lastCreativity,
+        themeMode, locale, defaultServerId, lastModel, lastLoras, lastCreativity,
         lastCustomSteps, lastHiresFix, lastCustomCfg, lastWidth, lastHeight,
         lastPrompt, saveToGallery, downloadLocally, galleryPassword,
       ];

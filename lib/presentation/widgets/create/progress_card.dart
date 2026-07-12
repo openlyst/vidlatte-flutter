@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/generation_job.dart';
+import '../../../i18n/app_strings.dart';
 
 class ProgressCard extends StatelessWidget {
   final GenerationJob job;
@@ -63,14 +64,14 @@ class ProgressCard extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
                   onPressed: onCancel,
-                  tooltip: 'Cancel',
+                  tooltip: AppStrings.of(context).cancelTooltip,
                   visualDensity: VisualDensity.compact,
                 ),
               if (job.status == JobStatus.failed && onRetry != null)
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 18),
                   onPressed: onRetry,
-                  tooltip: 'Retry',
+                  tooltip: AppStrings.of(context).retryTooltip,
                   visualDensity: VisualDensity.compact,
                 ),
             ],
@@ -91,17 +92,17 @@ class ProgressCard extends StatelessWidget {
             ),
           ] else if (job.status == JobStatus.failed) ...[
             Text(
-              job.errorMessage ?? 'Generation failed',
+              job.errorMessage ?? AppStrings.of(context).generationFailed,
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
             ),
           ] else if (job.status == JobStatus.cancelled) ...[
             Text(
-              'Cancelled',
+              AppStrings.of(context).cancelled,
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ] else ...[
             Text(
-              'Status: ${job.status.name}',
+              AppStrings.of(context).statusLabel(job.status.name),
               style: theme.textTheme.bodySmall,
             ),
           ],

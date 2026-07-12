@@ -10,6 +10,7 @@ import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/settings/lora_edit_dialog.dart';
+import '../../../i18n/app_strings.dart';
 
 class BrowsePage extends StatefulWidget {
   const BrowsePage({super.key});
@@ -35,28 +36,29 @@ class _BrowsePageState extends State<BrowsePage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Browse'),
+        title: Text(s.browseTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/create'),
         ),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Models', icon: Icon(Icons.layers_outlined)),
-            Tab(text: 'LoRAs', icon: Icon(Icons.style_outlined)),
+          tabs: [
+            Tab(text: s.modelsTab, icon: const Icon(Icons.layers_outlined)),
+            Tab(text: s.lorasTab, icon: const Icon(Icons.style_outlined)),
           ],
         ),
       ),
       body: BlocBuilder<ServersBloc, ServersState>(
         builder: (context, state) {
           if (state.servers.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.dns_outlined,
-              title: 'No Server Connected',
-              message: 'Add a ComfyUI server in Settings to browse available models.',
+              title: s.noServerConnected,
+              message: s.noServerConnectedMsg,
             );
           }
 
@@ -96,12 +98,13 @@ class _ModelList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final s = AppStrings.of(context);
 
     if (models.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.layers_clear,
-        title: 'No Models Found',
-        message: 'Make sure your ComfyUI server has checkpoints loaded.',
+        title: s.noModelsFound,
+        message: s.noModelsFoundMsg,
       );
     }
 
@@ -118,7 +121,7 @@ class _ModelList extends StatelessWidget {
           icon: Icons.layers_outlined,
           iconColor: ext.accent,
           title: name,
-          subtitle: folder.isNotEmpty ? folder : 'From: $serverName',
+          subtitle: folder.isNotEmpty ? folder : s.fromServer(serverName),
           trailing: _CopyButton(
             text: model,
             label: name,
@@ -148,12 +151,13 @@ class _LoraList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final s = AppStrings.of(context);
 
     if (loras.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.style_outlined,
-        title: 'No LoRAs Found',
-        message: 'Make sure your ComfyUI server has LoRA models loaded.',
+        title: s.noLorasFound,
+        message: s.noLorasFoundMsg,
       );
     }
 
@@ -169,11 +173,11 @@ class _LoraList extends StatelessWidget {
                   LoraTriggerWordsFetchRequested(serverId, loras),
                 );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Fetching trigger words for ${loras.length} LoRAs...')),
+                  SnackBar(content: Text(s.fetchingTriggerWords(loras.length))),
                 );
               },
               icon: const Icon(Icons.auto_fix_high),
-              label: const Text('Fetch All Trigger Words'),
+              label: Text(s.fetchAllTriggerWords),
             ),
           ),
         ),
@@ -197,9 +201,9 @@ class _LoraList extends StatelessWidget {
           titleStyle: isHidden
               ? TextStyle(color: ext.muted, decoration: TextDecoration.lineThrough)
               : null,
-          subtitle: folder.isNotEmpty ? folder : 'From: $serverName',
+          subtitle: folder.isNotEmpty ? folder : s.fromServer(serverName),
           subtitleExtra: isHidden
-              ? _Badge(text: 'Hidden', color: ext.muted, ext: ext)
+              ? _Badge(text: s.hidden, color: ext.muted, ext: ext)
               : triggers != null && triggers.isNotEmpty
                   ? _TriggerChips(text: triggers, ext: ext)
                   : null,
@@ -209,20 +213,20 @@ class _LoraList extends StatelessWidget {
               _IconButton(
                 ext: ext,
                 icon: Icons.auto_fix_high,
-                tooltip: 'Fetch trigger words',
+                tooltip: s.fetchTriggerWords,
                 onPressed: () {
                   context.read<ServersBloc>().add(
                     LoraTriggerWordsFetchRequested(serverId, [lora]),
                   );
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Fetching trigger words for $name...')),
+                    SnackBar(content: Text(s.fetchingTriggerWordsFor(name))),
                   );
                 },
               ),
               _IconButton(
                 ext: ext,
                 icon: isHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                tooltip: isHidden ? 'Show' : 'Hide',
+                tooltip: isHidden ? s.show : s.hide,
                 active: !isHidden,
                 onPressed: () {
                   final bloc = context.read<ServersBloc>();
@@ -238,7 +242,7 @@ class _LoraList extends StatelessWidget {
               _IconButton(
                 ext: ext,
                 icon: Icons.edit_outlined,
-                tooltip: 'Edit LoRA',
+                tooltip: s.editLora,
                 onPressed: () {
                   final bloc = context.read<ServersBloc>();
                   final existing = bloc.state.loraMetadata[serverId]
@@ -462,11 +466,11 @@ class _CopyButton extends StatelessWidget {
     return _IconButton(
       ext: ext,
       icon: Icons.copy_outlined,
-      tooltip: 'Copy name',
+      tooltip: AppStrings.of(context).copyName,
       onPressed: () {
         Clipboard.setData(ClipboardData(text: text));
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Copied: $label')),
+          SnackBar(content: Text(AppStrings.of(context).copiedLabel(label))),
         );
       },
     );

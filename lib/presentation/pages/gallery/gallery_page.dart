@@ -12,6 +12,7 @@ import '../../../data/models/collection.dart';
 import '../../../data/models/generated_image.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/image_detail_modal.dart';
+import '../../../i18n/app_strings.dart';
 
 class GalleryPage extends StatefulWidget {
   const GalleryPage({super.key});
@@ -39,6 +40,7 @@ class _GalleryPageState extends State<GalleryPage> {
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final s = AppStrings.of(context);
 
     return Scaffold(
       body: BlocListener<GalleryBloc, GalleryState>(
@@ -47,7 +49,7 @@ class _GalleryPageState extends State<GalleryPage> {
           if (!_unlockAttempted) return;
           if (state.isLocked) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Incorrect password')),
+              SnackBar(content: Text(s.incorrectPassword)),
             );
           }
           _unlockAttempted = false;
@@ -58,12 +60,12 @@ class _GalleryPageState extends State<GalleryPage> {
             return CustomScrollView(
               slivers: [
                 _buildHeader(context, ext, state),
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: EmptyState(
                     icon: Icons.photo_library_outlined,
-                    title: 'Gallery is Empty',
-                    message: 'Generated images will appear here automatically.',
+                    title: s.galleryEmpty,
+                    message: s.galleryEmptyMsg,
                   ),
                 ),
               ],
@@ -86,12 +88,12 @@ class _GalleryPageState extends State<GalleryPage> {
               else if (state.filter == GalleryFilter.hidden) ...[
                 SliverToBoxAdapter(child: _buildHiddenBanner(context, ext, state)),
                 if (state.filteredImages.isEmpty)
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                     hasScrollBody: false,
                     child: EmptyState(
                       icon: Icons.lock_outline,
-                      title: 'No Hidden Images',
-                      message: 'Hide images from the card menu to see them here.',
+                      title: s.noHiddenImages,
+                      message: s.noHiddenImagesMsg,
                     ),
                   )
                 else
@@ -101,12 +103,12 @@ class _GalleryPageState extends State<GalleryPage> {
                 if (state.filter == GalleryFilter.collection && state.selectedCollectionId != null)
                   SliverToBoxAdapter(child: _buildCollectionBanner(context, ext, state)),
                 if (state.filteredImages.isEmpty)
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                     hasScrollBody: false,
                     child: EmptyState(
                       icon: Icons.search_off,
-                      title: 'No Results',
-                      message: 'Try a different search or filter.',
+                      title: s.noResults,
+                      message: s.noResultsMsg,
                     ),
                   )
                 else
@@ -121,6 +123,7 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Widget _buildHeader(BuildContext context, AppColors ext, GalleryState state) {
+    final s = AppStrings.of(context);
     return SliverAppBar(
       expandedHeight: 132,
       pinned: true,
@@ -132,7 +135,7 @@ class _GalleryPageState extends State<GalleryPage> {
           left: ThemeConstants.spacingMedium,
           bottom: ThemeConstants.spacingSmall,
         ),
-        title: const Text('Gallery'),
+        title: Text(s.galleryTitle),
         background: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -149,7 +152,7 @@ class _GalleryPageState extends State<GalleryPage> {
               },
               style: Theme.of(context).textTheme.bodyLarge,
               decoration: InputDecoration(
-                hintText: 'Search by prompt, model, or LoRA...',
+                hintText: s.searchPromptModelLora,
                 prefixIcon: Icon(Icons.search, color: ext.muted, size: 20),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -173,6 +176,7 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Widget _buildFilterBar(BuildContext context, AppColors ext, GalleryState state) {
+    final s = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: ThemeConstants.spacingMedium,
@@ -181,7 +185,7 @@ class _GalleryPageState extends State<GalleryPage> {
       child: Row(
         children: [
           _FilterSegment(
-            label: 'All',
+            label: s.all,
             selected: state.filter == GalleryFilter.all,
             onTap: () => context
                 .read<GalleryBloc>()
@@ -192,7 +196,7 @@ class _GalleryPageState extends State<GalleryPage> {
           ),
           const SizedBox(width: ThemeConstants.spacingSmall),
           _FilterSegment(
-            label: 'Favorites',
+            label: s.favorites,
             icon: Icons.favorite_rounded,
             selected: state.filter == GalleryFilter.favorites,
             onTap: () => context
@@ -204,7 +208,7 @@ class _GalleryPageState extends State<GalleryPage> {
           ),
           const SizedBox(width: ThemeConstants.spacingSmall),
           _FilterSegment(
-            label: 'Playlists',
+            label: s.playlists,
             icon: Icons.playlist_play_rounded,
             selected: state.filter == GalleryFilter.collection,
             onTap: () => context
@@ -219,7 +223,7 @@ class _GalleryPageState extends State<GalleryPage> {
             Padding(
               padding: const EdgeInsets.only(right: ThemeConstants.spacingSmall),
               child: _FilterSegment(
-                label: state.isLocked ? 'Locked' : 'Unlocked',
+                label: state.isLocked ? s.locked : s.unlocked,
                 icon: state.isLocked
                     ? Icons.lock_outline
                     : Icons.lock_open_outlined,
@@ -237,7 +241,7 @@ class _GalleryPageState extends State<GalleryPage> {
               ),
             ),
           Text(
-            '${state.filteredImages.length} images',
+            '${state.filteredImages.length} ${s.imagesLabel}',
             style: Theme.of(context).textTheme.labelMedium,
           ),
         ],
@@ -246,6 +250,7 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Widget _buildCollectionBanner(BuildContext context, AppColors ext, GalleryState state) {
+    final s = AppStrings.of(context);
     final collection = state.collections.where((c) => c.id == state.selectedCollectionId).firstOrNull;
     if (collection == null) return const SizedBox.shrink();
     return Padding(
@@ -270,19 +275,19 @@ class _GalleryPageState extends State<GalleryPage> {
           IconButton(
             icon: Icon(Icons.edit_outlined, size: 18, color: ext.muted),
             onPressed: () => _showRenameDialog(context, collection),
-            tooltip: 'Rename',
+            tooltip: s.rename,
           ),
           IconButton(
             icon: Icon(Icons.delete_outline, size: 18, color: ext.muted),
             onPressed: () => _confirmDeleteCollection(context, collection),
-            tooltip: 'Delete playlist',
+            tooltip: s.deletePlaylistTooltip,
           ),
           IconButton(
             icon: Icon(Icons.arrow_back, size: 18, color: ext.muted),
             onPressed: () => context
                 .read<GalleryBloc>()
                 .add(const GalleryCollectionSelected(null)),
-            tooltip: 'Back to playlists',
+            tooltip: s.backToPlaylists,
           ),
         ],
       ),
@@ -290,6 +295,7 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Widget _buildHiddenBanner(BuildContext context, AppColors ext, GalleryState state) {
+    final s = AppStrings.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: ThemeConstants.spacingMedium,
@@ -309,7 +315,7 @@ class _GalleryPageState extends State<GalleryPage> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Locked',
+                  s.locked,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -322,7 +328,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 onPressed: () => context
                     .read<GalleryBloc>()
                     .add(const GalleryCollectionSelected(null)),
-                tooltip: 'Back to playlists',
+                tooltip: s.backToPlaylists,
               ),
             ],
           ),
@@ -367,18 +373,19 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Widget _buildPlaylistsList(BuildContext context, AppColors ext, GalleryState state) {
+    final s = AppStrings.of(context);
     final hasLocked = state.hasPassword;
     if (state.collections.isEmpty && !hasLocked) {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: EmptyState(
           icon: Icons.playlist_play,
-          title: 'No Playlists',
-          message: 'Create a playlist to organize your images.',
+          title: s.noPlaylists,
+          message: s.noPlaylistsMsg,
           action: FilledButton.icon(
             onPressed: () => _showCreateDialog(context),
             icon: const Icon(Icons.add),
-            label: const Text('New Playlist'),
+            label: Text(s.newPlaylist),
           ),
         ),
       );
@@ -400,7 +407,7 @@ class _GalleryPageState extends State<GalleryPage> {
                     side: BorderSide(color: ext.border, width: 0.8),
                   ),
                   leading: Icon(Icons.add, color: ext.accent),
-                  title: Text('New Playlist', style: TextStyle(color: ext.accent, fontWeight: FontWeight.w600)),
+                  title: Text(s.newPlaylist, style: TextStyle(color: ext.accent, fontWeight: FontWeight.w600)),
                   onTap: () => _showCreateDialog(context),
                 ),
               );
@@ -414,8 +421,8 @@ class _GalleryPageState extends State<GalleryPage> {
                   ),
                   tileColor: ext.surfaceElevated,
                   leading: Icon(Icons.lock_outline, color: ext.accent),
-                  title: const Text('Locked', style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('$lockedCount hidden image${lockedCount == 1 ? '' : 's'}'),
+                  title: Text(s.locked, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(s.hiddenImagesCount(lockedCount)),
                   onTap: () {
                     if (state.isLocked) {
                       _showUnlockDialog(context);
@@ -438,7 +445,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 tileColor: ext.surfaceElevated,
                 leading: Icon(Icons.playlist_play, color: ext.accent),
                 title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('$count image${count == 1 ? '' : 's'}'),
+                subtitle: Text(s.imagesCount(count)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -492,23 +499,24 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   void _showCreateDialog(BuildContext context) {
+    final s = AppStrings.of(context);
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('New Playlist'),
+        title: Text(s.newPlaylist),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Playlist name',
-            hintText: 'e.g. Portraits, Landscapes...',
+          decoration: InputDecoration(
+            labelText: s.playlistName,
+            hintText: s.playlistNameHint,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -518,7 +526,7 @@ class _GalleryPageState extends State<GalleryPage> {
               }
               Navigator.of(ctx).pop();
             },
-            child: const Text('Create'),
+            child: Text(s.create),
           ),
         ],
       ),
@@ -526,20 +534,21 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   void _showRenameDialog(BuildContext context, Collection collection) {
+    final s = AppStrings.of(context);
     final controller = TextEditingController(text: collection.name);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rename Playlist'),
+        title: Text(s.renamePlaylist),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Playlist name'),
+          decoration: InputDecoration(labelText: s.playlistName),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -551,7 +560,7 @@ class _GalleryPageState extends State<GalleryPage> {
               }
               Navigator.of(ctx).pop();
             },
-            child: const Text('Save'),
+            child: Text(s.save),
           ),
         ],
       ),
@@ -559,24 +568,25 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   void _confirmDeleteCollection(BuildContext context, Collection collection) {
+    final s = AppStrings.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Playlist'),
+        title: Text(s.deletePlaylist),
         content: Text(
-          'Delete "${collection.name}"? Images will remain in your gallery.',
+          s.deletePlaylistConfirmRaw(collection.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           FilledButton(
             onPressed: () {
               context.read<GalleryBloc>().add(GalleryCollectionDeleted(collection.id));
               Navigator.of(ctx).pop();
             },
-            child: const Text('Delete'),
+            child: Text(s.delete),
           ),
         ],
       ),
@@ -593,6 +603,7 @@ class _GalleryPageState extends State<GalleryPage> {
       isScrollControlled: true,
       builder: (ctx) => BlocBuilder<GalleryBloc, GalleryState>(
         builder: (context, state) {
+          final s = AppStrings.of(context);
           final currentCollections = state.collections;
           return SafeArea(
             child: Column(
@@ -605,7 +616,7 @@ class _GalleryPageState extends State<GalleryPage> {
                       Icon(Icons.playlist_add, size: 20, color: Theme.of(context).extension<AppColors>()!.accent),
                       const SizedBox(width: 8),
                       Text(
-                        'Add to playlist',
+                        s.addToPlaylist,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
@@ -617,16 +628,16 @@ class _GalleryPageState extends State<GalleryPage> {
                       image.isHidden ? Icons.lock : Icons.lock_outline,
                       color: image.isHidden ? Theme.of(context).extension<AppColors>()!.accent : null,
                     ),
-                    title: const Text('Locked'),
+                    title: Text(s.locked),
                     onTap: () {
                       context.read<GalleryBloc>().add(GalleryImageHiddenToggled(image.id));
                       Navigator.of(ctx).pop();
                     },
                   ),
                 if (currentCollections.isEmpty && !state.hasPassword)
-                  const Padding(
-                    padding: EdgeInsets.all(ThemeConstants.spacingLarge),
-                    child: Text('No playlists yet. Tap "New playlist" below to create one.'),
+                  Padding(
+                    padding: const EdgeInsets.all(ThemeConstants.spacingLarge),
+                    child: Text(s.noPlaylistsYet),
                   )
                 else if (currentCollections.isNotEmpty) ...[
                   const Divider(height: 1),
@@ -651,7 +662,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.add),
-                  title: const Text('New playlist'),
+                  title: Text(s.newPlaylist),
                   onTap: () => _showCreateDialog(context),
                 ),
               ],
@@ -670,23 +681,24 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   void _confirmDelete(BuildContext context, GeneratedImage image) {
+    final s = AppStrings.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Image'),
-        content: const Text(
-            'This will permanently remove the image from your device.'),
+        title: Text(s.deleteImage),
+        content: Text(
+            s.deleteImageMsg),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           FilledButton(
             onPressed: () {
               context.read<GalleryBloc>().add(GalleryImageDeleted(image.id));
               Navigator.of(ctx).pop();
             },
-            child: const Text('Delete'),
+            child: Text(s.delete),
           ),
         ],
       ),
@@ -694,29 +706,30 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   void _showUnlockDialog(BuildContext context) {
+    final s = AppStrings.of(context);
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.lock_outline, size: 22),
             SizedBox(width: 8),
-            Text('Gallery Locked'),
+            Text(s.galleryLocked),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Enter your password to view hidden images.'),
+            Text(s.galleryLockedMsg),
             const SizedBox(height: ThemeConstants.spacingMedium),
             TextField(
               controller: controller,
               autofocus: true,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
+              decoration: InputDecoration(
+                labelText: s.password,
                 border: OutlineInputBorder(),
               ),
               onSubmitted: (value) {
@@ -732,7 +745,7 @@ class _GalleryPageState extends State<GalleryPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -743,7 +756,7 @@ class _GalleryPageState extends State<GalleryPage> {
                   .add(GalleryUnlockAttempted(password));
               Navigator.of(ctx).pop();
             },
-            child: const Text('Unlock'),
+            child: Text(s.unlock),
           ),
         ],
       ),
@@ -773,6 +786,7 @@ class _PlaylistsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final s = AppStrings.of(context);
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -783,21 +797,21 @@ class _PlaylistsPanel extends StatelessWidget {
               children: [
                 Icon(Icons.playlist_play, size: 22, color: ext.accent),
                 const SizedBox(width: 8),
-                Text('Playlists', style: Theme.of(context).textTheme.titleMedium),
+                Text(s.playlists, style: Theme.of(context).textTheme.titleMedium),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: onCreate,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('New'),
+                  label: Text(s.new_),
                 ),
               ],
             ),
           ),
           const Divider(height: 1),
           if (collections.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(ThemeConstants.spacingXLarge),
-              child: Text('No playlists yet. Tap "New" to create one.'),
+            Padding(
+              padding: const EdgeInsets.all(ThemeConstants.spacingXLarge),
+              child: Text(s.noPlaylistsYetNew),
             )
           else
             ...collections.map((c) {
@@ -815,7 +829,7 @@ class _PlaylistsPanel extends StatelessWidget {
                     color: selected ? ext.accent : null,
                   ),
                 ),
-                subtitle: Text('$count image${count == 1 ? '' : 's'}'),
+                subtitle: Text(s.imagesCount(count)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

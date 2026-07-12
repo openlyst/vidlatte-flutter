@@ -10,6 +10,7 @@ import '../../../data/models/comfy_server.dart';
 import '../../../data/models/llm_server.dart';
 import '../../../data/models/model_catalog.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../../i18n/app_strings.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -21,8 +22,9 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(s.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           ThemeConstants.spacingLarge,
@@ -32,6 +34,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         children: [
           _ThemeSection(),
+          const SizedBox(height: ThemeConstants.spacingLarge),
+          _LanguageSection(),
           const SizedBox(height: ThemeConstants.spacingLarge),
           _ServersSection(),
           const SizedBox(height: ThemeConstants.spacingLarge),
@@ -102,10 +106,11 @@ class _ThemeSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
+    final s = AppStrings.of(context);
     final settings = context.watch<SettingsBloc>().state.settings;
     return _SectionCard(
-      title: 'Appearance',
-      subtitle: 'Choose how Vidlatte looks.',
+      title: s.appearance,
+      subtitle: s.appearanceSubtitle,
       children: [
         Container(
           padding: const EdgeInsets.all(4),
@@ -116,10 +121,10 @@ class _ThemeSection extends StatelessWidget {
           ),
           child: Row(
             children: [
-              for (final mode in const [
-                ('system', 'System', Icons.brightness_auto_outlined),
-                ('light', 'Light', Icons.light_mode_outlined),
-                ('dark', 'Dark', Icons.dark_mode_outlined),
+              for (final mode in [
+                ('system', s.system, Icons.brightness_auto_outlined),
+                ('light', s.light, Icons.light_mode_outlined),
+                ('dark', s.dark, Icons.dark_mode_outlined),
               ])
                 Expanded(
                   child: _ThemeOption(
@@ -183,24 +188,71 @@ class _ThemeOption extends StatelessWidget {
   }
 }
 
+class _LanguageSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
+    final settings = context.watch<SettingsBloc>().state.settings;
+    final ext = Theme.of(context).extension<AppColors>()!;
+
+    const options = [
+      ('system', 'System', Icons.language),
+      ('en', 'English', Icons.language),
+      ('zh', '简体中文', Icons.language),
+      ('ru', 'Русский', Icons.language),
+    ];
+
+    return _SectionCard(
+      title: s.language,
+      subtitle: s.languageSubtitle,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: ext.surfaceElevated,
+            borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusSmall),
+            border: Border.all(color: ext.border, width: 0.5),
+          ),
+          child: Row(
+            children: [
+              for (final opt in options)
+                Expanded(
+                  child: _ThemeOption(
+                    label: opt.$2,
+                    icon: opt.$3,
+                    selected: settings.locale == opt.$1,
+                    onTap: () => context
+                        .read<SettingsBloc>()
+                        .add(LocaleChanged(opt.$1)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ServersSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ServersBloc, ServersState>(
       builder: (context, state) {
+        final s = AppStrings.of(context);
         return _SectionCard(
-          title: 'ComfyUI Servers',
+          title: s.comfyuiServers,
           trailing: FilledButton.icon(
             onPressed: () => _showAddServerDialog(context),
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add'),
+            label: Text(s.add),
           ),
           children: [
             if (state.servers.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.dns_outlined,
-                title: 'No Servers',
-                message: 'Add a ComfyUI server to start generating images.',
+                title: s.noServers,
+                message: s.noServersMsg,
               )
             else
               ...state.servers.map((server) => Padding(
@@ -247,6 +299,7 @@ class _ServerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     return Container(
       decoration: BoxDecoration(
         color: ext.surfaceElevated,
@@ -288,7 +341,7 @@ class _ServerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Default',
+                  s.default_,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -314,14 +367,14 @@ class _ServerCard extends StatelessWidget {
                 Divider(color: ext.border, height: 1),
                 const SizedBox(height: ThemeConstants.spacingSmall),
                 if (health != null) ...[
-                  _InfoRow('Status', health!.healthy ? 'Healthy' : 'Unhealthy'),
-                  if (health!.os != null) _InfoRow('OS', health!.os!),
+                  _InfoRow(s.status, health!.healthy ? s.healthy : s.unhealthy),
+                  if (health!.os != null) _InfoRow(s.os, health!.os!),
                   if (health!.pythonVersion != null)
-                    _InfoRow('Python', health!.pythonVersion!),
+                    _InfoRow(s.python, health!.pythonVersion!),
                   if (health!.ramTotal != null)
-                    _InfoRow('RAM', '${(health!.ramTotal! / 1024 / 1024 / 1024).toStringAsFixed(1)} GB'),
+                    _InfoRow(s.ram, '${(health!.ramTotal! / 1024 / 1024 / 1024).toStringAsFixed(1)} GB'),
                   if (health!.error != null)
-                    _InfoRow('Error', health!.error!, isError: true),
+                    _InfoRow(s.error, health!.error!, isError: true),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                 ],
                 const SizedBox(height: ThemeConstants.spacingMedium),
@@ -331,14 +384,14 @@ class _ServerCard extends StatelessWidget {
                   children: [
                     _ActionChip(
                       icon: Icons.health_and_safety,
-                      label: 'Health Check',
+                      label: s.healthCheck,
                       onTap: () => context
                           .read<ServersBloc>()
                           .add(ServerHealthCheckRequested(server.id)),
                     ),
                     _ActionChip(
                       icon: Icons.download,
-                      label: 'Fetch Models',
+                      label: s.fetchModels,
                       onTap: () => context
                           .read<ServersBloc>()
                           .add(ServerModelsFetchRequested(server.id)),
@@ -346,7 +399,7 @@ class _ServerCard extends StatelessWidget {
                     if (!isDefault)
                       _ActionChip(
                         icon: Icons.star,
-                        label: 'Set Default',
+                        label: s.setDefault,
                         accent: true,
                         onTap: () => context
                             .read<ServersBloc>()
@@ -354,12 +407,12 @@ class _ServerCard extends StatelessWidget {
                       ),
                     _ActionChip(
                       icon: Icons.edit,
-                      label: 'Edit',
+                      label: s.edit,
                       onTap: () => _showEditDialog(context, server),
                     ),
                     _ActionChip(
                       icon: Icons.delete_outline,
-                      label: 'Delete',
+                      label: s.delete,
                       danger: true,
                       onTap: () => _confirmDelete(context, server.id),
                     ),
@@ -391,19 +444,19 @@ class _ServerCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Server'),
-        content: const Text('Are you sure you want to remove this server?'),
+        title: Text(AppStrings.of(context).deleteServer),
+        content: Text(AppStrings.of(context).deleteServerMsg),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
               context.read<ServersBloc>().add(ServerDeleteRequested(id));
               Navigator.of(ctx).pop();
             },
-            child: const Text('Delete'),
+            child: Text(AppStrings.of(context).delete),
           ),
         ],
       ),
@@ -525,8 +578,9 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return AlertDialog(
-      title: Text(widget.server == null ? 'Add Server' : 'Edit Server'),
+      title: Text(widget.server == null ? s.addServer : s.editServer),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -537,20 +591,20 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  decoration: InputDecoration(labelText: s.name),
+                  validator: (v) => v == null || v.trim().isEmpty ? s.required_ : null,
                 ),
                 const SizedBox(height: ThemeConstants.spacingSmall),
                 TextFormField(
                   controller: _urlController,
-                  decoration: const InputDecoration(
-                    labelText: 'URL',
+                  decoration: InputDecoration(
+                    labelText: s.url,
                     hintText: 'http://127.0.0.1:8188',
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Required';
+                    if (v == null || v.trim().isEmpty) return s.required_;
                     final uri = Uri.tryParse(v.trim());
-                    if (uri == null || !uri.hasScheme) return 'Invalid URL';
+                    if (uri == null || !uri.hasScheme) return s.invalidUrl;
                     return null;
                   },
                 ),
@@ -562,7 +616,7 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(s.cancel),
         ),
         FilledButton(
           onPressed: () {
@@ -574,7 +628,7 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
               Navigator.of(context).pop();
             }
           },
-          child: const Text('Save'),
+          child: Text(s.save),
         ),
       ],
     );
@@ -586,20 +640,21 @@ class _LlmServersSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<LlmBloc, LlmState>(
       builder: (context, state) {
+        final s = AppStrings.of(context);
         return _SectionCard(
-          title: 'LLM Servers',
-          subtitle: 'Connect to LM Studio or any OpenAI-compatible server for prompt generation.',
+          title: s.llmServers,
+          subtitle: s.llmServersSubtitle,
           trailing: FilledButton.icon(
             onPressed: () => _showAddLlmServerDialog(context),
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add'),
+            label: Text(s.add),
           ),
           children: [
             if (state.servers.isEmpty)
-              const EmptyState(
+              EmptyState(
                 icon: Icons.psychology_outlined,
-                title: 'No LLM Servers',
-                message: 'Add an LLM server to enable Auto Image generation.',
+                title: s.noLlmServers,
+                message: s.noLlmServersMsg,
               )
             else
               ...state.servers.map((server) => Padding(
@@ -648,6 +703,7 @@ class _LlmServerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
     final theme = Theme.of(context);
+    final s = AppStrings.of(context);
     return Container(
       decoration: BoxDecoration(
         color: ext.surfaceElevated,
@@ -693,14 +749,14 @@ class _LlmServerCard extends StatelessWidget {
                 Divider(color: ext.border, height: 1),
                 const SizedBox(height: ThemeConstants.spacingSmall),
                 if (health != null) ...[
-                  _LlmInfoRow('Status', health!.healthy == true ? 'Healthy' : 'Unhealthy'),
+                  _LlmInfoRow(s.status, health!.healthy == true ? s.healthy : s.unhealthy),
                   if (health!.error != null)
-                    _LlmInfoRow('Error', health!.error!, isError: true),
+                    _LlmInfoRow(s.error, health!.error!, isError: true),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                 ],
-                _LlmInfoRow('Models', '$modelCount'),
-                _LlmInfoRow('Default Model', server.defaultModel ?? 'None'),
-                _LlmInfoRow('Enabled', server.isEnabled ? 'Yes' : 'No'),
+                _LlmInfoRow(s.models, '$modelCount'),
+                _LlmInfoRow('${s.default_} ${s.model}', server.defaultModel ?? s.none),
+                _LlmInfoRow(s.enabled, server.isEnabled ? s.yes : s.no),
                 const SizedBox(height: ThemeConstants.spacingMedium),
                 Wrap(
                   spacing: ThemeConstants.spacingSmall,
@@ -708,26 +764,26 @@ class _LlmServerCard extends StatelessWidget {
                   children: [
                     _ActionChip(
                       icon: Icons.health_and_safety,
-                      label: 'Test',
+                      label: s.test,
                       onTap: () => context
                           .read<LlmBloc>()
                           .add(LlmHealthCheckRequested(server.id)),
                     ),
                     _ActionChip(
                       icon: Icons.download,
-                      label: 'Fetch Models',
+                      label: s.fetchModels,
                       onTap: () => context
                           .read<LlmBloc>()
                           .add(LlmModelsFetchRequested(server.id)),
                     ),
                     _ActionChip(
                       icon: Icons.edit,
-                      label: 'Edit',
+                      label: s.edit,
                       onTap: () => _showEditDialog(context, server),
                     ),
                     _ActionChip(
                       icon: Icons.delete_outline,
-                      label: 'Delete',
+                      label: s.delete,
                       danger: true,
                       onTap: () => _confirmDelete(context, server.id),
                     ),
@@ -764,19 +820,19 @@ class _LlmServerCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete LLM Server'),
-        content: const Text('Are you sure you want to remove this server?'),
+        title: Text(AppStrings.of(context).deleteLlmServer),
+        content: Text(AppStrings.of(context).deleteLlmServerMsg),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
               context.read<LlmBloc>().add(LlmServerDeleteRequested(id));
               Navigator.of(ctx).pop();
             },
-            child: const Text('Delete'),
+            child: Text(AppStrings.of(context).delete),
           ),
         ],
       ),
@@ -848,8 +904,9 @@ class _LlmServerFormDialogState extends State<_LlmServerFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return AlertDialog(
-      title: Text(widget.server == null ? 'Add LLM Server' : 'Edit LLM Server'),
+      title: Text(widget.server == null ? s.addLlmServer : s.editLlmServer),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -860,38 +917,38 @@ class _LlmServerFormDialogState extends State<_LlmServerFormDialog> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  decoration: InputDecoration(labelText: s.name),
+                  validator: (v) => v == null || v.trim().isEmpty ? s.required_ : null,
                 ),
                 const SizedBox(height: ThemeConstants.spacingSmall),
                 TextFormField(
                   controller: _urlController,
-                  decoration: const InputDecoration(
-                    labelText: 'URL',
+                  decoration: InputDecoration(
+                    labelText: s.url,
                     hintText: 'http://127.0.0.1:1234',
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Required';
+                    if (v == null || v.trim().isEmpty) return s.required_;
                     final uri = Uri.tryParse(v.trim());
-                    if (uri == null || !uri.hasScheme) return 'Invalid URL';
+                    if (uri == null || !uri.hasScheme) return s.invalidUrl;
                     return null;
                   },
                 ),
                 const SizedBox(height: ThemeConstants.spacingSmall),
                 TextFormField(
                   controller: _apiKeyController,
-                  decoration: const InputDecoration(
-                    labelText: 'API Key (optional)',
-                    hintText: 'Leave empty for local servers',
+                  decoration: InputDecoration(
+                    labelText: s.apiKeyOptional,
+                    hintText: s.apiKeyHint,
                   ),
                   obscureText: true,
                 ),
                 const SizedBox(height: ThemeConstants.spacingSmall),
                 TextFormField(
                   controller: _defaultModelController,
-                  decoration: const InputDecoration(
-                    labelText: 'Default Model (optional)',
-                    hintText: 'e.g., llama-3-8b-instruct',
+                  decoration: InputDecoration(
+                    labelText: s.defaultModelOptional,
+                    hintText: s.defaultModelHint,
                   ),
                 ),
               ],
@@ -902,7 +959,7 @@ class _LlmServerFormDialogState extends State<_LlmServerFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(s.cancel),
         ),
         FilledButton(
           onPressed: () {
@@ -918,7 +975,7 @@ class _LlmServerFormDialogState extends State<_LlmServerFormDialog> {
               Navigator.of(context).pop();
             }
           },
-          child: const Text('Save'),
+          child: Text(s.save),
         ),
       ],
     );
@@ -930,12 +987,13 @@ class _GalleryPrivacySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
+        final s = AppStrings.of(context);
         final hasPassword = state.settings.galleryPassword != null;
         return _SectionCard(
-          title: 'Gallery Privacy',
+          title: s.galleryPrivacy,
           subtitle: hasPassword
-              ? 'Password protection enabled'
-              : 'Set a password to hide images',
+              ? s.galleryPrivacyEnabled
+              : s.galleryPrivacyDisabled,
           children: [
             Row(
               children: [
@@ -943,8 +1001,8 @@ class _GalleryPrivacySection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(hasPassword
-                      ? 'Your gallery is protected. Hidden images require a password to view.'
-                      : 'Set a password to lock hidden images. Without a password, hidden images are still visible.'),
+                      ? s.galleryProtectedMsg
+                      : s.galleryNoPasswordMsg),
                 ),
               ],
             ),
@@ -955,14 +1013,14 @@ class _GalleryPrivacySection extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: () => _showPasswordDialog(context, state.settings.galleryPassword),
                     icon: Icon(hasPassword ? Icons.edit : Icons.lock),
-                    label: Text(hasPassword ? 'Change Password' : 'Set Password'),
+                    label: Text(hasPassword ? s.changePassword : s.setPassword),
                   ),
                 ),
                 if (hasPassword) ...[
                   const SizedBox(width: ThemeConstants.spacingSmall),
                   TextButton(
                     onPressed: () => _confirmRemovePassword(context),
-                    child: const Text('Remove'),
+                    child: Text(s.remove),
                   ),
                 ],
               ],
@@ -980,7 +1038,7 @@ class _GalleryPrivacySection extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(existingPassword != null ? 'Change Password' : 'Set Password'),
+        title: Text(existingPassword != null ? AppStrings.of(context).changePassword : AppStrings.of(context).setPassword),
         content: SizedBox(
           width: 360,
           child: Column(
@@ -990,8 +1048,8 @@ class _GalleryPrivacySection extends StatelessWidget {
                 TextField(
                   controller: oldPwdController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Current password',
+                  decoration: InputDecoration(
+                    labelText: AppStrings.of(context).currentPassword,
                   ),
                 ),
                 const SizedBox(height: ThemeConstants.spacingSmall),
@@ -999,16 +1057,16 @@ class _GalleryPrivacySection extends StatelessWidget {
               TextField(
                 controller: pwdController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'New password',
+                decoration: InputDecoration(
+                  labelText: AppStrings.of(context).newPassword,
                 ),
               ),
               const SizedBox(height: ThemeConstants.spacingSmall),
               TextField(
                 controller: confirmController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm password',
+                decoration: InputDecoration(
+                  labelText: AppStrings.of(context).confirmPassword,
                 ),
               ),
             ],
@@ -1017,7 +1075,7 @@ class _GalleryPrivacySection extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -1026,13 +1084,13 @@ class _GalleryPrivacySection extends StatelessWidget {
               if (pwd.isEmpty) return;
               if (pwd != confirm) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Passwords do not match')),
+                  SnackBar(content: Text(AppStrings.of(context).passwordsDoNotMatch)),
                 );
                 return;
               }
               if (existingPassword != null && oldPwdController.text != existingPassword) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Current password is incorrect')),
+                  SnackBar(content: Text(AppStrings.of(context).currentPasswordIncorrect)),
                 );
                 return;
               }
@@ -1042,10 +1100,10 @@ class _GalleryPrivacySection extends StatelessWidget {
               ));
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(existingPassword != null ? 'Password updated' : 'Password set')),
+                SnackBar(content: Text(existingPassword != null ? AppStrings.of(context).passwordUpdated : AppStrings.of(context).passwordSet)),
               );
             },
-            child: const Text('Save'),
+            child: Text(AppStrings.of(context).save),
           ),
         ],
       ),
@@ -1058,17 +1116,17 @@ class _GalleryPrivacySection extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove Password'),
+        title: Text(AppStrings.of(context).removePassword),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Enter your current password to remove password protection.'),
+            Text(AppStrings.of(context).removePasswordMsg),
             const SizedBox(height: ThemeConstants.spacingSmall),
             TextField(
               controller: pwdController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current password',
+              decoration: InputDecoration(
+                labelText: AppStrings.of(context).currentPassword,
               ),
             ),
           ],
@@ -1076,13 +1134,13 @@ class _GalleryPrivacySection extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
               if (pwdController.text != currentPassword) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Incorrect password')),
+                  SnackBar(content: Text(AppStrings.of(context).incorrectPasswordMsg)),
                 );
                 return;
               }
@@ -1092,7 +1150,7 @@ class _GalleryPrivacySection extends StatelessWidget {
               ));
               Navigator.of(ctx).pop();
             },
-            child: const Text('Remove'),
+            child: Text(AppStrings.of(context).remove),
           ),
         ],
       ),
