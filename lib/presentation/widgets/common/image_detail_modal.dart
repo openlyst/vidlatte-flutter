@@ -74,6 +74,51 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
     final server = _getServer();
     if (server == null) return;
 
+    final serversState = context.read<ServersBloc>().state;
+    final catalog = serversState.catalogs[server.id];
+    final upscaleModels = catalog?.upscaleModels ?? [];
+
+    if (upscaleModels.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.noUpscaleModels)),
+      );
+      return;
+    }
+
+    String? selectedModel;
+    if (upscaleModels.length == 1) {
+      selectedModel = upscaleModels.first;
+    } else {
+      selectedModel = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(s.upscaleModel),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: upscaleModels.length,
+              itemBuilder: (ctx, i) {
+                final m = upscaleModels[i];
+                return ListTile(
+                  title: Text(m.split('/').last),
+                  onTap: () => Navigator.of(ctx).pop(m),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (selectedModel == null) return;
+
     setState(() {
       _processing = true;
       _processMsg = s.upscaleImage;
@@ -86,6 +131,7 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
         filename: widget.image.comfyFilename!,
         subfolder: widget.image.comfySubfolder ?? '',
         type: widget.image.comfyType ?? 'output',
+        model: selectedModel,
       );
       comfy.dispose();
 

@@ -209,4 +209,41 @@ void main() {
       expect(inputs['steps'], 10);
     });
   });
+
+  group('ComfyWorkflow.upscale', () {
+    test('uses UpscaleModelLoader and ImageUpscaleWithModel nodes', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output');
+
+      expect(workflow['2']['class_type'], 'UpscaleModelLoader');
+      expect(workflow['3']['class_type'], 'ImageUpscaleWithModel');
+    });
+
+    test('does not use non-existent UpscaleImage node', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output');
+
+      for (final node in workflow.values) {
+        expect((node as Map<String, dynamic>)['class_type'], isNot('UpscaleImage'));
+      }
+    });
+
+    test('wires upscale model loader into ImageUpscaleWithModel', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output',
+          model: 'RealESRGAN_x4plus.pth');
+
+      final loaderInputs = workflow['2']['inputs'] as Map<String, dynamic>;
+      expect(loaderInputs['model_name'], 'RealESRGAN_x4plus.pth');
+
+      final upscaleInputs = workflow['3']['inputs'] as Map<String, dynamic>;
+      expect(upscaleInputs['upscale_model'], ['2', 0]);
+      expect(upscaleInputs['image'], ['1', 0]);
+    });
+
+    test('save node references ImageUpscaleWithModel output', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output');
+
+      final saveInputs = workflow['4']['inputs'] as Map<String, dynamic>;
+      expect(saveInputs['images'], ['3', 0]);
+      expect(workflow['4']['class_type'], 'SaveImage');
+    });
+  });
 }

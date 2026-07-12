@@ -324,15 +324,20 @@ class ComfyWorkflow {
       '2': {
         'inputs': {
           'model_name': model,
-          'image': ['1', 0],
-          'tile_size': 512,
         },
-        'class_type': 'UpscaleImage',
+        'class_type': 'UpscaleModelLoader',
       },
       '3': {
         'inputs': {
+          'upscale_model': ['2', 0],
+          'image': ['1', 0],
+        },
+        'class_type': 'ImageUpscaleWithModel',
+      },
+      '4': {
+        'inputs': {
           'filename_prefix': 'vidlatte_upscale',
-          'images': ['2', 0],
+          'images': ['3', 0],
         },
         'class_type': 'SaveImage',
       },

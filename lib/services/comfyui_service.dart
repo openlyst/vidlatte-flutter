@@ -150,11 +150,14 @@ class ComfyService {
             options: _authOptions(server, responseType: ResponseType.json)),
         _dio.get('$baseUrl/object_info/ControlNetLoader',
             options: _authOptions(server, responseType: ResponseType.json)),
+        _dio.get('$baseUrl/object_info/UpscaleModelLoader',
+            options: _authOptions(server, responseType: ResponseType.json)),
       ]);
 
       final modelsJson = responses[0].data as Map<String, dynamic>;
       final lorasJson = responses[1].data as Map<String, dynamic>;
       final controlnetJson = responses[2].data as Map<String, dynamic>;
+      final upscaleJson = responses[3].data as Map<String, dynamic>;
 
       final models = (modelsJson['CheckpointLoaderSimple']
               as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
@@ -177,11 +180,19 @@ class ComfyService {
           ? (controlnetList[0] as List).cast<String>()
           : <String>[];
 
+      final upscaleModels = (upscaleJson['UpscaleModelLoader']
+              as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
+      final upscaleList = (upscaleModels?['required'] as Map<String, dynamic>?)?['model_name'] as List?;
+      final upscaleNames = upscaleList != null && upscaleList.isNotEmpty
+          ? (upscaleList[0] as List).cast<String>()
+          : <String>[];
+
       return ModelCatalog(
         serverId: server.id,
         models: modelNames,
         loras: loraNames,
         controlnets: controlnetNames,
+        upscaleModels: upscaleNames,
         maxLoras: server.maxLoras,
         fetchedAt: DateTime.now(),
       );

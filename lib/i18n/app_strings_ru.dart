@@ -158,6 +158,8 @@ class AppStringsRu extends AppStrings {
   @override
   String get upscaleFailed => 'Ошибка апскейла';
   @override
+  String get noUpscaleModels => 'На сервере не найдены модели апскейла';
+  @override
   String get inpaint => 'Инпеинтинг';
   @override
   String get inpaintHint => 'Закрасьте области для перерисовки';

@@ -95,6 +95,7 @@ abstract class AppStrings {
   String get faceRestoreFailed;
   String get upscaleDone;
   String get upscaleFailed;
+  String get noUpscaleModels;
 
   // Inpainting
   String get inpaint;
