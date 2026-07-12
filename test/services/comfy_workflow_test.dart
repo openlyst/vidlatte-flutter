@@ -228,22 +228,37 @@ void main() {
 
     test('wires upscale model loader into ImageUpscaleWithModel', () {
       final workflow = ComfyWorkflow.upscale('test.png', '', 'output',
-          model: 'RealESRGAN_x4plus.pth');
+          model: '4x_NMKD-Siax_200k.pth');
 
       final loaderInputs = workflow['2']['inputs'] as Map<String, dynamic>;
-      expect(loaderInputs['model_name'], 'RealESRGAN_x4plus.pth');
+      expect(loaderInputs['model_name'], '4x_NMKD-Siax_200k.pth');
 
       final upscaleInputs = workflow['3']['inputs'] as Map<String, dynamic>;
       expect(upscaleInputs['upscale_model'], ['2', 0]);
       expect(upscaleInputs['image'], ['1', 0]);
     });
 
-    test('save node references ImageUpscaleWithModel output', () {
-      final workflow = ComfyWorkflow.upscale('test.png', '', 'output');
+    test('skips ImageScaleBy when scale matches model native scale', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output',
+          model: '4x_NMKD-Siax_200k.pth', scale: 4.0);
 
+      expect(workflow['4']['class_type'], 'SaveImage');
       final saveInputs = workflow['4']['inputs'] as Map<String, dynamic>;
       expect(saveInputs['images'], ['3', 0]);
-      expect(workflow['4']['class_type'], 'SaveImage');
+    });
+
+    test('adds ImageScaleBy when scale differs from model native scale', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output',
+          model: '4x_NMKD-Siax_200k.pth', scale: 2.0);
+
+      expect(workflow['4']['class_type'], 'ImageScaleBy');
+      final scaleInputs = workflow['4']['inputs'] as Map<String, dynamic>;
+      expect(scaleInputs['scale_by'], 0.5);
+      expect(scaleInputs['image'], ['3', 0]);
+
+      expect(workflow['5']['class_type'], 'SaveImage');
+      final saveInputs = workflow['5']['inputs'] as Map<String, dynamic>;
+      expect(saveInputs['images'], ['4', 0]);
     });
   });
 }
