@@ -10,10 +10,11 @@ class AppConfig {
 }
 
 class ThemeConstants {
-  static const double borderRadius = 12.0;
+  static const double borderRadius = 14.0;
   static const double borderRadiusSmall = 8.0;
-  static const double borderRadiusLarge = 16.0;
+  static const double borderRadiusLarge = 18.0;
   static const double borderRadiusXLarge = 24.0;
+  static const double borderRadiusPill = 999.0;
 
   static const double spacingXSmall = 4.0;
   static const double spacingSmall = 8.0;
