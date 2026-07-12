@@ -58,7 +58,7 @@ class _PhoneShell extends StatelessWidget {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: SizedBox(
-          height: 60,
+          height: 68,
           child: Container(
             decoration: BoxDecoration(
               color: ext.surfaceElevated,
@@ -117,30 +117,26 @@ class _FloatingNavItem extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? ext.accent.withValues(alpha: 0.12) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          color: selected ? ext.accent.withValues(alpha: 0.14) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
         ),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 22, color: selected ? ext.accent : ext.muted),
-              if (selected) ...[
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: ext.accent,
-                  ),
-                ),
-              ],
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: selected ? ext.accent : ext.muted),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? ext.accent : ext.muted,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -278,7 +274,6 @@ class _DesktopSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ext = Theme.of(context).extension<AppColors>()!;
     return Container(
       width: 220,
       padding: const EdgeInsets.fromLTRB(16, 20, 12, 16),
@@ -375,17 +370,20 @@ class _GradientLogo extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(
-            color: ext.accent,
-            borderRadius: BorderRadius.circular(size * 0.28),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [ext.accentGradientStart, ext.accentGradientEnd],
+            ),
+            borderRadius: BorderRadius.circular(size * 0.3),
           ),
           child: Center(
-            child: Text(
-              'V',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: size * 0.55,
-                fontWeight: FontWeight.w800,
-              ),
+            child: Icon(
+              Icons.local_cafe,
+              size: size * 0.52,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? ext.espresso
+                  : Colors.white,
             ),
           ),
         ),
@@ -394,9 +392,9 @@ class _GradientLogo extends StatelessWidget {
           Text(
             AppConfig.appName,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
+              fontSize: 19,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.4,
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
