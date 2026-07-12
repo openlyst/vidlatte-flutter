@@ -113,6 +113,26 @@ class AppStringsZh extends AppStrings {
   String get negativePromptHint => '不想在图片中出现的内容';
   @override
   String get loraWeight => '强度';
+  @override
+  String get img2img => '图生图';
+  @override
+  String get txt2img => '文生图';
+  @override
+  String get selectRefImage => '选择参考图片';
+  @override
+  String get refImageHint => '上传或选择一张图片进行变换';
+  @override
+  String get denoiseStrength => '重绘幅度';
+  @override
+  String get denoiseHint => '越高变化越大，越低越接近原图';
+  @override
+  String get uploadImage => '上传图片';
+  @override
+  String get pickFromGallery => '从图库选择';
+  @override
+  String get noRefImage => '未选择参考图片';
+  @override
+  String get removeRefImage => '移除';
 
   @override
   String get createTitle => '创作';

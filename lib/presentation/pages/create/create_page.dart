@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,11 +12,13 @@ import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/comfy_server.dart';
 import '../../../data/models/generated_image.dart';
+import '../../../services/comfyui_service.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/image_detail_modal.dart';
 import '../../widgets/common/image_grid.dart';
 import '../../widgets/create/auto_image_content.dart';
 import '../../widgets/create/generation_controls.dart';
+import '../../widgets/create/img2img_input.dart';
 import '../../widgets/create/prompt_input.dart';
 import '../../widgets/create/progress_card.dart';
 import '../../widgets/create/queue_card.dart';
@@ -43,6 +47,9 @@ class _CreatePageState extends State<CreatePage> {
 
   bool _loadedSettings = false;
   bool _isAutoImageMode = false;
+  bool _isImg2Img = false;
+  Uint8List? _refImageBytes;
+  double _denoise = 0.5;
   final _autoImageController = AutoImageController();
 
   void _onAutoImageChanged() {
@@ -115,7 +122,7 @@ class _CreatePageState extends State<CreatePage> {
     } catch (_) {}
   }
 
-  void _generate() {
+  Future<void> _generate() async {
     final serversState = context.read<ServersBloc>().state;
     ComfyServer? server;
     if (_selectedServerId != null) {
@@ -155,6 +162,34 @@ class _CreatePageState extends State<CreatePage> {
 
     _persistSettings();
 
+    String? refFilename;
+    String? refSubfolder;
+    String? refType;
+
+    if (_isImg2Img && _refImageBytes != null) {
+      try {
+        final comfy = ComfyService();
+        final uploaded = await comfy.uploadImage(
+          server,
+          _refImageBytes!,
+          'vidlatte_ref_${DateTime.now().millisecondsSinceEpoch}.png',
+        );
+        refFilename = uploaded.filename;
+        refSubfolder = uploaded.subfolder;
+        refType = uploaded.type;
+        comfy.dispose();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Upload failed: $e')),
+          );
+        }
+        return;
+      }
+    }
+
+    if (!mounted) return;
+
     context.read<GenerationBloc>().add(GenerationSubmitted(
           server: server,
           prompt: _promptController.text.trim(),
@@ -168,6 +203,10 @@ class _CreatePageState extends State<CreatePage> {
           hiresFix: _customHiresFix,
           width: _width,
           height: _height,
+          refImageFilename: refFilename,
+          refImageSubfolder: refSubfolder,
+          refImageType: refType,
+          denoise: _denoise,
         ));
   }
 
@@ -284,6 +323,17 @@ class _CreatePageState extends State<CreatePage> {
           negativeController: _negativePromptController,
           maxLength: ComfyConstants.maxPromptLength,
         ),
+        const SizedBox(height: ThemeConstants.spacingSmall),
+        _buildModeToggle(context),
+        if (_isImg2Img) ...[
+          const SizedBox(height: ThemeConstants.spacingSmall),
+          Img2ImgInput(
+            refImageBytes: _refImageBytes,
+            denoise: _denoise,
+            onImageChanged: (bytes) => setState(() => _refImageBytes = bytes),
+            onDenoiseChanged: (v) => setState(() => _denoise = v),
+          ),
+        ],
         const SizedBox(height: ThemeConstants.spacingMedium),
         GenerationControls(
           models: catalog?.models as List<String>? ?? [],
@@ -501,6 +551,35 @@ class _CreatePageState extends State<CreatePage> {
     showDialog(
       context: context,
       builder: (_) => ImageDetailModal(image: image),
+    );
+  }
+
+  Widget _buildModeToggle(BuildContext context) {
+    final s = AppStrings.of(context);
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return SegmentedButton<bool>(
+      segments: [
+        ButtonSegment(
+          value: false,
+          icon: const Icon(Icons.text_fields, size: 18),
+          label: Text(s.txt2img),
+        ),
+        ButtonSegment(
+          value: true,
+          icon: const Icon(Icons.image, size: 18),
+          label: Text(s.img2img),
+        ),
+      ],
+      selected: {_isImg2Img},
+      onSelectionChanged: (selection) {
+        setState(() {
+          _isImg2Img = selection.first;
+          if (!_isImg2Img) _refImageBytes = null;
+        });
+      },
+      style: const ButtonStyle(
+        visualDensity: VisualDensity(horizontal: -3, vertical: -2),
+      ),
     );
   }
 }
