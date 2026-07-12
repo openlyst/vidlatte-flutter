@@ -181,8 +181,10 @@ class _SessionDetail extends StatefulWidget {
 
 class _SessionDetailState extends State<_SessionDetail> {
   final _promptController = TextEditingController();
+  final _negativePromptController = TextEditingController();
   String _selectedModel = '';
   List<String> _selectedLoras = [];
+  Map<String, double> _loraWeights = {};
   Creativity _creativity = Creativity.normal;
   double? _customCfg;
   int? _customSteps;
@@ -221,6 +223,7 @@ class _SessionDetailState extends State<_SessionDetail> {
   @override
   void dispose() {
     _promptController.dispose();
+    _negativePromptController.dispose();
     super.dispose();
   }
 
@@ -263,8 +266,10 @@ class _SessionDetailState extends State<_SessionDetail> {
     context.read<GenerationBloc>().add(GenerationSubmitted(
           server: server,
           prompt: _promptController.text.trim(),
+          negativePrompt: _negativePromptController.text.trim(),
           model: _selectedModel,
           loras: _selectedLoras,
+          loraWeights: _loraWeights,
           creativity: _creativity,
           cfg: _customCfg,
           steps: _customSteps,
@@ -330,7 +335,7 @@ class _SessionDetailState extends State<_SessionDetail> {
           children: [
             _buildSessionHeader(context, s),
             const SizedBox(height: ThemeConstants.spacingMedium),
-            PromptInput(controller: _promptController, maxLength: ComfyConstants.maxPromptLength),
+            PromptInput(controller: _promptController, negativeController: _negativePromptController, maxLength: ComfyConstants.maxPromptLength),
             const SizedBox(height: ThemeConstants.spacingMedium),
             GenerationControls(
               models: catalog?.models as List<String>? ?? [],
@@ -339,6 +344,7 @@ class _SessionDetailState extends State<_SessionDetail> {
               maxLoras: effectiveServer.maxLoras,
               selectedModel: _selectedModel,
               selectedLoras: _selectedLoras,
+              loraWeights: _loraWeights,
               creativity: _creativity,
               customCfg: _customCfg,
               customSteps: _customSteps,
@@ -349,6 +355,7 @@ class _SessionDetailState extends State<_SessionDetail> {
               selectedServerId: effectiveServer.id,
               onModelChanged: (m) => setState(() => _selectedModel = m),
               onLorasChanged: (l) => setState(() => _selectedLoras = l),
+              onLoraWeightsChanged: (w) => setState(() => _loraWeights = w),
               onCreativityChanged: (c) => setState(() => _creativity = c),
               onCfgChanged: (v) => setState(() => _customCfg = v),
               onStepsChanged: (st) => setState(() => _customSteps = st),
@@ -358,6 +365,7 @@ class _SessionDetailState extends State<_SessionDetail> {
                 _selectedServerId = id;
                 _selectedModel = '';
                 _selectedLoras = [];
+                _loraWeights = {};
               }),
             ),
             const SizedBox(height: ThemeConstants.spacingLarge),

@@ -17,6 +17,10 @@ class ServerAddRequested extends ServersEvent {
   final int maxLoras;
   final int steps;
   final bool hiresFix;
+  final ServerAuthType authType;
+  final String? authUsername;
+  final String? authPassword;
+  final String? authToken;
 
   const ServerAddRequested({
     required this.name,
@@ -24,10 +28,14 @@ class ServerAddRequested extends ServersEvent {
     this.maxLoras = 5,
     this.steps = 20,
     this.hiresFix = false,
+    this.authType = ServerAuthType.none,
+    this.authUsername,
+    this.authPassword,
+    this.authToken,
   });
 
   @override
-  List<Object?> get props => [name, url, maxLoras, steps, hiresFix];
+  List<Object?> get props => [name, url, maxLoras, steps, hiresFix, authType, authUsername, authPassword, authToken];
 }
 
 class ServerUpdateRequested extends ServersEvent {

@@ -93,6 +93,26 @@ class AppStringsZh extends AppStrings {
   String get url => '地址';
   @override
   String get invalidUrl => '无效地址';
+  @override
+  String get authType => '认证方式';
+  @override
+  String get authNone => '无';
+  @override
+  String get authBasic => '基本认证';
+  @override
+  String get authBearer => 'Bearer 令牌';
+  @override
+  String get username => '用户名';
+  @override
+  String get authPassword => '密码';
+  @override
+  String get authToken => '令牌';
+  @override
+  String get negativePrompt => '反向提示词';
+  @override
+  String get negativePromptHint => '不想在图片中出现的内容';
+  @override
+  String get loraWeight => '强度';
 
   @override
   String get createTitle => '创作';

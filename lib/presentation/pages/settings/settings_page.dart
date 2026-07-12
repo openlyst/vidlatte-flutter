@@ -273,10 +273,14 @@ class _ServersSection extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => _ServerFormDialog(
-        onSave: (name, url) {
+        onSave: (name, url, authType, authUsername, authPassword, authToken) {
           context.read<ServersBloc>().add(ServerAddRequested(
                 name: name,
                 url: url,
+                authType: authType,
+                authUsername: authUsername,
+                authPassword: authPassword,
+                authToken: authToken,
               ));
         },
       ),
@@ -431,9 +435,16 @@ class _ServerCard extends StatelessWidget {
       context: context,
       builder: (ctx) => _ServerFormDialog(
         server: server,
-        onSave: (name, url) {
+        onSave: (name, url, authType, authUsername, authPassword, authToken) {
           context.read<ServersBloc>().add(ServerUpdateRequested(
-                server.copyWith(name: name, url: url),
+                server.copyWith(
+                  name: name,
+                  url: url,
+                  authType: authType,
+                  authUsername: authUsername,
+                  authPassword: authPassword,
+                  authToken: authToken,
+                ),
               ));
         },
       ),
@@ -556,7 +567,7 @@ class _ActionChip extends StatelessWidget {
 
 class _ServerFormDialog extends StatefulWidget {
   final ComfyServer? server;
-  final void Function(String name, String url) onSave;
+  final void Function(String name, String url, ServerAuthType authType, String? authUsername, String? authPassword, String? authToken) onSave;
 
   const _ServerFormDialog({this.server, required this.onSave});
 
@@ -567,12 +578,25 @@ class _ServerFormDialog extends StatefulWidget {
 class _ServerFormDialogState extends State<_ServerFormDialog> {
   late final _nameController = TextEditingController(text: widget.server?.name ?? '');
   late final _urlController = TextEditingController(text: widget.server?.url ?? 'http://127.0.0.1:8188');
+  late final _usernameController = TextEditingController(text: widget.server?.authUsername ?? '');
+  late final _passwordController = TextEditingController(text: widget.server?.authPassword ?? '');
+  late final _tokenController = TextEditingController(text: widget.server?.authToken ?? '');
+  ServerAuthType _authType = ServerAuthType.none;
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _authType = widget.server?.authType ?? ServerAuthType.none;
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _urlController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _tokenController.dispose();
     super.dispose();
   }
 
@@ -608,6 +632,38 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
                     return null;
                   },
                 ),
+                const SizedBox(height: ThemeConstants.spacingMedium),
+                DropdownButtonFormField<ServerAuthType>(
+                  initialValue: _authType,
+                  decoration: InputDecoration(labelText: s.authType),
+                  items: [
+                    DropdownMenuItem(value: ServerAuthType.none, child: Text(s.authNone)),
+                    DropdownMenuItem(value: ServerAuthType.basic, child: Text(s.authBasic)),
+                    DropdownMenuItem(value: ServerAuthType.bearer, child: Text(s.authBearer)),
+                  ],
+                  onChanged: (v) => setState(() => _authType = v ?? ServerAuthType.none),
+                ),
+                if (_authType == ServerAuthType.basic) ...[
+                  const SizedBox(height: ThemeConstants.spacingSmall),
+                  TextFormField(
+                    controller: _usernameController,
+                    decoration: InputDecoration(labelText: s.username),
+                  ),
+                  const SizedBox(height: ThemeConstants.spacingSmall),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(labelText: s.authPassword),
+                    obscureText: true,
+                  ),
+                ],
+                if (_authType == ServerAuthType.bearer) ...[
+                  const SizedBox(height: ThemeConstants.spacingSmall),
+                  TextFormField(
+                    controller: _tokenController,
+                    decoration: InputDecoration(labelText: s.authToken),
+                    obscureText: true,
+                  ),
+                ],
               ],
             ),
           ),
@@ -624,6 +680,10 @@ class _ServerFormDialogState extends State<_ServerFormDialog> {
               widget.onSave(
                 _nameController.text.trim(),
                 _urlController.text.trim(),
+                _authType,
+                _authType == ServerAuthType.basic ? _usernameController.text.trim() : null,
+                _authType == ServerAuthType.basic ? _passwordController.text.trim() : null,
+                _authType == ServerAuthType.bearer ? _tokenController.text.trim() : null,
               );
               Navigator.of(context).pop();
             }

@@ -37,8 +37,10 @@ extension ImageStatusExtension on ImageStatus {
 class GeneratedImage extends Equatable {
   final String id;
   final String prompt;
+  final String negativePrompt;
   final String model;
   final List<String> loras;
+  final Map<String, double> loraWeights;
   final Creativity creativity;
   final int? steps;
   final bool hiresFix;
@@ -61,8 +63,10 @@ class GeneratedImage extends Equatable {
   const GeneratedImage({
     required this.id,
     required this.prompt,
+    this.negativePrompt = '',
     required this.model,
     this.loras = const [],
+    this.loraWeights = const {},
     this.creativity = Creativity.normal,
     this.steps,
     this.hiresFix = false,
@@ -86,8 +90,10 @@ class GeneratedImage extends Equatable {
   GeneratedImage copyWith({
     String? id,
     String? prompt,
+    String? negativePrompt,
     String? model,
     List<String>? loras,
+    Map<String, double>? loraWeights,
     Creativity? creativity,
     int? steps,
     bool? hiresFix,
@@ -110,8 +116,10 @@ class GeneratedImage extends Equatable {
     return GeneratedImage(
       id: id ?? this.id,
       prompt: prompt ?? this.prompt,
+      negativePrompt: negativePrompt ?? this.negativePrompt,
       model: model ?? this.model,
       loras: loras ?? this.loras,
+      loraWeights: loraWeights ?? this.loraWeights,
       creativity: creativity ?? this.creativity,
       steps: steps ?? this.steps,
       hiresFix: hiresFix ?? this.hiresFix,
@@ -137,8 +145,10 @@ class GeneratedImage extends Equatable {
     return GeneratedImage(
       id: json['id'] as String,
       prompt: json['prompt'] as String,
+      negativePrompt: json['negativePrompt'] as String? ?? '',
       model: json['model'] as String,
       loras: (json['loras'] as List?)?.map((e) => e as String).toList() ?? [],
+      loraWeights: (json['loraWeights'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, (v as num).toDouble())) ?? {},
       creativity: _parseCreativity(json['creativity'] as String? ?? 'normal'),
       steps: json['steps'] as int?,
       hiresFix: json['hiresFix'] as bool? ?? false,
@@ -163,8 +173,10 @@ class GeneratedImage extends Equatable {
   Map<String, dynamic> toJson() => {
         'id': id,
         'prompt': prompt,
+        'negativePrompt': negativePrompt,
         'model': model,
         'loras': loras,
+        'loraWeights': loraWeights,
         'creativity': creativity.name,
         'steps': steps,
         'hiresFix': hiresFix,
@@ -200,7 +212,7 @@ class GeneratedImage extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, prompt, model, loras, creativity, steps, hiresFix,
+        id, prompt, negativePrompt, model, loras, loraWeights, creativity, steps, hiresFix,
         width, height, seed, status, localPath, serverUrl,
         comfyFilename, comfySubfolder, comfyType, errorMessage,
         isFavorite, isHidden, collectionId, createdAt, completedAt,

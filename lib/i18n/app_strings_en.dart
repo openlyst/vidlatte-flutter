@@ -93,6 +93,26 @@ class AppStringsEn extends AppStrings {
   String get url => 'URL';
   @override
   String get invalidUrl => 'Invalid URL';
+  @override
+  String get authType => 'Authentication';
+  @override
+  String get authNone => 'None';
+  @override
+  String get authBasic => 'Basic Auth';
+  @override
+  String get authBearer => 'Bearer Token';
+  @override
+  String get username => 'Username';
+  @override
+  String get authPassword => 'Password';
+  @override
+  String get authToken => 'Token';
+  @override
+  String get negativePrompt => 'Negative Prompt';
+  @override
+  String get negativePromptHint => 'What to avoid in the image';
+  @override
+  String get loraWeight => 'Strength';
 
   @override
   String get createTitle => 'Create';

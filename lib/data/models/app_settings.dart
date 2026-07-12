@@ -13,6 +13,8 @@ class AppSettings extends Equatable {
   final int lastWidth;
   final int lastHeight;
   final String lastPrompt;
+  final String lastNegativePrompt;
+  final Map<String, double> lastLoraWeights;
   final bool saveToGallery;
   final bool downloadLocally;
   final String? galleryPassword;
@@ -30,6 +32,8 @@ class AppSettings extends Equatable {
     this.lastWidth = 768,
     this.lastHeight = 768,
     this.lastPrompt = '',
+    this.lastNegativePrompt = '',
+    this.lastLoraWeights = const {},
     this.saveToGallery = true,
     this.downloadLocally = true,
     this.galleryPassword,
@@ -48,6 +52,8 @@ class AppSettings extends Equatable {
     int? lastWidth,
     int? lastHeight,
     String? lastPrompt,
+    String? lastNegativePrompt,
+    Map<String, double>? lastLoraWeights,
     bool? saveToGallery,
     bool? downloadLocally,
     Object? galleryPassword = _sentinel,
@@ -65,6 +71,8 @@ class AppSettings extends Equatable {
       lastWidth: lastWidth ?? this.lastWidth,
       lastHeight: lastHeight ?? this.lastHeight,
       lastPrompt: lastPrompt ?? this.lastPrompt,
+      lastNegativePrompt: lastNegativePrompt ?? this.lastNegativePrompt,
+      lastLoraWeights: lastLoraWeights ?? this.lastLoraWeights,
       saveToGallery: saveToGallery ?? this.saveToGallery,
       downloadLocally: downloadLocally ?? this.downloadLocally,
       galleryPassword: identical(galleryPassword, _sentinel)
@@ -87,6 +95,8 @@ class AppSettings extends Equatable {
       lastWidth: json['lastWidth'] as int? ?? 768,
       lastHeight: json['lastHeight'] as int? ?? 768,
       lastPrompt: json['lastPrompt'] as String? ?? '',
+      lastNegativePrompt: json['lastNegativePrompt'] as String? ?? '',
+      lastLoraWeights: (json['lastLoraWeights'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, (v as num).toDouble())) ?? {},
       saveToGallery: json['saveToGallery'] as bool? ?? true,
       downloadLocally: json['downloadLocally'] as bool? ?? true,
       galleryPassword: json['galleryPassword'] as String?,
@@ -106,6 +116,8 @@ class AppSettings extends Equatable {
         'lastWidth': lastWidth,
         'lastHeight': lastHeight,
         'lastPrompt': lastPrompt,
+        'lastNegativePrompt': lastNegativePrompt,
+        'lastLoraWeights': lastLoraWeights,
         'saveToGallery': saveToGallery,
         'downloadLocally': downloadLocally,
         'galleryPassword': galleryPassword,
@@ -115,7 +127,7 @@ class AppSettings extends Equatable {
   List<Object?> get props => [
         themeMode, locale, defaultServerId, lastModel, lastLoras, lastCreativity,
         lastCustomSteps, lastHiresFix, lastCustomCfg, lastWidth, lastHeight,
-        lastPrompt, saveToGallery, downloadLocally, galleryPassword,
+        lastPrompt, lastNegativePrompt, lastLoraWeights, saveToGallery, downloadLocally, galleryPassword,
       ];
 }
 

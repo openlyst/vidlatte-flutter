@@ -55,6 +55,20 @@ abstract class AppStrings {
   String get name;
   String get url;
   String get invalidUrl;
+  String get authType;
+  String get authNone;
+  String get authBasic;
+  String get authBearer;
+  String get username;
+  String get authPassword;
+  String get authToken;
+
+  // Negative prompt
+  String get negativePrompt;
+  String get negativePromptHint;
+
+  // LoRA weights
+  String get loraWeight;
 
   // Create page
   String get createTitle;

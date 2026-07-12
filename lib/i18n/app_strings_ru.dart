@@ -93,6 +93,26 @@ class AppStringsRu extends AppStrings {
   String get url => 'URL';
   @override
   String get invalidUrl => 'Неверный URL';
+  @override
+  String get authType => 'Аутентификация';
+  @override
+  String get authNone => 'Нет';
+  @override
+  String get authBasic => 'Basic Auth';
+  @override
+  String get authBearer => 'Bearer токен';
+  @override
+  String get username => 'Имя пользователя';
+  @override
+  String get authPassword => 'Пароль';
+  @override
+  String get authToken => 'Токен';
+  @override
+  String get negativePrompt => 'Негативный промпт';
+  @override
+  String get negativePromptHint => 'Что исключить из изображения';
+  @override
+  String get loraWeight => 'Сила';
 
   @override
   String get createTitle => 'Создать';

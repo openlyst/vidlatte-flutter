@@ -3,10 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../i18n/app_strings.dart';
 
+class LoraPickerResult {
+  final List<String> selectedLoras;
+  final Map<String, double> weights;
+
+  const LoraPickerResult(this.selectedLoras, this.weights);
+}
+
 class LoraPickerDialog extends StatefulWidget {
   final List<String> loras;
   final Map<String, String> triggerWords;
   final List<String> selectedLoras;
+  final Map<String, double> loraWeights;
   final int maxLoras;
 
   const LoraPickerDialog({
@@ -14,6 +22,7 @@ class LoraPickerDialog extends StatefulWidget {
     required this.loras,
     required this.triggerWords,
     required this.selectedLoras,
+    this.loraWeights = const {},
     required this.maxLoras,
   });
 
@@ -23,12 +32,17 @@ class LoraPickerDialog extends StatefulWidget {
 
 class _LoraPickerDialogState extends State<LoraPickerDialog> {
   late List<String> _selected;
+  late Map<String, double> _weights;
   String _search = '';
 
   @override
   void initState() {
     super.initState();
     _selected = List.from(widget.selectedLoras);
+    _weights = Map.from(widget.loraWeights);
+    for (final lora in _selected) {
+      _weights.putIfAbsent(lora, () => 0.8);
+    }
   }
 
   List<String> get _filtered {
@@ -45,8 +59,10 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
     setState(() {
       if (_selected.contains(lora)) {
         _selected.remove(lora);
+        _weights.remove(lora);
       } else if (_selected.length < widget.maxLoras) {
         _selected.add(lora);
+        _weights[lora] = 0.8;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppStrings.of(context).maxLorasSelected(widget.maxLoras))),
@@ -59,17 +75,18 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ext = theme.extension<AppColors>()!;
+    final s = AppStrings.of(context);
     return Dialog(
       child: SizedBox(
         width: 640,
-        height: 640,
+        height: 720,
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
               child: Row(
                 children: [
-                  Text(AppStrings.of(context).selectLoras, style: theme.textTheme.titleLarge),
+                  Text(s.selectLoras, style: theme.textTheme.titleLarge),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -100,7 +117,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                 autofocus: true,
                 decoration: InputDecoration(
                   isDense: true,
-                  hintText: AppStrings.of(context).searchByNameOrTriggers,
+                  hintText: s.searchByNameOrTriggers,
                   prefixIcon: const Icon(Icons.search),
                   border: const OutlineInputBorder(),
                 ),
@@ -117,8 +134,23 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                     runSpacing: 6,
                     children: _selected.map((lora) {
                       final name = lora.split('/').last;
+                      final weight = _weights[lora] ?? 0.8;
                       return Chip(
-                        label: Text(name, style: const TextStyle(fontSize: 12)),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(name, style: const TextStyle(fontSize: 12)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${(weight * 100).round()}%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: ext.accent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                         deleteIcon: const Icon(Icons.close, size: 16),
                         onDeleted: () => _toggle(lora),
                         visualDensity: VisualDensity.compact,
@@ -133,7 +165,7 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
               child: _filtered.isEmpty
                   ? Center(
                       child: Text(
-                        _search.isEmpty ? AppStrings.of(context).noLorasAvailable : AppStrings.of(context).noMatches,
+                        _search.isEmpty ? s.noLorasAvailable : s.noMatches,
                         style: theme.textTheme.bodyMedium,
                       ),
                     )
@@ -177,6 +209,31 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                                         .toList(),
                                   ),
                                 ),
+                              if (isSelected) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${s.loraWeight}: ',
+                                      style: TextStyle(fontSize: 11, color: ext.muted),
+                                    ),
+                                    Expanded(
+                                      child: Slider(
+                                        value: _weights[lora] ?? 0.8,
+                                        min: -1.0,
+                                        max: 2.0,
+                                        divisions: 30,
+                                        label: '${((_weights[lora] ?? 0.8) * 100).round()}%',
+                                        onChanged: (v) => setState(() => _weights[lora] = v),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${((_weights[lora] ?? 0.8) * 100).round()}%',
+                                      style: TextStyle(fontSize: 11, color: ext.accent, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                           trailing: hasTriggers
@@ -195,12 +252,12 @@ class _LoraPickerDialogState extends State<LoraPickerDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text(AppStrings.of(context).cancel),
+                    child: Text(s.cancel),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
-                    onPressed: () => Navigator.of(context).pop(_selected),
-                    child: Text(AppStrings.of(context).done),
+                    onPressed: () => Navigator.of(context).pop(LoraPickerResult(_selected, _weights)),
+                    child: Text(s.done),
                   ),
                 ],
               ),
