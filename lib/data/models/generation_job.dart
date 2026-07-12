@@ -60,6 +60,11 @@ class GenerationJob extends Equatable {
   final String? refImageSubfolder;
   final String? refImageType;
   final double denoise;
+  final String? controlnetModel;
+  final String? controlImageFilename;
+  final String? controlImageSubfolder;
+  final String? controlImageType;
+  final double controlnetStrength;
   final String serverId;
   final String? serverUrl;
   final JobStatus status;
@@ -96,6 +101,11 @@ class GenerationJob extends Equatable {
     this.refImageSubfolder,
     this.refImageType,
     this.denoise = 0.5,
+    this.controlnetModel,
+    this.controlImageFilename,
+    this.controlImageSubfolder,
+    this.controlImageType,
+    this.controlnetStrength = 1.0,
     required this.serverId,
     this.serverUrl,
     this.status = JobStatus.queued,
@@ -133,6 +143,11 @@ class GenerationJob extends Equatable {
     String? refImageSubfolder,
     String? refImageType,
     double? denoise,
+    String? controlnetModel,
+    String? controlImageFilename,
+    String? controlImageSubfolder,
+    String? controlImageType,
+    double? controlnetStrength,
     String? serverId,
     String? serverUrl,
     JobStatus? status,
@@ -169,6 +184,11 @@ class GenerationJob extends Equatable {
       refImageSubfolder: refImageSubfolder ?? this.refImageSubfolder,
       refImageType: refImageType ?? this.refImageType,
       denoise: denoise ?? this.denoise,
+      controlnetModel: controlnetModel ?? this.controlnetModel,
+      controlImageFilename: controlImageFilename ?? this.controlImageFilename,
+      controlImageSubfolder: controlImageSubfolder ?? this.controlImageSubfolder,
+      controlImageType: controlImageType ?? this.controlImageType,
+      controlnetStrength: controlnetStrength ?? this.controlnetStrength,
       serverId: serverId ?? this.serverId,
       serverUrl: serverUrl ?? this.serverUrl,
       status: status ?? this.status,
@@ -203,7 +223,7 @@ class GenerationJob extends Equatable {
   @override
   List<Object?> get props => [
         id, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix,
-        width, height, seed, refImageFilename, refImageSubfolder, refImageType, denoise, serverId, serverUrl, status,
+        width, height, seed, refImageFilename, refImageSubfolder, refImageType, denoise, controlnetModel, controlImageFilename, controlImageSubfolder, controlImageType, controlnetStrength, serverId, serverUrl, status,
         progressValue, progressMax, currentNode, previewBase64,
         resultLocalPath, resultFilename, resultSubfolder, resultType,
         errorMessage, attempts, maxAttempts, createdAt, startedAt, completedAt,

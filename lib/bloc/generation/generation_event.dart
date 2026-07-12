@@ -27,6 +27,11 @@ class GenerationSubmitted extends GenerationEvent {
   final String? refImageSubfolder;
   final String? refImageType;
   final double denoise;
+  final String? controlnetModel;
+  final String? controlImageFilename;
+  final String? controlImageSubfolder;
+  final String? controlImageType;
+  final double controlnetStrength;
 
   const GenerationSubmitted({
     required this.server,
@@ -46,10 +51,15 @@ class GenerationSubmitted extends GenerationEvent {
     this.refImageSubfolder,
     this.refImageType,
     this.denoise = 0.5,
+    this.controlnetModel,
+    this.controlImageFilename,
+    this.controlImageSubfolder,
+    this.controlImageType,
+    this.controlnetStrength = 1.0,
   });
 
   @override
-  List<Object?> get props => [server, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix, width, height, seed, refImageFilename, refImageSubfolder, refImageType, denoise];
+  List<Object?> get props => [server, prompt, negativePrompt, model, loras, loraWeights, creativity, cfg, steps, hiresFix, width, height, seed, refImageFilename, refImageSubfolder, refImageType, denoise, controlnetModel, controlImageFilename, controlImageSubfolder, controlImageType, controlnetStrength];
 }
 
 class GenerationCancelled extends GenerationEvent {

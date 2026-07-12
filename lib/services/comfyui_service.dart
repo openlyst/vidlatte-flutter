@@ -148,10 +148,13 @@ class ComfyService {
             options: _authOptions(server, responseType: ResponseType.json)),
         _dio.get('$baseUrl/object_info/LoraLoader',
             options: _authOptions(server, responseType: ResponseType.json)),
+        _dio.get('$baseUrl/object_info/ControlNetLoader',
+            options: _authOptions(server, responseType: ResponseType.json)),
       ]);
 
       final modelsJson = responses[0].data as Map<String, dynamic>;
       final lorasJson = responses[1].data as Map<String, dynamic>;
+      final controlnetJson = responses[2].data as Map<String, dynamic>;
 
       final models = (modelsJson['CheckpointLoaderSimple']
               as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
@@ -167,10 +170,18 @@ class ComfyService {
           ? (loraList[0] as List).cast<String>()
           : <String>[];
 
+      final controlnets = (controlnetJson['ControlNetLoader']
+              as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
+      final controlnetList = (controlnets?['required'] as Map<String, dynamic>?)?['control_net_name'] as List?;
+      final controlnetNames = controlnetList != null && controlnetList.isNotEmpty
+          ? (controlnetList[0] as List).cast<String>()
+          : <String>[];
+
       return ModelCatalog(
         serverId: server.id,
         models: modelNames,
         loras: loraNames,
+        controlnets: controlnetNames,
         maxLoras: server.maxLoras,
         fetchedAt: DateTime.now(),
       );
@@ -325,6 +336,11 @@ class ComfyService {
     String? refImageSubfolder,
     String? refImageType,
     double denoise = 0.5,
+    String? controlnetModel,
+    String? controlImageFilename,
+    String? controlImageSubfolder,
+    String? controlImageType,
+    double controlnetStrength = 1.0,
     void Function(PreviewMessage)? onPreview,
   }) async {
     final actualSteps = steps ?? server.steps;
@@ -346,6 +362,11 @@ class ComfyService {
       refImageSubfolder: refImageSubfolder,
       refImageType: refImageType,
       denoise: denoise,
+      controlnetModel: controlnetModel,
+      controlImageFilename: controlImageFilename,
+      controlImageSubfolder: controlImageSubfolder,
+      controlImageType: controlImageType,
+      controlnetStrength: controlnetStrength,
     ));
 
     if (actualHiresFix) {
