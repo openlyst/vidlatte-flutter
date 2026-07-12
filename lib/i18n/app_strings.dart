@@ -107,6 +107,15 @@ abstract class AppStrings {
   String get noInpaintImage;
   String get selectInpaintImage;
 
+  // ControlNet
+  String get controlnet;
+  String get controlnetHint;
+  String get controlnetModel;
+  String get controlnetStrength;
+  String get controlImage;
+  String get noControlnetModels;
+  String get selectControlImage;
+
   // Create page
   String get createTitle;
   String get autoImageTitle;

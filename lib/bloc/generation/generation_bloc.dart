@@ -55,6 +55,11 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
       refImageSubfolder: event.refImageSubfolder,
       refImageType: event.refImageType,
       denoise: event.denoise,
+      controlnetModel: event.controlnetModel,
+      controlImageFilename: event.controlImageFilename,
+      controlImageSubfolder: event.controlImageSubfolder,
+      controlImageType: event.controlImageType,
+      controlnetStrength: event.controlnetStrength,
       serverId: event.server.id,
       serverUrl: event.server.url,
       status: JobStatus.queued,
@@ -138,6 +143,11 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
         refImageSubfolder: job.refImageSubfolder,
         refImageType: job.refImageType,
         denoise: job.denoise,
+        controlnetModel: job.controlnetModel,
+        controlImageFilename: job.controlImageFilename,
+        controlImageSubfolder: job.controlImageSubfolder,
+        controlImageType: job.controlImageType,
+        controlnetStrength: job.controlnetStrength,
         onPreview: (msg) {
           if (state.currentJob?.id != job.id) return;
           emit(state.copyWith(

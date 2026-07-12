@@ -32,6 +32,7 @@ class ModelCatalog extends Equatable {
   final String serverId;
   final List<String> models;
   final List<String> loras;
+  final List<String> controlnets;
   final int maxLoras;
   final DateTime fetchedAt;
 
@@ -39,12 +40,13 @@ class ModelCatalog extends Equatable {
     required this.serverId,
     required this.models,
     required this.loras,
+    this.controlnets = const [],
     required this.maxLoras,
     required this.fetchedAt,
   });
 
   @override
-  List<Object?> get props => [serverId, models, loras, maxLoras, fetchedAt];
+  List<Object?> get props => [serverId, models, loras, controlnets, maxLoras, fetchedAt];
 }
 
 class ServerHealth extends Equatable {

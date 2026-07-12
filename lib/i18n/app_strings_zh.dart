@@ -175,6 +175,20 @@ class AppStringsZh extends AppStrings {
   String get noInpaintImage => '选择图片开始局部重绘';
   @override
   String get selectInpaintImage => '选择图片';
+  @override
+  String get controlnet => 'ControlNet';
+  @override
+  String get controlnetHint => '使用参考图片引导生成';
+  @override
+  String get controlnetModel => 'ControlNet 模型';
+  @override
+  String get controlnetStrength => '强度';
+  @override
+  String get controlImage => '控制图片';
+  @override
+  String get noControlnetModels => '服务器上未找到 ControlNet 模型';
+  @override
+  String get selectControlImage => '选择控制图片';
 
   @override
   String get createTitle => '创作';

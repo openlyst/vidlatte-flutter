@@ -18,6 +18,11 @@ class WorkflowInputs {
   final String? refImageSubfolder;
   final String? refImageType;
   final double denoise;
+  final String? controlnetModel;
+  final String? controlImageFilename;
+  final String? controlImageSubfolder;
+  final String? controlImageType;
+  final double controlnetStrength;
 
   WorkflowInputs({
     required this.prompt,
@@ -35,9 +40,15 @@ class WorkflowInputs {
     this.refImageSubfolder,
     this.refImageType,
     this.denoise = 0.5,
+    this.controlnetModel,
+    this.controlImageFilename,
+    this.controlImageSubfolder,
+    this.controlImageType,
+    this.controlnetStrength = 1.0,
   }) : seed = seed ?? Random().nextInt(2147483647);
 
   bool get isImg2Img => refImageFilename != null;
+  bool get hasControlNet => controlnetModel != null && controlImageFilename != null;
 }
 
 class ComfyWorkflow {
@@ -152,6 +163,39 @@ class ComfyWorkflow {
       (workflow['2'] as Map<String, dynamic>)['inputs']['clip'] = currentClipRef;
       (workflow['3'] as Map<String, dynamic>)['inputs']['clip'] = currentClipRef;
       (workflow['5'] as Map<String, dynamic>)['inputs']['model'] = currentModelRef;
+    }
+
+    if (inputs.hasControlNet) {
+      final loadControlImageInputs = <String, dynamic>{
+        'image': inputs.controlImageFilename!,
+      };
+      if (inputs.controlImageSubfolder != null && inputs.controlImageSubfolder!.isNotEmpty) {
+        loadControlImageInputs['subfolder'] = inputs.controlImageSubfolder;
+      }
+      if (inputs.controlImageType != null) {
+        loadControlImageInputs['type'] = inputs.controlImageType;
+      }
+
+      workflow[nodeId.toString()] = {
+        'inputs': loadControlImageInputs,
+        'class_type': 'LoadImage',
+      };
+      final controlImageRef = [nodeId.toString(), 0];
+      nodeId++;
+
+      final currentModelRef = (workflow['5']['inputs']['model'] as List);
+
+      workflow[nodeId.toString()] = {
+        'inputs': {
+          'control_net_name': inputs.controlnetModel,
+          'image': controlImageRef,
+          'strength': inputs.controlnetStrength,
+          'model': currentModelRef,
+        },
+        'class_type': 'ControlNetApply',
+      };
+      (workflow['5'] as Map<String, dynamic>)['inputs']['model'] = [nodeId.toString(), 0];
+      nodeId++;
     }
 
     return workflow;

@@ -18,6 +18,7 @@ import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/image_detail_modal.dart';
 import '../../widgets/common/image_grid.dart';
 import '../../widgets/create/auto_image_content.dart';
+import '../../widgets/create/controlnet_input.dart';
 import '../../widgets/create/generation_controls.dart';
 import '../../widgets/create/img2img_input.dart';
 import '../../widgets/create/prompt_input.dart';
@@ -53,6 +54,10 @@ class _CreatePageState extends State<CreatePage> {
   bool _isImg2Img = false;
   Uint8List? _refImageBytes;
   double _denoise = 0.5;
+  bool _useControlNet = false;
+  String? _controlnetModel;
+  Uint8List? _controlImageBytes;
+  double _controlnetStrength = 1.0;
   final _autoImageController = AutoImageController();
 
   void _onAutoImageChanged() {
@@ -193,6 +198,11 @@ class _CreatePageState extends State<CreatePage> {
     String? refSubfolder;
     String? refType;
 
+    String? controlnetModel;
+    String? controlImageFilename;
+    String? controlImageSubfolder;
+    String? controlImageType;
+
     if (_isImg2Img && _refImageBytes != null) {
       try {
         final comfy = ComfyService();
@@ -209,6 +219,29 @@ class _CreatePageState extends State<CreatePage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Upload failed: $e')),
+          );
+        }
+        return;
+      }
+    }
+
+    if (_useControlNet && _controlnetModel != null && _controlImageBytes != null) {
+      try {
+        final comfy = ComfyService();
+        final uploaded = await comfy.uploadImage(
+          server,
+          _controlImageBytes!,
+          'vidlatte_control_${DateTime.now().millisecondsSinceEpoch}.png',
+        );
+        controlImageFilename = uploaded.filename;
+        controlImageSubfolder = uploaded.subfolder;
+        controlImageType = uploaded.type;
+        controlnetModel = _controlnetModel;
+        comfy.dispose();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Control image upload failed: $e')),
           );
         }
         return;
@@ -234,6 +267,11 @@ class _CreatePageState extends State<CreatePage> {
           refImageSubfolder: refSubfolder,
           refImageType: refType,
           denoise: _denoise,
+          controlnetModel: controlnetModel,
+          controlImageFilename: controlImageFilename,
+          controlImageSubfolder: controlImageSubfolder,
+          controlImageType: controlImageType,
+          controlnetStrength: _controlnetStrength,
         ));
   }
 
@@ -369,6 +407,20 @@ class _CreatePageState extends State<CreatePage> {
             denoise: _denoise,
             onImageChanged: (bytes) => setState(() => _refImageBytes = bytes),
             onDenoiseChanged: (v) => setState(() => _denoise = v),
+          ),
+        ],
+        const SizedBox(height: ThemeConstants.spacingSmall),
+        _buildControlNetToggle(context),
+        if (_useControlNet) ...[
+          const SizedBox(height: ThemeConstants.spacingSmall),
+          ControlNetInput(
+            controlnetModels: catalog?.controlnets as List<String>? ?? [],
+            selectedModel: _controlnetModel,
+            controlImageBytes: _controlImageBytes,
+            strength: _controlnetStrength,
+            onModelChanged: (m) => setState(() => _controlnetModel = m),
+            onImageChanged: (bytes) => setState(() => _controlImageBytes = bytes),
+            onStrengthChanged: (v) => setState(() => _controlnetStrength = v),
           ),
         ],
         const SizedBox(height: ThemeConstants.spacingMedium),
@@ -617,6 +669,24 @@ class _CreatePageState extends State<CreatePage> {
       style: const ButtonStyle(
         visualDensity: VisualDensity(horizontal: -3, vertical: -2),
       ),
+    );
+  }
+
+  Widget _buildControlNetToggle(BuildContext context) {
+    final s = AppStrings.of(context);
+    return SwitchListTile(
+      title: Text(s.controlnet, style: Theme.of(context).textTheme.bodyMedium),
+      subtitle: Text(s.controlnetHint, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+      value: _useControlNet,
+      onChanged: (v) => setState(() {
+        _useControlNet = v;
+        if (!v) {
+          _controlnetModel = null;
+          _controlImageBytes = null;
+        }
+      }),
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 }

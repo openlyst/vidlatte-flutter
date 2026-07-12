@@ -175,6 +175,20 @@ class AppStringsEn extends AppStrings {
   String get noInpaintImage => 'Select an image to start inpainting';
   @override
   String get selectInpaintImage => 'Select Image';
+  @override
+  String get controlnet => 'ControlNet';
+  @override
+  String get controlnetHint => 'Guide generation with a reference image';
+  @override
+  String get controlnetModel => 'ControlNet Model';
+  @override
+  String get controlnetStrength => 'Strength';
+  @override
+  String get controlImage => 'Control Image';
+  @override
+  String get noControlnetModels => 'No ControlNet models found on server';
+  @override
+  String get selectControlImage => 'Select Control Image';
 
   @override
   String get createTitle => 'Create';

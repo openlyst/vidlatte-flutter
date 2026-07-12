@@ -175,6 +175,20 @@ class AppStringsRu extends AppStrings {
   String get noInpaintImage => 'Выберите изображение для инпеинтинга';
   @override
   String get selectInpaintImage => 'Выбрать изображение';
+  @override
+  String get controlnet => 'ControlNet';
+  @override
+  String get controlnetHint => 'Управление генерацией через опорное изображение';
+  @override
+  String get controlnetModel => 'Модель ControlNet';
+  @override
+  String get controlnetStrength => 'Сила';
+  @override
+  String get controlImage => 'Контрольное изображение';
+  @override
+  String get noControlnetModels => 'На сервере нет моделей ControlNet';
+  @override
+  String get selectControlImage => 'Выбрать контрольное изображение';
 
   @override
   String get createTitle => 'Создать';
