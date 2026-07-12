@@ -533,11 +533,19 @@ class ComfyService {
                   promptId: msgData?['prompt_id'] as String?,
                 ));
               case 'executing':
-                onPreview(PreviewMessage(
-                  type: 'executing',
-                  node: msgData?['node']?.toString(),
-                  promptId: msgData?['prompt_id'] as String?,
-                ));
+                final node = msgData?['node']?.toString();
+                if (node == null || node.isEmpty) {
+                  onPreview(PreviewMessage(
+                    type: 'complete',
+                    promptId: msgData?['prompt_id'] as String?,
+                  ));
+                } else {
+                  onPreview(PreviewMessage(
+                    type: 'executing',
+                    node: node,
+                    promptId: msgData?['prompt_id'] as String?,
+                  ));
+                }
               case 'progress':
                 onPreview(PreviewMessage(
                   type: 'progress',
@@ -549,8 +557,25 @@ class ComfyService {
                   type: 'executed',
                   node: msgData?['node']?.toString(),
                 ));
+              case 'status':
+                onPreview(PreviewMessage(
+                  type: 'status',
+                  progressValue: msgData?['status']?['exec_info']?['nodes_executed'] as int?,
+                  progressMax: msgData?['status']?['exec_info']?['nodes_remaining'] as int?,
+                ));
             }
           } catch (_) {}
+        } else if (data is List<int>) {
+          if (data.length > 8) {
+            final eventId = String.fromCharCodes(data.sublist(0, 8));
+            if (eventId == 'preview') {
+              final previewBytes = Uint8List.fromList(data.sublist(8));
+              onPreview(PreviewMessage(
+                type: 'preview',
+                previewBytes: previewBytes,
+              ));
+            }
+          }
         }
       },
       onError: (e) {

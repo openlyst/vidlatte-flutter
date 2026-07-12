@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
@@ -150,16 +152,23 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
         controlnetStrength: job.controlnetStrength,
         onPreview: (msg) {
           if (state.currentJob?.id != job.id) return;
+          String? previewBase64;
+          if (msg.previewBytes != null && msg.previewBytes!.isNotEmpty) {
+            previewBase64 = base64Encode(msg.previewBytes!);
+          }
           emit(state.copyWith(
             currentJob: state.currentJob!.copyWith(
               status: msg.type == 'progress'
                   ? JobStatus.progress
                   : msg.type == 'executing'
                       ? JobStatus.executing
-                      : state.currentJob!.status,
+                      : msg.type == 'preview'
+                          ? JobStatus.progress
+                          : state.currentJob!.status,
               progressValue: msg.progressValue,
               progressMax: msg.progressMax,
               currentNode: msg.node,
+              previewBase64: previewBase64 ?? state.currentJob!.previewBase64,
             ),
           ));
         },
