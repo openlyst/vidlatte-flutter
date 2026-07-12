@@ -157,6 +157,24 @@ class AppStringsZh extends AppStrings {
   String get upscaleDone => '放大完成';
   @override
   String get upscaleFailed => '放大失败';
+  @override
+  String get inpaint => '局部重绘';
+  @override
+  String get inpaintHint => '涂抹需要重绘的区域';
+  @override
+  String get brushSize => '笔刷大小';
+  @override
+  String get clearMask => '清除蒙版';
+  @override
+  String get maskEraser => '橡皮擦';
+  @override
+  String get inpaintDenoise => '重绘强度';
+  @override
+  String get inpaintDenoiseHint => '对蒙版区域的修改程度';
+  @override
+  String get noInpaintImage => '选择图片开始局部重绘';
+  @override
+  String get selectInpaintImage => '选择图片';
 
   @override
   String get createTitle => '创作';

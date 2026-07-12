@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -394,6 +395,46 @@ class ComfyService {
       type,
       model: model,
       scale: scale,
+    );
+    final promptId = await submitWorkflow(server, workflow);
+    return pollForResult(server, promptId, onPreview: onPreview);
+  }
+
+  Future<ComfyJobResult> inpaint(
+    ComfyServer server, {
+    required String imageFilename,
+    String imageSubfolder = '',
+    String imageType = 'input',
+    required String maskFilename,
+    String maskSubfolder = '',
+    String maskType = 'input',
+    required String prompt,
+    String negativePrompt = '',
+    required String model,
+    List<String> loras = const [],
+    Map<String, double> loraWeights = const {},
+    int? seed,
+    int steps = 20,
+    double cfg = 7.0,
+    double denoise = 0.75,
+    void Function(PreviewMessage)? onPreview,
+  }) async {
+    final workflow = ComfyWorkflow.inpaint(
+      imageFilename,
+      imageSubfolder,
+      imageType,
+      maskFilename,
+      maskSubfolder,
+      maskType,
+      prompt: prompt,
+      negativePrompt: negativePrompt,
+      model: model,
+      loras: loras,
+      loraWeights: loraWeights,
+      seed: seed ?? Random().nextInt(2147483647),
+      steps: steps,
+      cfg: cfg,
+      denoise: denoise,
     );
     final promptId = await submitWorkflow(server, workflow);
     return pollForResult(server, promptId, onPreview: onPreview);

@@ -157,6 +157,24 @@ class AppStringsRu extends AppStrings {
   String get upscaleDone => 'Апскейл завершён';
   @override
   String get upscaleFailed => 'Ошибка апскейла';
+  @override
+  String get inpaint => 'Инпеинтинг';
+  @override
+  String get inpaintHint => 'Закрасьте области для перерисовки';
+  @override
+  String get brushSize => 'Размер кисти';
+  @override
+  String get clearMask => 'Очистить маску';
+  @override
+  String get maskEraser => 'Ластик';
+  @override
+  String get inpaintDenoise => 'Сила перерисовки';
+  @override
+  String get inpaintDenoiseHint => 'Насколько сильно изменить выделенную область';
+  @override
+  String get noInpaintImage => 'Выберите изображение для инпеинтинга';
+  @override
+  String get selectInpaintImage => 'Выбрать изображение';
 
   @override
   String get createTitle => 'Создать';
