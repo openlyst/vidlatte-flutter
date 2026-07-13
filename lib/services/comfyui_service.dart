@@ -159,33 +159,10 @@ class ComfyService {
       final controlnetJson = responses[2].data as Map<String, dynamic>;
       final upscaleJson = responses[3].data as Map<String, dynamic>;
 
-      final models = (modelsJson['CheckpointLoaderSimple']
-              as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
-      final modelList = (models?['required'] as Map<String, dynamic>?)?['ckpt_name'] as List?;
-      final modelNames = modelList != null && modelList.isNotEmpty
-          ? (modelList[0] as List).cast<String>()
-          : <String>[];
-
-      final loras = (lorasJson['LoraLoader']
-              as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
-      final loraList = (loras?['required'] as Map<String, dynamic>?)?['lora_name'] as List?;
-      final loraNames = loraList != null && loraList.isNotEmpty
-          ? (loraList[0] as List).cast<String>()
-          : <String>[];
-
-      final controlnets = (controlnetJson['ControlNetLoader']
-              as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
-      final controlnetList = (controlnets?['required'] as Map<String, dynamic>?)?['control_net_name'] as List?;
-      final controlnetNames = controlnetList != null && controlnetList.isNotEmpty
-          ? (controlnetList[0] as List).cast<String>()
-          : <String>[];
-
-      final upscaleModels = (upscaleJson['UpscaleModelLoader']
-              as Map<String, dynamic>?)?['input'] as Map<String, dynamic>?;
-      final upscaleList = (upscaleModels?['required'] as Map<String, dynamic>?)?['model_name'] as List?;
-      final upscaleNames = upscaleList != null && upscaleList.isNotEmpty
-          ? (upscaleList[0] as List).cast<String>()
-          : <String>[];
+      final modelNames = _extractModelList(modelsJson, 'CheckpointLoaderSimple', 'ckpt_name');
+      final loraNames = _extractModelList(lorasJson, 'LoraLoader', 'lora_name');
+      final controlnetNames = _extractModelList(controlnetJson, 'ControlNetLoader', 'control_net_name');
+      final upscaleNames = _extractModelList(upscaleJson, 'UpscaleModelLoader', 'model_name');
 
       return ModelCatalog(
         serverId: server.id,
@@ -201,6 +178,24 @@ class ComfyService {
     } catch (e) {
       throw ComfyApiException('Failed to fetch models: $e');
     }
+  }
+
+  List<String> _extractModelList(Map<String, dynamic> json, String nodeType, String fieldName) {
+    final node = json[nodeType] as Map<String, dynamic>?;
+    final input = node?['input'] as Map<String, dynamic>?;
+    final required = input?['required'] as Map<String, dynamic>?;
+    final field = required?[fieldName] as List?;
+    if (field == null || field.isEmpty) return [];
+
+    final first = field[0];
+    if (first is List) {
+      return first.cast<String>();
+    }
+    if (first is String && field.length > 1 && field[1] is Map) {
+      final options = (field[1] as Map)['options'];
+      if (options is List) return options.cast<String>();
+    }
+    return [];
   }
 
   Future<Map<String, dynamic>?> getLoraMetadata(ComfyServer server, String loraName) async {
