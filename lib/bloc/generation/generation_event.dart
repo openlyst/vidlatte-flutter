@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../data/models/comfy_server.dart';
+import '../../data/models/generated_image.dart';
 import '../../data/models/generation_job.dart';
 
 abstract class GenerationEvent extends Equatable {
@@ -107,4 +108,13 @@ class GenerationRetried extends GenerationEvent {
 
   @override
   List<Object?> get props => [jobId];
+}
+
+class GenerationImagesSynced extends GenerationEvent {
+  final List<GeneratedImage> images;
+
+  const GenerationImagesSynced(this.images);
+
+  @override
+  List<Object?> get props => [images];
 }

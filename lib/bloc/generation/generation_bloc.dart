@@ -33,6 +33,7 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
     on<GenerationImageFavoriteToggled>(_onFavoriteToggled);
     on<GenerationReordered>(_onReordered);
     on<GenerationRetried>(_onRetried);
+    on<GenerationImagesSynced>(_onImagesSynced);
   }
 
   Future<void> _onSubmitted(GenerationSubmitted event, Emitter<GenerationState> emit) async {
@@ -300,5 +301,30 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
       return img.copyWith(isFavorite: !img.isFavorite);
     }).toList();
     emit(state.copyWith(images: images));
+  }
+
+  void _onImagesSynced(GenerationImagesSynced event, Emitter<GenerationState> emit) {
+    final currentIds = state.images.map((e) => e.id).toSet();
+    final syncedIds = event.images.map((e) => e.id).toSet();
+    final newImages = <GeneratedImage>[];
+
+    for (final img in state.images) {
+      if (syncedIds.contains(img.id)) {
+        final synced = event.images.firstWhere((e) => e.id == img.id);
+        newImages.add(img.copyWith(
+          isFavorite: synced.isFavorite,
+          isHidden: synced.isHidden,
+          collectionId: synced.collectionId,
+        ));
+      }
+    }
+
+    for (final img in event.images) {
+      if (!currentIds.contains(img.id)) {
+        newImages.insert(0, img);
+      }
+    }
+
+    emit(state.copyWith(images: newImages));
   }
 }
