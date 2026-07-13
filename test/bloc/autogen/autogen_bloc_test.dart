@@ -63,6 +63,10 @@ void main() {
         llmServerId: 'llm-1',
         llmModel: 'llama-3',
         imageServerId: 's1',
+        width: 1024,
+        height: 1024,
+        steps: 30,
+        hiresFix: true,
       )),
       expect: () => [
         isA<AutoGenState>()
@@ -70,7 +74,11 @@ void main() {
             .having((s) => s.topic, 'topic', 'cyberpunk')
             .having((s) => s.maxImages, 'maxImages', 5)
             .having((s) => s.imageModel, 'imageModel', 'model.safetensors')
-            .having((s) => s.llmServerId, 'llmServerId', 'llm-1'),
+            .having((s) => s.llmServerId, 'llmServerId', 'llm-1')
+            .having((s) => s.width, 'width', 1024)
+            .having((s) => s.height, 'height', 1024)
+            .having((s) => s.steps, 'steps', 30)
+            .having((s) => s.hiresFix, 'hiresFix', true),
       ],
     );
 

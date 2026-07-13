@@ -58,6 +58,10 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
       llmServerId: event.llmServerId,
       llmModel: event.llmModel,
       imageServerId: event.imageServerId,
+      width: event.width,
+      height: event.height,
+      steps: event.steps,
+      hiresFix: event.hiresFix,
     ));
   }
 
@@ -290,6 +294,10 @@ CRITICAL RULES:
       model: state.imageModel,
       loras: state.selectedLoras,
       seed: seed,
+      width: state.width,
+      height: state.height,
+      steps: state.steps,
+      hiresFix: state.hiresFix,
     );
 
     if (!result.success) {
@@ -309,10 +317,10 @@ CRITICAL RULES:
       model: state.imageModel,
       loras: state.selectedLoras,
       creativity: Creativity.normal,
-      steps: server.steps,
-      hiresFix: server.hiresFix,
-      width: 1024,
-      height: 1024,
+      steps: state.steps ?? server.steps,
+      hiresFix: state.hiresFix ?? server.hiresFix,
+      width: state.width,
+      height: state.height,
       seed: seed,
       status: ImageStatus.completed,
       localPath: localPath,
