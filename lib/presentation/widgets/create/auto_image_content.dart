@@ -867,11 +867,25 @@ class _AutoImageCard extends StatelessWidget {
 
   void _openViewer(BuildContext context) {
     if (image.status != ImageStatus.completed || image.localPath == null) return;
-    final fullImage = context.read<StorageService>().getImage(image.id);
-    if (fullImage == null) return;
+    final storage = context.read<StorageService>();
+    final autoImages = context.read<AutoGenBloc>().state.images;
+    final fullImages = <GeneratedImage>[];
+    int initialIndex = -1;
+    for (var i = 0; i < autoImages.length; i++) {
+      final autoImage = autoImages[i];
+      if (autoImage.status != ImageStatus.completed || autoImage.localPath == null) continue;
+      final fullImage = storage.getImage(autoImage.id);
+      if (fullImage == null) continue;
+      fullImages.add(fullImage);
+      if (autoImage.id == image.id) initialIndex = fullImages.length - 1;
+    }
+    if (initialIndex < 0 || fullImages.isEmpty) return;
     showDialog(
       context: context,
-      builder: (_) => ImageDetailModal(image: fullImage),
+      builder: (_) => ImageDetailModal(
+        images: fullImages,
+        initialIndex: initialIndex,
+      ),
     );
   }
 

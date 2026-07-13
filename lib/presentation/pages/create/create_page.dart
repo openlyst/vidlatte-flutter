@@ -661,9 +661,15 @@ class _CreatePageState extends State<CreatePage> {
   }
 
   void _showImageDetail(BuildContext context, GeneratedImage image) {
+    final images = context.read<GenerationBloc>().state.images;
+    final index = images.indexWhere((img) => img.id == image.id);
+    if (index < 0) return;
     showDialog(
       context: context,
-      builder: (_) => ImageDetailModal(image: image),
+      builder: (_) => ImageDetailModal(
+        images: images,
+        initialIndex: index,
+      ),
     );
   }
 
