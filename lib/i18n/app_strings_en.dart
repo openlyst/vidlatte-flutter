@@ -291,7 +291,7 @@ class AppStringsEn extends AppStrings {
   @override
   String get maxImages => 'Max Images';
   @override
-  String get maxImagesHint => '10 (0 or blank for infinite)';
+  String get infiniteImages => 'Generate infinite images';
   @override
   String get llmServer => 'LLM Server';
   @override

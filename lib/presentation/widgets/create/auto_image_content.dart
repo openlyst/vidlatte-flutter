@@ -56,6 +56,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
   String _basePrompt = '';
   String _mustIncludeTags = '';
   int? _maxImages = 10;
+  bool _infiniteImages = false;
   List<String> _selectedLoras = [];
   String _imageModel = '';
   String? _selectedLlmServerId;
@@ -78,6 +79,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
     _basePrompt = autoGenState.basePrompt;
     _mustIncludeTags = autoGenState.mustIncludeTags;
     _maxImages = autoGenState.maxImages;
+    _infiniteImages = autoGenState.infiniteImages;
     _selectedLoras = List.from(autoGenState.selectedLoras);
     _imageModel = autoGenState.imageModel;
     _selectedLlmServerId = autoGenState.llmServerId;
@@ -138,6 +140,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
           basePrompt: _basePrompt,
           mustIncludeTags: _mustIncludeTags,
           maxImages: _maxImages,
+          infiniteImages: _infiniteImages,
           selectedLoras: _selectedLoras,
           imageModel: _imageModel,
           llmServerId: _selectedLlmServerId,
@@ -337,17 +340,26 @@ class _AutoImageContentState extends State<AutoImageContent> {
                 onChanged: (v) => _mustIncludeTags = v,
               ),
               const SizedBox(height: ThemeConstants.spacingMedium),
+              SwitchListTile(
+                title: Text(s.infiniteImages, style: theme.textTheme.labelLarge),
+                value: _infiniteImages,
+                onChanged: (v) => _setState(() => _infiniteImages = v),
+                contentPadding: EdgeInsets.zero,
+              ),
               Row(
                 children: [
-                  Text(s.maxImages, style: theme.textTheme.labelLarge),
+                  Text(s.maxImages, style: theme.textTheme.labelLarge?.copyWith(
+                    color: _infiniteImages ? theme.disabledColor : null,
+                  )),
                   const Spacer(),
                   SizedBox(
-                    width: 120,
+                    width: 80,
                     child: TextField(
+                      enabled: !_infiniteImages,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: s.maxImagesHint,
+                        hintText: _infiniteImages ? '' : '10',
                       ),
                       onChanged: (v) {
                         final n = int.tryParse(v);

@@ -60,6 +60,7 @@ class AutoGenConfigChanged extends AutoGenEvent {
   final String basePrompt;
   final String mustIncludeTags;
   final int? maxImages;
+  final bool infiniteImages;
   final List<String> selectedLoras;
   final String imageModel;
   final String? llmServerId;
@@ -76,6 +77,7 @@ class AutoGenConfigChanged extends AutoGenEvent {
     required this.basePrompt,
     required this.mustIncludeTags,
     required this.maxImages,
+    required this.infiniteImages,
     required this.selectedLoras,
     required this.imageModel,
     this.llmServerId,
@@ -90,7 +92,7 @@ class AutoGenConfigChanged extends AutoGenEvent {
   @override
   List<Object?> get props => [
         mode, topic, basePrompt, mustIncludeTags, maxImages,
-        selectedLoras, imageModel, llmServerId, llmModel, imageServerId,
+        infiniteImages, selectedLoras, imageModel, llmServerId, llmModel, imageServerId,
         width, height, steps, hiresFix,
       ];
 }
