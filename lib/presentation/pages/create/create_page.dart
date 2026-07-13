@@ -326,15 +326,20 @@ class _CreatePageState extends State<CreatePage> {
                     label: Text(s.stop),
                   );
                 }
+                final canStart = _autoImageController.canStart;
+                debugPrint('[CreatePage] auto start button canStart=$canStart');
                 return TextButton.icon(
-                  onPressed: _autoImageController.canStart
-                      ? () => _autoImageController.start()
+                  onPressed: canStart
+                      ? () {
+                          debugPrint('[CreatePage] auto start button pressed');
+                          _autoImageController.start();
+                        }
                       : null,
                   icon: Icon(Icons.play_circle,
-                      color: _autoImageController.canStart ? ext.accent : ext.muted),
+                      color: canStart ? ext.accent : ext.muted),
                   label: Text(s.start,
                       style: TextStyle(
-                          color: _autoImageController.canStart ? ext.accent : ext.muted)),
+                          color: canStart ? ext.accent : ext.muted)),
                 );
               },
             ),

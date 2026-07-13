@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
@@ -61,6 +62,7 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
   }
 
   Future<void> _onStarted(AutoGenStarted event, Emitter<AutoGenState> emit) async {
+    debugPrint('[AutoGenBloc] AutoGenStarted received, isRunning=${state.isRunning}');
     if (state.isRunning) return;
     _cancelToken = false;
     emit(state.copyWith(isRunning: true, status: AutoGenStatus.generatingPrompt));
@@ -94,10 +96,13 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
   }
 
   void _onImageStarted(AutoGenImageStarted event, Emitter<AutoGenState> emit) {
-    emit(state.copyWith(images: [event.image, ...state.images]));
+    final images = [event.image, ...state.images];
+    final completedCount = images.where((i) => i.status == ImageStatus.completed).length;
+    emit(state.copyWith(images: images, generatedCount: completedCount));
   }
 
   void _onErrorOccurred(AutoGenErrorOccurred event, Emitter<AutoGenState> emit) {
+    debugPrint('[AutoGenBloc] AutoGenErrorOccurred: ${event.message}');
     emit(state.copyWith(
       status: AutoGenStatus.error,
       errorMessage: event.message,
@@ -128,27 +133,33 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
       }
 
       // Generate prompt
-      emit(state.copyWith(status: AutoGenStatus.generatingPrompt));
-      final prompt = await _generatePrompt();
-      if (_cancelToken) return;
-      if (prompt == null) {
-        add(AutoGenErrorOccurred('Failed to generate prompt'));
+      String prompt;
+      try {
+        emit(state.copyWith(status: AutoGenStatus.generatingPrompt));
+        prompt = await _generatePrompt();
+      } catch (e) {
+        add(AutoGenErrorOccurred('Failed to generate prompt: $e'));
         return;
       }
+      if (_cancelToken) return;
       add(AutoGenPromptGenerated(prompt));
 
       // Generate image
-      emit(state.copyWith(status: AutoGenStatus.generatingImage));
-      final imageId = await _generateImage(prompt);
-      if (_cancelToken) return;
-      if (imageId == null) {
-        add(AutoGenErrorOccurred('Failed to start image generation'));
+      final ({String id, String localPath}) imageResult;
+      try {
+        emit(state.copyWith(status: AutoGenStatus.generatingImage));
+        imageResult = await _generateImage(prompt);
+      } catch (e) {
+        add(AutoGenErrorOccurred('Failed to generate image: $e'));
         return;
       }
+      if (_cancelToken) return;
 
       final autoImage = AutoGenImage(
-        id: imageId,
+        id: imageResult.id,
         prompt: prompt,
+        status: ImageStatus.completed,
+        localPath: imageResult.localPath,
         createdAt: DateTime.now(),
       );
       add(AutoGenImageStarted(autoImage));
@@ -161,16 +172,21 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
     }
   }
 
-  Future<String?> _generatePrompt() async {
+  Future<String> _generatePrompt() async {
     final llmServerId = state.llmServerId;
     final llmModel = state.llmModel;
-    if (llmServerId == null || llmModel == null) return null;
+    if (llmServerId == null || llmModel == null) {
+      throw Exception('LLM server or model not configured (serverId=$llmServerId, model=$llmModel)');
+    }
 
     final server = _storage.getLlmServer(llmServerId);
-    if (server == null) return null;
+    if (server == null) {
+      throw Exception('LLM server $llmServerId not found in storage');
+    }
 
     final systemPrompt = _buildSystemPrompt();
     final userPrompt = _buildUserPrompt();
+    debugPrint('[AutoGenBloc] _generatePrompt: calling ${server.url} with model $llmModel');
 
     final result = await _llm.chatCompletion(
       server: server,
@@ -182,9 +198,14 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
       temperature: 0.8,
       maxTokens: 1024,
     );
+    debugPrint('[AutoGenBloc] _generatePrompt: chatCompletion result success=${result.success}, error=${result.error}, contentLength=${result.content.length}');
 
-    if (!result.success) return null;
-    return _cleanPrompt(result.content);
+    if (!result.success) {
+      throw Exception('LLM request failed: ${result.error ?? 'unknown error'}');
+    }
+    final cleaned = _cleanPrompt(result.content);
+    debugPrint('[AutoGenBloc] _generatePrompt: success, prompt=$cleaned');
+    return cleaned;
   }
 
   String _buildSystemPrompt() {
@@ -250,16 +271,19 @@ CRITICAL RULES:
     return p.trim();
   }
 
-  Future<String?> _generateImage(String prompt) async {
+  Future<({String id, String localPath})> _generateImage(String prompt) async {
     final imageServerId = state.imageServerId;
     ComfyServer? server;
     if (imageServerId != null) {
       server = _storage.getServer(imageServerId);
     }
     server ??= _storage.getDefaultServer();
-    if (server == null) return null;
+    if (server == null) {
+      throw Exception('No image server configured or found in storage');
+    }
 
     final seed = DateTime.now().microsecondsSinceEpoch % 2147483647;
+    debugPrint('[AutoGenBloc] _generateImage: calling ${server.url} with model ${state.imageModel}');
     final result = await _comfy.generateImage(
       server,
       prompt: prompt,
@@ -268,7 +292,12 @@ CRITICAL RULES:
       seed: seed,
     );
 
-    if (!result.success || result.imageBytes == null) return null;
+    if (!result.success) {
+      throw Exception('Image generation failed: ${result.error ?? 'unknown error'}');
+    }
+    if (result.imageBytes == null) {
+      throw Exception('Image generation succeeded but returned no image bytes');
+    }
 
     final filename = 'auto_${_uuid.v4()}.png';
     final localPath = await _storage.saveImageFile(result.imageBytes!, filename);
@@ -293,14 +322,7 @@ CRITICAL RULES:
     );
     await _storage.saveImage(image);
 
-    // Update the auto gen image
-    add(AutoGenImageUpdated(
-      _uuid.v4(), // This won't match - the caller handles the update
-      ImageStatus.completed,
-      localPath: localPath,
-    ));
-
-    return image.id;
+    return (id: image.id, localPath: localPath);
   }
 
   @override
