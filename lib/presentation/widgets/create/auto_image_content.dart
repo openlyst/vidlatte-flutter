@@ -587,8 +587,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
     final isWide = MediaQuery.sizeOf(context).width >= ThemeConstants.tabletBreakpoint;
     return BlocBuilder<AutoGenBloc, AutoGenState>(
       builder: (context, state) {
-        if (state.images.isEmpty &&
-            state.status != AutoGenStatus.generatingPrompt) {
+        if (state.images.isEmpty && !state.isRunning) {
           return EmptyState(
             icon: Icons.auto_awesome_outlined,
             title: s.autoImageTitle,

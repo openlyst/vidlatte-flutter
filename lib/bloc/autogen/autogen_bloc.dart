@@ -96,7 +96,9 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
   }
 
   void _onImageStarted(AutoGenImageStarted event, Emitter<AutoGenState> emit) {
-    emit(state.copyWith(images: [event.image, ...state.images]));
+    final images = [event.image, ...state.images];
+    final completedCount = images.where((i) => i.status == ImageStatus.completed).length;
+    emit(state.copyWith(images: images, generatedCount: completedCount));
   }
 
   void _onErrorOccurred(AutoGenErrorOccurred event, Emitter<AutoGenState> emit) {
@@ -143,10 +145,10 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
       add(AutoGenPromptGenerated(prompt));
 
       // Generate image
-      String imageId;
+      final ({String id, String localPath}) imageResult;
       try {
         emit(state.copyWith(status: AutoGenStatus.generatingImage));
-        imageId = await _generateImage(prompt);
+        imageResult = await _generateImage(prompt);
       } catch (e) {
         add(AutoGenErrorOccurred('Failed to generate image: $e'));
         return;
@@ -154,8 +156,10 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
       if (_cancelToken) return;
 
       final autoImage = AutoGenImage(
-        id: imageId,
+        id: imageResult.id,
         prompt: prompt,
+        status: ImageStatus.completed,
+        localPath: imageResult.localPath,
         createdAt: DateTime.now(),
       );
       add(AutoGenImageStarted(autoImage));
@@ -267,7 +271,7 @@ CRITICAL RULES:
     return p.trim();
   }
 
-  Future<String> _generateImage(String prompt) async {
+  Future<({String id, String localPath})> _generateImage(String prompt) async {
     final imageServerId = state.imageServerId;
     ComfyServer? server;
     if (imageServerId != null) {
@@ -318,14 +322,7 @@ CRITICAL RULES:
     );
     await _storage.saveImage(image);
 
-    // Update the auto gen image
-    add(AutoGenImageUpdated(
-      image.id,
-      ImageStatus.completed,
-      localPath: localPath,
-    ));
-
-    return image.id;
+    return (id: image.id, localPath: localPath);
   }
 
   @override
