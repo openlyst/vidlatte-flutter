@@ -53,6 +53,7 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
       basePrompt: event.basePrompt,
       mustIncludeTags: event.mustIncludeTags,
       maxImages: event.maxImages,
+      infiniteImages: event.infiniteImages,
       selectedLoras: event.selectedLoras,
       imageModel: event.imageModel,
       llmServerId: event.llmServerId,
@@ -124,7 +125,10 @@ class AutoGenBloc extends Bloc<AutoGenEvent, AutoGenState> {
   Future<void> _runLoop(Emitter<AutoGenState> emit) async {
     while (!_cancelToken) {
       final maxImages = state.maxImages;
-      if (maxImages != null && maxImages > 0 && state.generatedCount >= maxImages) {
+      if (!state.infiniteImages &&
+          maxImages != null &&
+          maxImages > 0 &&
+          state.generatedCount >= maxImages) {
         final hasPending = state.images.any(
           (img) => img.status == ImageStatus.pending || img.status == ImageStatus.processing,
         );
