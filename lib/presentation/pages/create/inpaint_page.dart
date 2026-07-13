@@ -1,11 +1,11 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../bloc/servers/servers_bloc.dart';
+import '../../../bloc/settings/settings_bloc.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/generated_image.dart';
@@ -27,11 +27,25 @@ class _InpaintPageState extends State<InpaintPage> {
   double _brushSize = 30;
   bool _isEraser = false;
   double _denoise = 0.75;
+  String _selectedModel = '';
+  bool _loadedSettings = false;
   final _promptController = TextEditingController();
   final _negativeController = TextEditingController();
   final _maskKey = GlobalKey<MaskEditorState>();
   final _picker = ImagePicker();
   bool _uploading = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loadedSettings) {
+      _loadedSettings = true;
+      final settings = context.read<SettingsBloc>().state.settings;
+      if (settings.lastModel.isNotEmpty) {
+        _selectedModel = settings.lastModel;
+      }
+    }
+  }
 
   void _pickImage() async {
     final result = await _picker.pickImage(source: ImageSource.gallery);
@@ -42,7 +56,10 @@ class _InpaintPageState extends State<InpaintPage> {
   }
 
   void _generate() async {
-    if (_imageBytes == null) return;
+    if (_imageBytes == null) {
+      debugPrint('[inpaint] _generate called with no image bytes');
+      return;
+    }
     final s = AppStrings.of(context);
 
     final serversState = context.read<ServersBloc>().state;
@@ -54,25 +71,66 @@ class _InpaintPageState extends State<InpaintPage> {
     }
     final server = serversState.servers.first;
 
+    if (_selectedModel.isEmpty) {
+      debugPrint('[inpaint] no model selected');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.selectModel)),
+        );
+      }
+      return;
+    }
+
+    final maskState = _maskKey.currentState;
+    if (maskState == null) {
+      debugPrint('[inpaint] MaskEditor state is null — widget not mounted yet');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Mask editor not ready, try again')),
+        );
+      }
+      return;
+    }
+
     setState(() => _uploading = true);
 
     try {
       final comfy = ComfyService();
       final ts = DateTime.now().millisecondsSinceEpoch;
 
+      debugPrint('[inpaint] uploading source image');
       final uploadedImage = await comfy.uploadImage(
         server,
         _imageBytes!,
         'vidlatte_inpaint_$ts.png',
       );
+      debugPrint('[inpaint] uploaded image: ${uploadedImage.filename}');
 
-      final maskBytes = await _maskKey.currentState!.exportMask();
+      debugPrint('[inpaint] exporting mask');
+      final maskBytes = await maskState.exportMask();
+      debugPrint('[inpaint] mask bytes length: ${maskBytes.length}');
+
+      if (maskBytes.isEmpty) {
+        debugPrint('[inpaint] mask is empty — image may still be loading');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Image still loading, try again in a moment')),
+          );
+        }
+        comfy.dispose();
+        if (mounted) setState(() => _uploading = false);
+        return;
+      }
+
+      debugPrint('[inpaint] uploading mask');
       final uploadedMask = await comfy.uploadImage(
         server,
         maskBytes,
         'vidlatte_mask_$ts.png',
       );
+      debugPrint('[inpaint] uploaded mask: ${uploadedMask.filename}');
 
+      debugPrint('[inpaint] submitting inpaint workflow');
       final result = await comfy.inpaint(
         server,
         imageFilename: uploadedImage.filename,
@@ -83,9 +141,10 @@ class _InpaintPageState extends State<InpaintPage> {
         maskType: uploadedMask.type,
         prompt: _promptController.text.trim(),
         negativePrompt: _negativeController.text.trim(),
-        model: '',
+        model: _selectedModel,
         denoise: _denoise,
       );
+      debugPrint('[inpaint] result success=${result.success} hasBytes=${result.imageBytes != null}');
       comfy.dispose();
 
       if (result.success && result.imageBytes != null) {
@@ -98,7 +157,7 @@ class _InpaintPageState extends State<InpaintPage> {
           id: uuid,
           prompt: _promptController.text.trim(),
           negativePrompt: _negativeController.text.trim(),
-          model: '',
+          model: _selectedModel,
           loras: const [],
           loraWeights: const {},
           width: 0,
@@ -125,7 +184,8 @@ class _InpaintPageState extends State<InpaintPage> {
           SnackBar(content: Text(s.faceRestoreFailed)),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[inpaint] error: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Inpaint failed: $e')),
@@ -192,6 +252,52 @@ class _InpaintPageState extends State<InpaintPage> {
                     ),
                     maxLines: 2,
                   ),
+                ),
+                BlocBuilder<ServersBloc, ServersState>(
+                  builder: (context, serversState) {
+                    final server = serversState.servers.isNotEmpty
+                        ? serversState.servers.first
+                        : null;
+                    final models = server != null
+                        ? (serversState.catalogs[server.id]?.models ?? [])
+                        : <String>[];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ThemeConstants.spacingMedium,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(s.model, style: Theme.of(context).textTheme.labelMedium),
+                              const Spacer(),
+                              IconButton(
+                                onPressed: server != null
+                                    ? () => context.read<ServersBloc>().add(ServerModelsFetchRequested(server.id))
+                                    : null,
+                                icon: const Icon(Icons.refresh, size: 20),
+                                tooltip: 'Refresh',
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedModel.isEmpty ? null : _selectedModel,
+                            decoration: InputDecoration(
+                              hintText: models.isEmpty ? s.loadingModels : s.selectModelHint,
+                              isDense: true,
+                            ),
+                            items: models.map((m) {
+                              return DropdownMenuItem(value: m, child: Text(m, overflow: TextOverflow.ellipsis));
+                            }).toList(),
+                            onChanged: (v) => setState(() => _selectedModel = v ?? ''),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 Expanded(
                   child: Padding(

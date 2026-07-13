@@ -316,6 +316,38 @@ class ComfyWorkflow {
     if (subfolder.isNotEmpty) loadImageInputs['subfolder'] = subfolder;
     if (type.isNotEmpty) loadImageInputs['type'] = type;
 
+    final modelScale = _parseModelScale(model);
+    final adjustRatio = scale / modelScale;
+
+    if ((adjustRatio - 1.0).abs() < 0.01) {
+      return {
+        '1': {
+          'inputs': loadImageInputs,
+          'class_type': 'LoadImage',
+        },
+        '2': {
+          'inputs': {
+            'model_name': model,
+          },
+          'class_type': 'UpscaleModelLoader',
+        },
+        '3': {
+          'inputs': {
+            'upscale_model': ['2', 0],
+            'image': ['1', 0],
+          },
+          'class_type': 'ImageUpscaleWithModel',
+        },
+        '4': {
+          'inputs': {
+            'filename_prefix': 'vidlatte_upscale',
+            'images': ['3', 0],
+          },
+          'class_type': 'SaveImage',
+        },
+      };
+    }
+
     return {
       '1': {
         'inputs': loadImageInputs,
@@ -324,19 +356,40 @@ class ComfyWorkflow {
       '2': {
         'inputs': {
           'model_name': model,
-          'image': ['1', 0],
-          'tile_size': 512,
         },
-        'class_type': 'UpscaleImage',
+        'class_type': 'UpscaleModelLoader',
       },
       '3': {
         'inputs': {
+          'upscale_model': ['2', 0],
+          'image': ['1', 0],
+        },
+        'class_type': 'ImageUpscaleWithModel',
+      },
+      '4': {
+        'inputs': {
+          'upscale_method': 'lanczos',
+          'scale_by': adjustRatio,
+          'image': ['3', 0],
+        },
+        'class_type': 'ImageScaleBy',
+      },
+      '5': {
+        'inputs': {
           'filename_prefix': 'vidlatte_upscale',
-          'images': ['2', 0],
+          'images': ['4', 0],
         },
         'class_type': 'SaveImage',
       },
     };
+  }
+
+  static double _parseModelScale(String modelName) {
+    final match = RegExp(r'^(\d+)x[_-]').firstMatch(modelName);
+    if (match != null) return double.parse(match.group(1)!);
+    final match2 = RegExp(r'[_-](\d+)x[_-]').firstMatch(modelName);
+    if (match2 != null) return double.parse(match2.group(1)!);
+    return 4.0;
   }
 
   static Map<String, dynamic> inpaint(
@@ -407,7 +460,7 @@ class ComfyWorkflow {
           'samples': ['12', 0],
           'mask': ['11', 1],
         },
-        'class_type': 'SetLatentMask',
+        'class_type': 'SetLatentNoiseMask',
       },
       '5': {
         'inputs': {

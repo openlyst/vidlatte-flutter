@@ -158,6 +158,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get upscaleFailed => 'Upscaling failed';
   @override
+  String get noUpscaleModels => 'No upscale models found on server';
+  @override
   String get inpaint => 'Inpaint';
   @override
   String get inpaintHint => 'Paint over areas to regenerate';

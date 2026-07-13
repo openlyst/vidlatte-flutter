@@ -367,6 +367,7 @@ class _SessionDetailState extends State<_SessionDetail> {
                 _selectedLoras = [];
                 _loraWeights = {};
               }),
+              onRefreshModels: () => context.read<ServersBloc>().add(ServerModelsFetchRequested(effectiveServer.id)),
             ),
             const SizedBox(height: ThemeConstants.spacingLarge),
             SizedBox(

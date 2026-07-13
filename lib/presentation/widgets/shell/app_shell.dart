@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -56,40 +58,47 @@ class _PhoneShell extends StatelessWidget {
     final ext = Theme.of(context).extension<AppColors>()!;
     final s = AppStrings.of(context);
     return Scaffold(
+      extendBody: true,
       body: child,
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: SizedBox(
           height: 68,
-          child: Container(
-            decoration: BoxDecoration(
-              color: ext.surfaceElevated,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: ext.border, width: 0.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: AppDestination.values.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final dest = entry.value;
-                  final selected = index == currentIndex;
-                  return Expanded(
-                    child: _FloatingNavItem(
-                      icon: selected ? dest.selectedIcon : dest.icon,
-                      label: _localizedLabel(s, dest),
-                      selected: selected,
-                      onTap: () => context.go(dest.path),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: ext.surfaceElevated.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: ext.border.withValues(alpha: 0.5), width: 0.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
-                  );
-                }).toList(),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Row(
+                    children: AppDestination.values.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final dest = entry.value;
+                      final selected = index == currentIndex;
+                      return Expanded(
+                        child: _FloatingNavItem(
+                          icon: selected ? dest.selectedIcon : dest.icon,
+                          label: _localizedLabel(s, dest),
+                          selected: selected,
+                          onTap: () => context.go(dest.path),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
             ),
           ),
