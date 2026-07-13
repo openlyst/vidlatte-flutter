@@ -65,6 +65,10 @@ class AutoGenConfigChanged extends AutoGenEvent {
   final String? llmServerId;
   final String? llmModel;
   final String? imageServerId;
+  final int width;
+  final int height;
+  final int? steps;
+  final bool? hiresFix;
 
   const AutoGenConfigChanged({
     required this.mode,
@@ -77,12 +81,17 @@ class AutoGenConfigChanged extends AutoGenEvent {
     this.llmServerId,
     this.llmModel,
     this.imageServerId,
+    required this.width,
+    required this.height,
+    this.steps,
+    this.hiresFix,
   });
 
   @override
   List<Object?> get props => [
         mode, topic, basePrompt, mustIncludeTags, maxImages,
         selectedLoras, imageModel, llmServerId, llmModel, imageServerId,
+        width, height, steps, hiresFix,
       ];
 }
 

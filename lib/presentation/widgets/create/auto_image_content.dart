@@ -61,6 +61,10 @@ class _AutoImageContentState extends State<AutoImageContent> {
   String? _selectedLlmServerId;
   String? _selectedLlmModel;
   String? _selectedImageServerId;
+  int _width = ComfyConstants.defaultWidth;
+  int _height = ComfyConstants.defaultHeight;
+  int _steps = ComfyConstants.defaultSteps;
+  bool _hiresFix = false;
   final _topicController = TextEditingController();
   final _basePromptController = TextEditingController();
   final _mustIncludeController = TextEditingController();
@@ -79,6 +83,10 @@ class _AutoImageContentState extends State<AutoImageContent> {
     _selectedLlmServerId = autoGenState.llmServerId;
     _selectedLlmModel = autoGenState.llmModel;
     _selectedImageServerId = autoGenState.imageServerId;
+    _width = autoGenState.width;
+    _height = autoGenState.height;
+    _steps = autoGenState.steps ?? ComfyConstants.defaultSteps;
+    _hiresFix = autoGenState.hiresFix ?? false;
     _topicController.text = _topic;
     _basePromptController.text = _basePrompt;
     _mustIncludeController.text = _mustIncludeTags;
@@ -135,6 +143,10 @@ class _AutoImageContentState extends State<AutoImageContent> {
           llmServerId: _selectedLlmServerId,
           llmModel: _selectedLlmModel,
           imageServerId: _selectedImageServerId,
+          width: _width,
+          height: _height,
+          steps: _steps,
+          hiresFix: _hiresFix,
         ));
   }
 
@@ -563,7 +575,69 @@ class _AutoImageContentState extends State<AutoImageContent> {
             );
           },
         ),
+        _buildGenerationSettingsCard(context),
       ],
+    );
+  }
+
+  static const _dimensionPresets = [
+    (512, 512, '512 × 512'),
+    (768, 768, '768 × 768'),
+    (1024, 1024, '1024 × 1024'),
+    (768, 1024, '768 × 1024'),
+    (1024, 768, '1024 × 768'),
+    (1024, 1536, '1024 × 1536'),
+    (1536, 1024, '1536 × 1024'),
+  ];
+
+  Widget _buildGenerationSettingsCard(BuildContext context) {
+    final s = AppStrings.of(context);
+    final theme = Theme.of(context);
+    return _buildSectionCard(
+      context,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(s.advanced, style: theme.textTheme.labelLarge),
+          const SizedBox(height: ThemeConstants.spacingSmall),
+          Text(s.dimensions, style: theme.textTheme.bodySmall),
+          const SizedBox(height: ThemeConstants.spacingSmall),
+          Wrap(
+            spacing: ThemeConstants.spacingSmall,
+            runSpacing: ThemeConstants.spacingSmall,
+            children: _dimensionPresets.map((preset) {
+              final ($w, $h, label) = preset;
+              final selected = _width == $w && _height == $h;
+              return FilterChip(
+                label: Text(label),
+                selected: selected,
+                onSelected: (_) => _setState(() {
+                  _width = $w;
+                  _height = $h;
+                }),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: ThemeConstants.spacingMedium),
+          Text('${s.stepsWithDefault} ($_steps)', style: theme.textTheme.bodySmall),
+          Slider(
+            value: _steps.toDouble(),
+            min: ComfyConstants.minSteps.toDouble(),
+            max: ComfyConstants.maxSteps.toDouble(),
+            divisions: ComfyConstants.maxSteps - ComfyConstants.minSteps,
+            label: '$_steps',
+            onChanged: (v) => _setState(() => _steps = v.round()),
+          ),
+          const SizedBox(height: ThemeConstants.spacingSmall),
+          SwitchListTile(
+            title: Text(s.hiresFix),
+            subtitle: Text(s.hiresFixSubtitle),
+            value: _hiresFix,
+            onChanged: (v) => _setState(() => _hiresFix = v),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
     );
   }
 
