@@ -579,7 +579,12 @@ class _AutoImageContentState extends State<AutoImageContent> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+                padding: const EdgeInsets.fromLTRB(
+                  ThemeConstants.spacingMedium,
+                  ThemeConstants.spacingMedium,
+                  ThemeConstants.spacingMedium,
+                  ThemeConstants.bottomNavTotal,
+                ),
                 sliver: SliverGrid(
                   gridDelegate:
                       const SliverGridDelegateWithMaxCrossAxisExtent(

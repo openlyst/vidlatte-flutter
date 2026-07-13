@@ -30,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ThemeConstants.spacingLarge,
           ThemeConstants.spacingMedium,
           ThemeConstants.spacingLarge,
-          ThemeConstants.spacingXLarge,
+          ThemeConstants.bottomNavTotal,
         ),
         children: [
           _ThemeSection(),

@@ -23,6 +23,10 @@ class ThemeConstants {
   static const double spacingXLarge = 32.0;
   static const double spacingXXLarge = 48.0;
 
+  static const double bottomNavHeight = 68.0;
+  static const double bottomNavPadding = 16.0;
+  static const double bottomNavTotal = bottomNavHeight + bottomNavPadding + spacingSmall;
+
   static const double iconSmall = 16.0;
   static const double iconMedium = 24.0;
   static const double iconLarge = 32.0;
