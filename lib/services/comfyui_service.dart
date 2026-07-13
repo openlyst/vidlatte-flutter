@@ -396,10 +396,11 @@ class ComfyService {
     bool useCodeFormer = false,
     void Function(PreviewMessage)? onPreview,
   }) async {
+    final loaded = await _ensureInputImage(server, filename, subfolder, type);
     final workflow = ComfyWorkflow.faceRestore(
-      filename,
-      subfolder,
-      type,
+      loaded.filename,
+      loaded.subfolder,
+      loaded.type,
       strength: strength,
       useCodeFormer: useCodeFormer,
     );
@@ -416,15 +417,30 @@ class ComfyService {
     double scale = 2.0,
     void Function(PreviewMessage)? onPreview,
   }) async {
+    final loaded = await _ensureInputImage(server, filename, subfolder, type);
     final workflow = ComfyWorkflow.upscale(
-      filename,
-      subfolder,
-      type,
+      loaded.filename,
+      loaded.subfolder,
+      loaded.type,
       model: model,
       scale: scale,
     );
     final promptId = await submitWorkflow(server, workflow);
     return pollForResult(server, promptId, onPreview: onPreview);
+  }
+
+  Future<({String filename, String subfolder, String type})> _ensureInputImage(
+    ComfyServer server,
+    String filename,
+    String subfolder,
+    String type,
+  ) async {
+    if (type == 'input') {
+      return (filename: filename, subfolder: subfolder, type: type);
+    }
+    final bytes = await getImage(server, filename, subfolder, type);
+    final uploaded = await uploadImage(server, bytes, filename);
+    return (filename: uploaded.filename, subfolder: uploaded.subfolder, type: uploaded.type);
   }
 
   Future<ComfyJobResult> inpaint(
