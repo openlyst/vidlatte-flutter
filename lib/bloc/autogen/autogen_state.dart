@@ -10,6 +10,7 @@ class AutoGenState extends Equatable {
   final String basePrompt;
   final String mustIncludeTags;
   final int? maxImages;
+  final bool infiniteImages;
   final List<String> selectedLoras;
   final String imageModel;
   final String? llmServerId;
@@ -32,6 +33,7 @@ class AutoGenState extends Equatable {
     this.basePrompt = '',
     this.mustIncludeTags = '',
     this.maxImages = 10,
+    this.infiniteImages = false,
     this.selectedLoras = const [],
     this.imageModel = '',
     this.llmServerId,
@@ -55,6 +57,7 @@ class AutoGenState extends Equatable {
     String? basePrompt,
     String? mustIncludeTags,
     Object? maxImages = _unset,
+    bool? infiniteImages,
     List<String>? selectedLoras,
     String? imageModel,
     Object? llmServerId = _unset,
@@ -77,6 +80,7 @@ class AutoGenState extends Equatable {
         basePrompt: basePrompt ?? this.basePrompt,
         mustIncludeTags: mustIncludeTags ?? this.mustIncludeTags,
         maxImages: maxImages == _unset ? this.maxImages : maxImages as int?,
+        infiniteImages: infiniteImages ?? this.infiniteImages,
         selectedLoras: selectedLoras ?? this.selectedLoras,
         imageModel: imageModel ?? this.imageModel,
         llmServerId: llmServerId == _unset ? this.llmServerId : llmServerId as String?,
@@ -96,7 +100,7 @@ class AutoGenState extends Equatable {
   @override
   List<Object?> get props => [
         status, mode, topic, basePrompt, mustIncludeTags, maxImages,
-        selectedLoras, imageModel, llmServerId, llmModel, imageServerId,
+        infiniteImages, selectedLoras, imageModel, llmServerId, llmModel, imageServerId,
         width, height, steps, hiresFix,
         images, currentPrompt, generatedCount, errorMessage, isRunning,
       ];

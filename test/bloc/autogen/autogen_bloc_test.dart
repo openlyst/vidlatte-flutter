@@ -58,6 +58,7 @@ void main() {
         basePrompt: 'a cat',
         mustIncludeTags: 'red hair',
         maxImages: 5,
+        infiniteImages: true,
         selectedLoras: ['lora1'],
         imageModel: 'model.safetensors',
         llmServerId: 'llm-1',
@@ -73,6 +74,7 @@ void main() {
             .having((s) => s.mode, 'mode', AutoGenMode.variation)
             .having((s) => s.topic, 'topic', 'cyberpunk')
             .having((s) => s.maxImages, 'maxImages', 5)
+            .having((s) => s.infiniteImages, 'infiniteImages', true)
             .having((s) => s.imageModel, 'imageModel', 'model.safetensors')
             .having((s) => s.llmServerId, 'llmServerId', 'llm-1')
             .having((s) => s.width, 'width', 1024)

@@ -291,7 +291,7 @@ class AppStringsRu extends AppStrings {
   @override
   String get maxImages => 'Макс. изображений';
   @override
-  String get maxImagesHint => '10 (0 или пусто для бесконечности)';
+  String get infiniteImages => 'Генерировать бесконечно';
   @override
   String get llmServer => 'LLM-сервер';
   @override

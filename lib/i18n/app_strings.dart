@@ -169,7 +169,7 @@ abstract class AppStrings {
   String get mustIncludeTags;
   String get mustIncludeHint;
   String get maxImages;
-  String get maxImagesHint;
+  String get infiniteImages;
   String get llmServer;
   String get llmModel;
   String get imageServer;
