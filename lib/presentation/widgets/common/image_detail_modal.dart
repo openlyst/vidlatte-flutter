@@ -394,8 +394,6 @@ class _UpscaleDialogState extends State<_UpscaleDialog> {
   double _scale = 2.0;
   bool _refreshing = false;
 
-  static const _scaleOptions = [1.5, 2.0, 3.0, 4.0];
-
   @override
   void initState() {
     super.initState();
@@ -460,19 +458,28 @@ class _UpscaleDialogState extends State<_UpscaleDialog> {
             onChanged: (v) => setState(() => _selectedModel = v!),
           ),
           const SizedBox(height: 20),
-          Text(widget.scaleLabel,
-              style: Theme.of(context).textTheme.labelMedium),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: _scaleOptions.map((sc) {
-              final selected = (sc - _scale).abs() < 0.01;
-              return ChoiceChip(
-                label: Text('${sc}x'),
-                selected: selected,
-                onSelected: (_) => setState(() => _scale = sc),
-              );
-            }).toList(),
+          Row(
+            children: [
+              Text(widget.scaleLabel,
+                  style: Theme.of(context).textTheme.labelMedium),
+              const Spacer(),
+              Text(
+                '${_scale.toStringAsFixed(1)}x',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          Slider(
+            value: _scale,
+            min: 1.0,
+            max: 8.0,
+            divisions: 14,
+            label: '${_scale.toStringAsFixed(1)}x',
+            onChanged: (v) => setState(() => _scale = v),
           ),
         ],
       ),
