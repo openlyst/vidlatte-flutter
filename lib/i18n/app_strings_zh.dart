@@ -291,6 +291,8 @@ class AppStringsZh extends AppStrings {
   @override
   String get maxImages => '最大图片数';
   @override
+  String get maxImagesHint => '10（0或留空表示无限）';
+  @override
   String get llmServer => 'LLM服务器';
   @override
   String get llmModel => 'LLM模型';
