@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -15,17 +16,64 @@ import '../../../services/comfyui_service.dart';
 import '../../../services/storage_service.dart';
 
 class ImageDetailModal extends StatefulWidget {
-  final GeneratedImage image;
+  final List<GeneratedImage> images;
+  final int initialIndex;
 
-  const ImageDetailModal({super.key, required this.image});
+  const ImageDetailModal({
+    super.key,
+    required this.images,
+    this.initialIndex = 0,
+  });
 
   @override
   State<ImageDetailModal> createState() => _ImageDetailModalState();
 }
 
 class _ImageDetailModalState extends State<ImageDetailModal> {
+  late final PageController _pageController;
+  late int _currentIndex;
   bool _processing = false;
   String? _processMsg;
+
+  GeneratedImage get _image => widget.images[_currentIndex];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex.clamp(0, widget.images.length - 1);
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int index) {
+    if (index < 0 || index >= widget.images.length) return;
+    setState(() => _currentIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _next() => _goTo(_currentIndex + 1);
+  void _previous() => _goTo(_currentIndex - 1);
+
+  void _onKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
+          event.logicalKey == LogicalKeyboardKey.arrowDown) {
+        _next();
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+          event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        _previous();
+      }
+    }
+  }
 
   void _faceRestore() async {
     final s = AppStrings.of(context);
@@ -41,9 +89,9 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
       final comfy = ComfyService();
       final result = await comfy.faceRestore(
         server,
-        filename: widget.image.comfyFilename!,
-        subfolder: widget.image.comfySubfolder ?? '',
-        type: widget.image.comfyType ?? 'output',
+        filename: _image.comfyFilename!,
+        subfolder: _image.comfySubfolder ?? '',
+        type: _image.comfyType ?? 'output',
       );
       comfy.dispose();
 
@@ -126,9 +174,9 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
       final comfy = ComfyService();
       final res = await comfy.upscale(
         server,
-        filename: widget.image.comfyFilename!,
-        subfolder: widget.image.comfySubfolder ?? '',
-        type: widget.image.comfyType ?? 'output',
+        filename: _image.comfyFilename!,
+        subfolder: _image.comfySubfolder ?? '',
+        type: _image.comfyType ?? 'output',
         model: result.model,
         scale: result.scale,
       );
@@ -159,7 +207,7 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
 
   dynamic _getServer() {
     final serversState = context.read<ServersBloc>().state;
-    final server = serversState.servers.where((s) => s.url == widget.image.serverUrl).firstOrNull;
+    final server = serversState.servers.where((s) => s.url == _image.serverUrl).firstOrNull;
     if (server == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppStrings.of(context).comfyNoServerError)),
@@ -175,7 +223,7 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
     final filename = 'post_$uuid.png';
     final localPath = await storage.saveImageFile(result.imageBytes!, filename);
 
-    final newImage = widget.image.copyWith(
+    final newImage = _image.copyWith(
       id: uuid,
       localPath: localPath,
       comfyFilename: result.filename,
@@ -190,56 +238,51 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
     }
   }
 
+  Widget _buildPage(BuildContext context, int index) {
+    final image = widget.images[index];
+    final ext = Theme.of(context).extension<AppColors>()!;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
+      child: image.localPath != null
+          ? PhotoView(
+              imageProvider: FileImage(File(image.localPath!)),
+              backgroundDecoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
+              ),
+              minScale: PhotoViewComputedScale.contained,
+              maxScale: PhotoViewComputedScale.covered * 3,
+            )
+          : Container(
+              color: ext.surfaceElevated,
+              child: Center(child: Icon(Icons.broken_image, size: 64, color: ext.muted)),
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
     final s = AppStrings.of(context);
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
-            child: widget.image.localPath != null
-                ? PhotoView(
-                    imageProvider: FileImage(File(widget.image.localPath!)),
-                    backgroundDecoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: BorderRadius.circular(ThemeConstants.borderRadiusLarge),
-                    ),
-                    minScale: PhotoViewComputedScale.contained,
-                    maxScale: PhotoViewComputedScale.covered * 3,
-                  )
-                : Container(
-                    color: ext.surfaceElevated,
-                    child: Center(child: Icon(Icons.broken_image, size: 64, color: ext.muted)),
-                  ),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ),
-              ),
+    final showNav = widget.images.length > 1;
+    return KeyboardListener(
+      autofocus: true,
+      focusNode: FocusNode(),
+      onKeyEvent: _onKeyEvent,
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              itemCount: widget.images.length,
+              onPageChanged: (index) => setState(() => _currentIndex = index),
+              itemBuilder: _buildPage,
             ),
-          ),
-          if (widget.image.comfyFilename != null)
             Positioned(
               top: 8,
-              left: 8,
+              right: 8,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: BackdropFilter(
@@ -249,118 +292,195 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
                       color: Colors.black.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
+                    child: IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (showNav && _currentIndex > 0)
+              Positioned(
+                left: 8,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: IconButton(
+                          onPressed: _previous,
+                          icon: const Icon(Icons.chevron_left, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (showNav && _currentIndex < widget.images.length - 1)
+              Positioned(
+                right: 8,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: IconButton(
+                          onPressed: _next,
+                          icon: const Icon(Icons.chevron_right, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (_image.comfyFilename != null)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: _processing ? null : _faceRestore,
+                            icon: const Icon(Icons.face_retouching_natural, color: Colors.white, size: 20),
+                            tooltip: s.faceRestore,
+                          ),
+                          IconButton(
+                            onPressed: _processing ? null : _upscale,
+                            icon: const Icon(Icons.hd_outlined, color: Colors.white, size: 20),
+                            tooltip: s.upscaleImage,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (_processing)
+              Positioned.fill(
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(color: Colors.white),
+                            const SizedBox(height: 12),
+                            Text(
+                              _processMsg ?? s.processing,
+                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              s.processingMsg,
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(ThemeConstants.borderRadiusLarge),
+                  bottomRight: Radius.circular(ThemeConstants.borderRadiusLarge),
+                ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(ThemeConstants.borderRadiusLarge),
+                        bottomRight: Radius.circular(ThemeConstants.borderRadiusLarge),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          onPressed: _processing ? null : _faceRestore,
-                          icon: const Icon(Icons.face_retouching_natural, color: Colors.white, size: 20),
-                          tooltip: s.faceRestore,
+                        Text(
+                          _image.prompt,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        IconButton(
-                          onPressed: _processing ? null : _upscale,
-                          icon: const Icon(Icons.hd_outlined, color: Colors.white, size: 20),
-                          tooltip: s.upscaleImage,
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            if (_image.loras.isNotEmpty) ...[
+                              Icon(Icons.bolt, size: 12, color: ext.accent),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_image.loras.length} ${s.lorasCount}',
+                                style: TextStyle(color: ext.accent, fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('·', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                              const SizedBox(width: 8),
+                            ],
+                            Flexible(
+                              child: Text(
+                                s.imageMeta(_image.model.split('/').last, _image.width, _image.height, _image.seed),
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
+                        if (showNav) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            '${_currentIndex + 1} / ${widget.images.length}',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                          ),
+                        ],
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-          if (_processing)
-            Positioned.fill(
-              child: Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(color: Colors.white),
-                          const SizedBox(height: 12),
-                          Text(
-                            _processMsg ?? s.processing,
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            s.processingMsg,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(ThemeConstants.borderRadiusLarge),
-                bottomRight: Radius.circular(ThemeConstants.borderRadiusLarge),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(ThemeConstants.borderRadiusLarge),
-                      bottomRight: Radius.circular(ThemeConstants.borderRadiusLarge),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.image.prompt,
-                        style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          if (widget.image.loras.isNotEmpty) ...[
-                            Icon(Icons.bolt, size: 12, color: ext.accent),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${widget.image.loras.length} ${s.lorasCount}',
-                              style: TextStyle(color: ext.accent, fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(width: 8),
-                            Text('·', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
-                            const SizedBox(width: 8),
-                          ],
-                          Flexible(
-                            child: Text(
-                              s.imageMeta(widget.image.model.split('/').last, widget.image.width, widget.image.height, widget.image.seed),
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

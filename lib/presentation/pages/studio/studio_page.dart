@@ -405,7 +405,7 @@ class _SessionDetailState extends State<_SessionDetail> {
               const SizedBox(height: ThemeConstants.spacingSmall),
               ImageGrid(
                 images: s.images,
-                onTap: (image) => _showImage(context, image),
+                onTap: (image) => _showImage(context, image, s.images),
                 onDelete: (image) {
                   context.read<StudioBloc>().add(StudioImageRemoved(s.id, image.id));
                 },
@@ -640,10 +640,15 @@ class _SessionDetailState extends State<_SessionDetail> {
     );
   }
 
-  void _showImage(BuildContext context, GeneratedImage image) {
+  void _showImage(BuildContext context, GeneratedImage image, List<GeneratedImage> images) {
+    final index = images.indexWhere((img) => img.id == image.id);
+    if (index < 0) return;
     showDialog(
       context: context,
-      builder: (_) => ImageDetailModal(image: image),
+      builder: (_) => ImageDetailModal(
+        images: images,
+        initialIndex: index,
+      ),
     );
   }
 }
