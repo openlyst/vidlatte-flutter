@@ -489,7 +489,12 @@ class _CreatePageState extends State<CreatePage> {
     dynamic catalog,
   ) {
     return ListView(
-      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      padding: const EdgeInsets.fromLTRB(
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.spacingMedium,
+        ThemeConstants.bottomNavTotal,
+      ),
       children: [
         _buildConfigPanel(context, genState, serversState, server, catalog),
         const SizedBox(height: ThemeConstants.spacingLarge),
@@ -511,7 +516,12 @@ class _CreatePageState extends State<CreatePage> {
         SizedBox(
           width: 400,
           child: ListView(
-            padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+            padding: const EdgeInsets.fromLTRB(
+              ThemeConstants.spacingMedium,
+              ThemeConstants.spacingMedium,
+              ThemeConstants.spacingMedium,
+              ThemeConstants.bottomNavTotal,
+            ),
             children: [
               _buildConfigPanel(context, genState, serversState, server, catalog),
             ],

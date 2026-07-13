@@ -102,7 +102,12 @@ class _SessionList extends StatelessWidget {
     return SizedBox(
       width: 260,
       child: ListView.builder(
-        padding: const EdgeInsets.all(ThemeConstants.spacingSmall),
+        padding: const EdgeInsets.fromLTRB(
+          ThemeConstants.spacingSmall,
+          ThemeConstants.spacingSmall,
+          ThemeConstants.spacingSmall,
+          ThemeConstants.bottomNavTotal,
+        ),
         itemCount: state.sessions.length,
         itemBuilder: (context, index) {
           final session = state.sessions[index];
@@ -331,7 +336,12 @@ class _SessionDetailState extends State<_SessionDetail> {
       builder: (context, genState) {
         final isGenerating = genState.status == GenerationStatus.generating;
         return ListView(
-          padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+          padding: const EdgeInsets.fromLTRB(
+            ThemeConstants.spacingMedium,
+            ThemeConstants.spacingMedium,
+            ThemeConstants.spacingMedium,
+            ThemeConstants.bottomNavTotal,
+          ),
           children: [
             _buildSessionHeader(context, s),
             const SizedBox(height: ThemeConstants.spacingMedium),
