@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 
 import '../data/models/llm_model.dart';
@@ -62,6 +63,48 @@ class LlmService {
     double temperature = 0.7,
     int maxTokens = 4096,
   }) async {
+    var result = await _openAiChatCompletion(
+      server: server,
+      model: model,
+      messages: messages,
+      temperature: temperature,
+      maxTokens: maxTokens,
+    );
+
+    // LM Studio returns 4xx from /v1/chat/completions when the requested model
+    // is not loaded. Its native /api/v1/models/load endpoint loads it on demand.
+    if (!result.success) {
+      final error = result.error ?? '';
+      final statusCode = _parseStatusCode(error);
+      if (statusCode != null && statusCode >= 400 && statusCode < 500) {
+        debugPrint('[LlmService] OpenAI-compatible chat failed with HTTP $statusCode, trying LM Studio /api/v1/models/load');
+        try {
+          await _loadLlmStudioModel(server, model);
+          debugPrint('[LlmService] LM Studio model load succeeded, retrying chat');
+          result = await _openAiChatCompletion(
+            server: server,
+            model: model,
+            messages: messages,
+            temperature: temperature,
+            maxTokens: maxTokens,
+          );
+        } catch (e) {
+          debugPrint('[LlmService] LM Studio model load fallback failed: $e');
+          // Keep the original OpenAI-compatible error.
+        }
+      }
+    }
+
+    return result;
+  }
+
+  Future<LlmChatResult> _openAiChatCompletion({
+    required LlmServer server,
+    required String model,
+    required List<LlmChatMessage> messages,
+    required double temperature,
+    required int maxTokens,
+  }) async {
     try {
       final resp = await _dio.post(
         '${_baseUrl(server)}/chat/completions',
@@ -81,13 +124,32 @@ class LlmService {
       final content = choices[0]['message']['content'] as String? ?? '';
       return LlmChatResult(success: true, content: content);
     } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final body = e.response?.data?.toString() ?? 'no body';
       return LlmChatResult(
         success: false,
-        error: e.message ?? e.error?.toString() ?? 'Request failed',
+        error: 'HTTP $status: ${e.message}. Response: $body',
       );
     } catch (e) {
       return LlmChatResult(success: false, error: e.toString());
     }
+  }
+
+  int? _parseStatusCode(String error) {
+    final match = RegExp(r'HTTP (\d+)').firstMatch(error);
+    return match != null ? int.tryParse(match.group(1)!) : null;
+  }
+
+  Future<void> _loadLlmStudioModel(LlmServer server, String model) async {
+    final url = server.url.replaceAll(RegExp(r'/+$'), '');
+    await _dio.post(
+      '$url/api/v1/models/load',
+      options: Options(headers: _headers(server)),
+      data: {
+        'model': model,
+        'context_length': 4096,
+      },
+    );
   }
 
   Stream<String> chatCompletionStream({
