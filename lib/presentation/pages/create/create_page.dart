@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../bloc/autogen/autogen_bloc.dart';
+import '../../../bloc/gallery/gallery_bloc.dart';
 import '../../../bloc/generation/generation_bloc.dart';
 import '../../../bloc/prompt_history/prompt_history_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
@@ -282,7 +283,12 @@ class _CreatePageState extends State<CreatePage> {
     final ext = Theme.of(context).extension<AppColors>()!;
     final s = AppStrings.of(context);
 
-    return BlocListener<SettingsBloc, SettingsState>(
+    return BlocListener<GalleryBloc, GalleryState>(
+      listenWhen: (prev, curr) => prev.allImages != curr.allImages,
+      listener: (context, state) {
+        context.read<GenerationBloc>().add(GenerationImagesSynced(state.allImages));
+      },
+      child: BlocListener<SettingsBloc, SettingsState>(
       listenWhen: (prev, curr) => !_loadedSettings && (curr.settings.lastModel.isNotEmpty || curr.settings.lastPrompt.isNotEmpty),
       listener: (context, state) => _loadSettings(),
       child: Scaffold(
@@ -375,6 +381,7 @@ class _CreatePageState extends State<CreatePage> {
                 );
               },
             ),
+      ),
       ),
     );
   }
