@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:vidlatte/data/models/generated_image.dart';
 import 'autogen_event.dart';
 
 export 'autogen_event.dart';
@@ -16,6 +15,10 @@ class AutoGenState extends Equatable {
   final String? llmServerId;
   final String? llmModel;
   final String? imageServerId;
+  final int width;
+  final int height;
+  final int? steps;
+  final bool? hiresFix;
   final List<AutoGenImage> images;
   final String currentPrompt;
   final int generatedCount;
@@ -34,6 +37,10 @@ class AutoGenState extends Equatable {
     this.llmServerId,
     this.llmModel,
     this.imageServerId,
+    this.width = 1024,
+    this.height = 1024,
+    this.steps,
+    this.hiresFix,
     this.images = const [],
     this.currentPrompt = '',
     this.generatedCount = 0,
@@ -53,6 +60,10 @@ class AutoGenState extends Equatable {
     Object? llmServerId = _unset,
     Object? llmModel = _unset,
     Object? imageServerId = _unset,
+    int? width,
+    int? height,
+    Object? steps = _unset,
+    Object? hiresFix = _unset,
     List<AutoGenImage>? images,
     String? currentPrompt,
     int? generatedCount,
@@ -71,6 +82,10 @@ class AutoGenState extends Equatable {
         llmServerId: llmServerId == _unset ? this.llmServerId : llmServerId as String?,
         llmModel: llmModel == _unset ? this.llmModel : llmModel as String?,
         imageServerId: imageServerId == _unset ? this.imageServerId : imageServerId as String?,
+        width: width ?? this.width,
+        height: height ?? this.height,
+        steps: steps == _unset ? this.steps : steps as int?,
+        hiresFix: hiresFix == _unset ? this.hiresFix : hiresFix as bool?,
         images: images ?? this.images,
         currentPrompt: currentPrompt ?? this.currentPrompt,
         generatedCount: generatedCount ?? this.generatedCount,
@@ -82,6 +97,7 @@ class AutoGenState extends Equatable {
   List<Object?> get props => [
         status, mode, topic, basePrompt, mustIncludeTags, maxImages,
         selectedLoras, imageModel, llmServerId, llmModel, imageServerId,
+        width, height, steps, hiresFix,
         images, currentPrompt, generatedCount, errorMessage, isRunning,
       ];
 }
