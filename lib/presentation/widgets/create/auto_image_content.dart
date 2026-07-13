@@ -342,12 +342,12 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   Text(s.maxImages, style: theme.textTheme.labelLarge),
                   const Spacer(),
                   SizedBox(
-                    width: 80,
+                    width: 120,
                     child: TextField(
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         isDense: true,
-                        hintText: '10',
+                        hintText: s.maxImagesHint,
                       ),
                       onChanged: (v) {
                         final n = int.tryParse(v);
