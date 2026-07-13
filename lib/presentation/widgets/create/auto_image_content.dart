@@ -11,7 +11,9 @@ import '../../../config/constants.dart';
 import '../../../config/theme.dart';
 import '../../../data/models/generated_image.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/image_detail_modal.dart';
 import '../../../i18n/app_strings.dart';
+import '../../../services/storage_service.dart';
 
 class AutoImageController {
   VoidCallback? _start;
@@ -863,14 +865,27 @@ class _AutoImageCard extends StatelessWidget {
 
   const _AutoImageCard({required this.image, required this.accent});
 
+  void _openViewer(BuildContext context) {
+    if (image.status != ImageStatus.completed || image.localPath == null) return;
+    final fullImage = context.read<StorageService>().getImage(image.id);
+    if (fullImage == null) return;
+    showDialog(
+      context: context,
+      builder: (_) => ImageDetailModal(image: fullImage),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ext = Theme.of(context).extension<AppColors>()!;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
+    final canView = image.status == ImageStatus.completed && image.localPath != null;
+    return GestureDetector(
+      onTap: canView ? () => _openViewer(context) : null,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(ThemeConstants.borderRadius),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
           if (image.localPath != null)
             Image.file(
               File(image.localPath!),
@@ -920,6 +935,7 @@ class _AutoImageCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
