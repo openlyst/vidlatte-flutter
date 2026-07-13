@@ -158,6 +158,8 @@ class AppStringsZh extends AppStrings {
   @override
   String get upscaleFailed => '放大失败';
   @override
+  String get noUpscaleModels => '服务器上未找到放大模型';
+  @override
   String get inpaint => '局部重绘';
   @override
   String get inpaintHint => '涂抹需要重绘的区域';

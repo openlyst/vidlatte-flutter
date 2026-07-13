@@ -349,7 +349,18 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   if (_selectedLlmServerId != null &&
                       (state.models[_selectedLlmServerId] ?? []).isNotEmpty) ...[
-                    Text(s.llmModel, style: theme.textTheme.labelLarge),
+                    Row(
+                      children: [
+                        Text(s.llmModel, style: theme.textTheme.labelLarge),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => context.read<LlmBloc>().add(LlmModelsFetchRequested(_selectedLlmServerId!)),
+                          icon: const Icon(Icons.refresh, size: 20),
+                          tooltip: 'Refresh',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: ThemeConstants.spacingSmall),
                     DropdownButtonFormField<String>(
                       value: _selectedLlmModel,
@@ -409,7 +420,18 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   ),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   if (_selectedImageServerId != null) ...[
-                    Text(s.imageModel, style: theme.textTheme.labelLarge),
+                    Row(
+                      children: [
+                        Text(s.imageModel, style: theme.textTheme.labelLarge),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => context.read<ServersBloc>().add(ServerModelsFetchRequested(_selectedImageServerId!)),
+                          icon: const Icon(Icons.refresh, size: 20),
+                          tooltip: 'Refresh',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: ThemeConstants.spacingSmall),
                     DropdownButtonFormField<String>(
                       value: _imageModel.isEmpty ? null : _imageModel,

@@ -1,6 +1,6 @@
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class MaskEditor extends StatefulWidget {
@@ -10,12 +10,11 @@ class MaskEditor extends StatefulWidget {
   final GlobalKey<MaskEditorState> exportKey;
 
   const MaskEditor({
-    super.key,
     required this.imageBytes,
     this.brushSize = 30,
     this.isEraser = false,
     required this.exportKey,
-  });
+  }) : super(key: exportKey);
 
   @override
   State<MaskEditor> createState() => MaskEditorState();
@@ -49,7 +48,10 @@ class MaskEditorState extends State<MaskEditor> {
   }
 
   Future<Uint8List> exportMask() async {
-    if (_image == null) return Uint8List(0);
+    if (_image == null) {
+      debugPrint('[mask] exportMask called before image loaded');
+      return Uint8List(0);
+    }
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -73,7 +75,11 @@ class MaskEditorState extends State<MaskEditor> {
     final picture = recorder.endRecording();
     final img = await picture.toImage(_image!.width, _image!.height);
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
+    if (byteData == null) {
+      debugPrint('[mask] toByteData returned null');
+      return Uint8List(0);
+    }
+    return byteData.buffer.asUint8List();
   }
 
   Offset _toImageCoords(Offset localPos, Size widgetSize) {
@@ -89,44 +95,51 @@ class MaskEditorState extends State<MaskEditor> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final displayWidth = constraints.maxWidth;
-        final displayHeight = _imageSize.height * (displayWidth / _imageSize.width);
+        final availW = constraints.maxWidth;
+        final availH = constraints.maxHeight;
+        final imgAspect = _imageSize.width / _imageSize.height;
 
-        return Column(
-          children: [
-            SizedBox(
-              width: displayWidth,
-              height: displayHeight,
-              child: GestureDetector(
-                onPanStart: (details) {
-                  _points.clear();
-                  _points.add(_toImageCoords(details.localPosition, Size(displayWidth, displayHeight)));
-                  _strokes.add(List.from(_points));
-                },
-                onPanUpdate: (details) {
-                  final point = _toImageCoords(details.localPosition, Size(displayWidth, displayHeight));
-                  _points.add(point);
-                  _strokes.last.add(point);
-                  _repaintNotifier.notifyListeners();
-                },
-                onPanEnd: (_) {
-                  _repaintNotifier.notifyListeners();
-                },
-                child: ClipRect(
-                  child: CustomPaint(
-                    painter: _MaskPainter(
-                      image: _image!,
-                      strokes: _strokes,
-                      brushSize: widget.brushSize,
-                      isEraser: widget.isEraser,
-                      repaintNotifier: _repaintNotifier,
-                    ),
-                    size: Size(displayWidth, displayHeight),
+        double displayWidth = availW;
+        double displayHeight = displayWidth / imgAspect;
+
+        if (displayHeight > availH) {
+          displayHeight = availH;
+          displayWidth = displayHeight * imgAspect;
+        }
+
+        return Center(
+          child: SizedBox(
+            width: displayWidth,
+            height: displayHeight,
+            child: GestureDetector(
+              onPanStart: (details) {
+                _points.clear();
+                _points.add(_toImageCoords(details.localPosition, Size(displayWidth, displayHeight)));
+                _strokes.add(List.from(_points));
+              },
+              onPanUpdate: (details) {
+                final point = _toImageCoords(details.localPosition, Size(displayWidth, displayHeight));
+                _points.add(point);
+                _strokes.last.add(point);
+                _repaintNotifier.notifyListeners();
+              },
+              onPanEnd: (_) {
+                _repaintNotifier.notifyListeners();
+              },
+              child: ClipRect(
+                child: CustomPaint(
+                  painter: _MaskPainter(
+                    image: _image!,
+                    strokes: _strokes,
+                    brushSize: widget.brushSize,
+                    isEraser: widget.isEraser,
+                    repaintNotifier: _repaintNotifier,
                   ),
+                  size: Size(displayWidth, displayHeight),
                 ),
               ),
             ),
-          ],
+          ),
         );
       },
     );

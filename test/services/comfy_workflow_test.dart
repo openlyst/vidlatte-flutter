@@ -209,4 +209,56 @@ void main() {
       expect(inputs['steps'], 10);
     });
   });
+
+  group('ComfyWorkflow.upscale', () {
+    test('uses UpscaleModelLoader and ImageUpscaleWithModel nodes', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output');
+
+      expect(workflow['2']['class_type'], 'UpscaleModelLoader');
+      expect(workflow['3']['class_type'], 'ImageUpscaleWithModel');
+    });
+
+    test('does not use non-existent UpscaleImage node', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output');
+
+      for (final node in workflow.values) {
+        expect((node as Map<String, dynamic>)['class_type'], isNot('UpscaleImage'));
+      }
+    });
+
+    test('wires upscale model loader into ImageUpscaleWithModel', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output',
+          model: '4x_NMKD-Siax_200k.pth');
+
+      final loaderInputs = workflow['2']['inputs'] as Map<String, dynamic>;
+      expect(loaderInputs['model_name'], '4x_NMKD-Siax_200k.pth');
+
+      final upscaleInputs = workflow['3']['inputs'] as Map<String, dynamic>;
+      expect(upscaleInputs['upscale_model'], ['2', 0]);
+      expect(upscaleInputs['image'], ['1', 0]);
+    });
+
+    test('skips ImageScaleBy when scale matches model native scale', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output',
+          model: '4x_NMKD-Siax_200k.pth', scale: 4.0);
+
+      expect(workflow['4']['class_type'], 'SaveImage');
+      final saveInputs = workflow['4']['inputs'] as Map<String, dynamic>;
+      expect(saveInputs['images'], ['3', 0]);
+    });
+
+    test('adds ImageScaleBy when scale differs from model native scale', () {
+      final workflow = ComfyWorkflow.upscale('test.png', '', 'output',
+          model: '4x_NMKD-Siax_200k.pth', scale: 2.0);
+
+      expect(workflow['4']['class_type'], 'ImageScaleBy');
+      final scaleInputs = workflow['4']['inputs'] as Map<String, dynamic>;
+      expect(scaleInputs['scale_by'], 0.5);
+      expect(scaleInputs['image'], ['3', 0]);
+
+      expect(workflow['5']['class_type'], 'SaveImage');
+      final saveInputs = workflow['5']['inputs'] as Map<String, dynamic>;
+      expect(saveInputs['images'], ['4', 0]);
+    });
+  });
 }

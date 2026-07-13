@@ -14,6 +14,7 @@ class ControlNetInput extends StatefulWidget {
   final ValueChanged<String?> onModelChanged;
   final ValueChanged<Uint8List?> onImageChanged;
   final ValueChanged<double> onStrengthChanged;
+  final VoidCallback? onRefreshModels;
 
   const ControlNetInput({
     super.key,
@@ -24,6 +25,7 @@ class ControlNetInput extends StatefulWidget {
     required this.onModelChanged,
     required this.onImageChanged,
     required this.onStrengthChanged,
+    this.onRefreshModels,
   });
 
   @override
@@ -59,10 +61,24 @@ class _ControlNetInputState extends State<ControlNetInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+            Text(s.controlnetModel, style: Theme.of(context).textTheme.labelMedium),
+            if (widget.onRefreshModels != null) ...[
+              const Spacer(),
+              IconButton(
+                onPressed: widget.onRefreshModels,
+                icon: const Icon(Icons.refresh, size: 20),
+                tooltip: 'Refresh',
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: widget.selectedModel,
           decoration: InputDecoration(
-            labelText: s.controlnetModel,
             isDense: true,
             prefixIcon: const Icon(Icons.account_tree, size: 18),
           ),
