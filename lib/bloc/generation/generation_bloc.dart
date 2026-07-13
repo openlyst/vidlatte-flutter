@@ -304,25 +304,17 @@ class GenerationBloc extends Bloc<GenerationEvent, GenerationState> {
   }
 
   void _onImagesSynced(GenerationImagesSynced event, Emitter<GenerationState> emit) {
-    final currentIds = state.images.map((e) => e.id).toSet();
     final syncedIds = event.images.map((e) => e.id).toSet();
     final newImages = <GeneratedImage>[];
 
     for (final img in state.images) {
-      if (syncedIds.contains(img.id)) {
-        final synced = event.images.firstWhere((e) => e.id == img.id);
-        newImages.add(img.copyWith(
-          isFavorite: synced.isFavorite,
-          isHidden: synced.isHidden,
-          collectionId: synced.collectionId,
-        ));
-      }
-    }
-
-    for (final img in event.images) {
-      if (!currentIds.contains(img.id)) {
-        newImages.insert(0, img);
-      }
+      if (!syncedIds.contains(img.id)) continue;
+      final synced = event.images.firstWhere((e) => e.id == img.id);
+      newImages.add(img.copyWith(
+        isFavorite: synced.isFavorite,
+        isHidden: synced.isHidden,
+        collectionId: synced.collectionId,
+      ));
     }
 
     emit(state.copyWith(images: newImages));
