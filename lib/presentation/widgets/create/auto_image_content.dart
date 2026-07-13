@@ -68,6 +68,37 @@ class _AutoImageContentState extends State<AutoImageContent> {
   @override
   void initState() {
     super.initState();
+    final autoGenState = context.read<AutoGenBloc>().state;
+    _mode = autoGenState.mode;
+    _topic = autoGenState.topic;
+    _basePrompt = autoGenState.basePrompt;
+    _mustIncludeTags = autoGenState.mustIncludeTags;
+    _maxImages = autoGenState.maxImages;
+    _selectedLoras = List.from(autoGenState.selectedLoras);
+    _imageModel = autoGenState.imageModel;
+    _selectedLlmServerId = autoGenState.llmServerId;
+    _selectedLlmModel = autoGenState.llmModel;
+    _selectedImageServerId = autoGenState.imageServerId;
+    _topicController.text = _topic;
+    _basePromptController.text = _basePrompt;
+    _mustIncludeController.text = _mustIncludeTags;
+
+    final llmState = context.read<LlmBloc>().state;
+    if (_selectedLlmServerId == null && llmState.servers.isNotEmpty) {
+      _selectedLlmServerId = llmState.servers.first.id;
+    }
+
+    final serversState = context.read<ServersBloc>().state;
+    _selectedImageServerId ??= serversState.defaultServer?.id ??
+        (serversState.servers.isNotEmpty ? serversState.servers.first.id : null);
+
+    if (_selectedLlmServerId != null) {
+      context.read<LlmBloc>().add(LlmModelsFetchRequested(_selectedLlmServerId!));
+    }
+    if (_selectedImageServerId != null) {
+      context.read<ServersBloc>().add(ServerModelsFetchRequested(_selectedImageServerId!));
+    }
+
     widget.controller._attach(
       start: _start,
       stop: _stop,
@@ -77,6 +108,11 @@ class _AutoImageContentState extends State<AutoImageContent> {
       setState(() {});
       widget.onCanStartChanged?.call();
     };
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[AutoImageContent] initState postFrame - canStart=${_canStart()}');
+      widget.controller._notifyChanged();
+    });
   }
 
   @override
@@ -103,19 +139,24 @@ class _AutoImageContentState extends State<AutoImageContent> {
   }
 
   bool _canStart() {
-    return _selectedLlmServerId != null &&
+    final can = _selectedLlmServerId != null &&
         _selectedLlmModel != null &&
         _imageModel.isNotEmpty;
+    debugPrint('[AutoImageContent] _canStart -> $can (llmServer=$_selectedLlmServerId, llmModel=$_selectedLlmModel, imageModel=$_imageModel)');
+    return can;
   }
 
   void _start() {
+    debugPrint('[AutoImageContent] _start called');
     final serversState = context.read<ServersBloc>().state;
     final serverId = _selectedImageServerId ?? serversState.defaultServer?.id;
+    debugPrint('[AutoImageContent] _start serverId=$serverId imageModel=$_imageModel');
     if (serverId != null) {
       final catalog = serversState.catalogs[serverId];
       if (catalog != null &&
           catalog.models.isNotEmpty &&
           !catalog.models.contains(_imageModel)) {
+        debugPrint('[AutoImageContent] _start model not on server, aborting');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(AppStrings.of(context).modelNotOnServerRaw(_imageModel))),
@@ -124,6 +165,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
       }
     }
     _syncConfig();
+    debugPrint('[AutoImageContent] _start adding AutoGenStarted');
     context.read<AutoGenBloc>().add(const AutoGenStarted());
   }
 
@@ -330,7 +372,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   Text(s.llmServer, style: theme.textTheme.labelLarge),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedLlmServerId ?? state.servers.first.id,
+                    initialValue: _selectedLlmServerId,
                     decoration: const InputDecoration(isDense: true),
                     items: state.servers
                         .map((s) =>
@@ -403,8 +445,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                   Text(s.imageServer, style: theme.textTheme.labelLarge),
                   const SizedBox(height: ThemeConstants.spacingSmall),
                   DropdownButtonFormField<String>(
-                    initialValue:
-                        _selectedImageServerId ?? state.defaultServer?.id,
+                    initialValue: _selectedImageServerId,
                     decoration: const InputDecoration(isDense: true),
                     items: state.servers
                         .map((s) =>
@@ -478,7 +519,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
                               checkColor: Colors.white,
                               tileColor: selected
                                   ? ext.accent.withValues(alpha: 0.08)
-                                  : Colors.transparent,
+                                  : null,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
                                     ThemeConstants.borderRadiusSmall),
@@ -546,8 +587,7 @@ class _AutoImageContentState extends State<AutoImageContent> {
     final isWide = MediaQuery.sizeOf(context).width >= ThemeConstants.tabletBreakpoint;
     return BlocBuilder<AutoGenBloc, AutoGenState>(
       builder: (context, state) {
-        if (state.images.isEmpty &&
-            state.status != AutoGenStatus.generatingPrompt) {
+        if (state.images.isEmpty && !state.isRunning) {
           return EmptyState(
             icon: Icons.auto_awesome_outlined,
             title: s.autoImageTitle,
