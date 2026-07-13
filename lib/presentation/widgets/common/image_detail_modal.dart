@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_view/photo_view.dart';
 
+import '../../../bloc/gallery/gallery_bloc.dart';
 import '../../../bloc/servers/servers_bloc.dart';
 import '../../../config/constants.dart';
 import '../../../config/theme.dart';
@@ -184,6 +185,9 @@ class _ImageDetailModalState extends State<ImageDetailModal> {
       completedAt: DateTime.now(),
     );
     await storage.saveImage(newImage);
+    if (mounted) {
+      context.read<GalleryBloc>().add(GalleryLoadRequested());
+    }
   }
 
   @override
