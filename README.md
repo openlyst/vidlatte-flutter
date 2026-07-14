@@ -1,6 +1,6 @@
 # Vidlatte
 
-[中文文档](README.zh.md)
+[中文文档](README.zh.md) | [Русский](README.ru.md)
 
 A standalone AI image generation app powered by ComfyUI. Connect to one or more ComfyUI servers, generate images with full control over models, LoRAs, ControlNet, and more — all from a clean cross-platform Flutter interface.
 
