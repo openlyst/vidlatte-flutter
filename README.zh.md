@@ -1,6 +1,6 @@
 # Vidlatte
 
-[English](README.md)
+[English](README.md) | [Русский](README.ru.md)
 
 独立的 AI 图像生成应用，由 ComfyUI 驱动。连接一个或多个 ComfyUI 服务器，全面控制模型、LoRA、ControlNet 等参数，通过简洁的跨平台 Flutter 界面生成图像。
 
